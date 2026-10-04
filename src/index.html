@@ -463,7 +463,7 @@ textarea.inp { padding: 12px; resize: none; line-height: 1.4; }
 .game-wrap { position: relative; flex: 1; display: flex; flex-direction: column; min-height: 0; }
 .game-hud { display: flex; justify-content: space-between; padding: 8px 14px; font-family: var(--hud); font-weight: 600; font-size: 13px; letter-spacing: .08em; color: var(--tx2); text-transform: uppercase; }
 .game-hud b { color: var(--am); }
-.game-cv { flex: 1; min-height: 0; position: relative; touch-action: none; background: #05080F; }
+.game-cv { flex: 1; min-height: 0; position: relative; touch-action: none; }
 .game-cv canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .game-over { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; background: rgba(var(--ink),.82); text-align: center; padding: 24px; }
 .game-over h2 { margin: 0; color: var(--cy); font-size: 22px; }
@@ -510,7 +510,7 @@ textarea.inp { padding: 12px; resize: none; line-height: 1.4; }
      "localStorage doldu, kayıt sessizce başarısız oldu" sorununun çözümü budur.
    - Her yazma işleminin sonucu kontrol edilir; hata olursa kullanıcı görür.
    ===================================================================== */
-var APP_VERSION = '2.4.0';
+var APP_VERSION = '2.5.0';
 var SCHEMA_VERSION = 2; // 1 = eski localStorage sürümü (MİT 1.0), 2 = IndexedDB
 
 var IN_FRAME = (function () { try { return window.self !== window.top; } catch (e) { return true; } })();
@@ -3202,9 +3202,12 @@ Actions.cat = function (el) {
   Game.open();
 };
 
-/* ---------- Oyun çerçevesi ---------- */
+/* ---------- Oyun çerçevesi ----------
+   Ortak: temaya göre arka plan (gece uzayı / gün doğumu gökyüzü), başlamadan
+   önce kısa anlatım ekranı ("Başlamak için dokun"), parçacık patlamaları,
+   uçan puan yazıları ve hafif ekran sarsıntısı. */
 var Game = {
-  active: null, idx: 0, records: {}, raf: 0, cv: null, g: null, W: 0, H: 0, last: 0, over: false,
+  active: null, idx: 0, records: {}, raf: 0, cv: null, g: null, W: 0, H: 0, last: 0, over: false, st: null,
   list: [],
   open: function () {
     var game = this.list[this.idx % this.list.length];
@@ -3221,10 +3224,23 @@ var Game = {
       '<div class="game-cv"><canvas></canvas><div class="game-over hidden" data-go></div></div></div>';
     this.active = game;
     this.cv = body.querySelector('canvas');
-    var self2 = this;
-    var pt = function (e) { var r = self2.cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
-    this.cv.addEventListener('pointerdown', function (e) { if (!self2.over && self2.active && self2.active.down) self2.active.down(self2.st, pt(e)); });
-    this.cv.addEventListener('pointermove', function (e) { if (!self2.over && self2.active && self2.active.move) self2.active.move(self2.st, pt(e)); });
+    var pt = function (e) { var r = self.cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+    this.cv.addEventListener('pointerdown', function (e) {
+      if (self.over || !self.active || !self.st) return;
+      try { self.cv.setPointerCapture(e.pointerId); } catch (err) {}
+      var p = pt(e);
+      if (!self.st.started) {
+        self.st.started = true;
+        Sound.play('open');
+        if (self.active.begin) self.active.begin(self.st, p);
+        return;
+      }
+      if (self.active.down) self.active.down(self.st, p);
+    });
+    this.cv.addEventListener('pointermove', function (e) {
+      if (self.over || !self.active || !self.st || !self.st.started) return;
+      if (self.active.move) self.active.move(self.st, pt(e));
+    });
     requestAnimationFrame(function () { self.start(); });
   },
   recText: function (game) { var r = this.records[game.id]; return r === undefined ? '—' : String(r); },
@@ -3237,7 +3253,8 @@ var Game = {
     this.g.setTransform(dpr, 0, 0, dpr, 0, 0);
     this.over = false;
     UI.pBody().querySelector('[data-go]').classList.add('hidden');
-    this.st = { W: this.W, H: this.H, score: 0, t: 0 };
+    this.st = { W: this.W, H: this.H, score: 0, t: 0, started: false, fx: [], pops: [], shake: 0, bg: this.makeBg(this.W, this.H) };
+    this.setExtra('');
     this.active.init(this.st);
     this.setScore(0);
     this.last = performance.now();
@@ -3247,15 +3264,111 @@ var Game = {
       if (!self.active || self.over) return;
       var dt = Math.min(0.05, (now - self.last) / 1000);
       self.last = now;
-      if (!document.hidden) {
-        self.st.t += dt;
-        self.active.step(self.st, dt);
-        self.g.clearRect(0, 0, self.W, self.H);
-        self.active.draw(self.g, self.st);
-      }
+      if (!document.hidden) self.frame(dt);
       self.raf = requestAnimationFrame(loop);
     })(this.last);
   },
+  frame: function (dt) {
+    var s = this.st, g = this.g;
+    s.t += dt;
+    if (s.started) this.active.step(s, dt);
+    if (!this.active) return;
+    // Parçacıklar ve uçan yazılar
+    s.fx.forEach(function (p) { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 260 * dt; p.life -= dt; });
+    s.fx = s.fx.filter(function (p) { return p.life > 0; });
+    s.pops.forEach(function (p) { p.y -= 46 * dt; p.life -= dt; });
+    s.pops = s.pops.filter(function (p) { return p.life > 0; });
+    if (s.shake > 0) s.shake = Math.max(0, s.shake - dt * 30);
+    g.save();
+    if (s.shake > 0) g.translate((Math.random() - 0.5) * s.shake, (Math.random() - 0.5) * s.shake);
+    this.drawBg(g, s);
+    this.active.draw(g, s, gPal());
+    var P = gPal();
+    s.fx.forEach(function (p) {
+      g.globalAlpha = Math.max(0, p.life / p.max);
+      g.fillStyle = p.c;
+      g.beginPath(); g.arc(p.x, p.y, p.r, 0, Math.PI * 2); g.fill();
+    });
+    g.globalAlpha = 1;
+    g.textAlign = 'center'; g.font = '600 20px "Exo 2", sans-serif';
+    s.pops.forEach(function (p) {
+      g.globalAlpha = Math.min(1, p.life * 2);
+      g.lineWidth = 4; g.strokeStyle = P.outline; g.strokeText(p.text, p.x, p.y);
+      g.fillStyle = p.c; g.fillText(p.text, p.x, p.y);
+    });
+    g.globalAlpha = 1;
+    g.restore();
+    if (!s.started) this.drawIntro(g, s, P);
+  },
+  // Arka plan: koyu temada yıldızlı gece, açık temada gün doğumu gökyüzü
+  makeBg: function (W, H) {
+    var stars = [], clouds = [];
+    for (var i = 0; i < 70; i++) stars.push({ x: Math.random() * W, y: Math.random() * H, r: Math.random() * 1.4 + 0.3, p: Math.random() * 6 });
+    for (var k = 0; k < 4; k++) clouds.push({ x: Math.random() * W, y: H * (0.08 + Math.random() * 0.45), w: 70 + Math.random() * 70, v: 6 + Math.random() * 10 });
+    return { stars: stars, clouds: clouds };
+  },
+  drawBg: function (g, s) {
+    var W = s.W, H = s.H, P = gPal(), gr;
+    if (P.light) {
+      gr = g.createLinearGradient(0, 0, 0, H);
+      gr.addColorStop(0, '#A9D3EE'); gr.addColorStop(0.5, '#EAF1F4'); gr.addColorStop(0.82, '#FFE9CF'); gr.addColorStop(1, '#FFD0A0');
+      g.fillStyle = gr; g.fillRect(0, 0, W, H);
+      var sun = g.createRadialGradient(W / 2, H * 1.02, 10, W / 2, H * 1.02, H * 0.55);
+      sun.addColorStop(0, 'rgba(255,170,70,.9)'); sun.addColorStop(0.25, 'rgba(255,190,110,.45)'); sun.addColorStop(1, 'rgba(255,200,130,0)');
+      g.fillStyle = sun; g.fillRect(0, 0, W, H);
+      g.fillStyle = 'rgba(255,255,255,.8)';
+      s.bg.clouds.forEach(function (c) {
+        var x = ((c.x + s.t * c.v) % (W + 160)) - 80;
+        g.beginPath();
+        g.ellipse(x, c.y, c.w * 0.5, c.w * 0.16, 0, 0, Math.PI * 2);
+        g.ellipse(x - c.w * 0.18, c.y - c.w * 0.08, c.w * 0.22, c.w * 0.14, 0, 0, Math.PI * 2);
+        g.ellipse(x + c.w * 0.15, c.y - c.w * 0.1, c.w * 0.26, c.w * 0.17, 0, 0, Math.PI * 2);
+        g.fill();
+      });
+    } else {
+      gr = g.createLinearGradient(0, 0, 0, H);
+      gr.addColorStop(0, '#05080F'); gr.addColorStop(1, '#0A1224');
+      g.fillStyle = gr; g.fillRect(0, 0, W, H);
+      var neb = g.createRadialGradient(W * 0.75, H * 0.2, 0, W * 0.75, H * 0.2, W * 0.7);
+      neb.addColorStop(0, 'rgba(0,229,255,.10)'); neb.addColorStop(1, 'rgba(0,229,255,0)');
+      g.fillStyle = neb; g.fillRect(0, 0, W, H);
+      var neb2 = g.createRadialGradient(W * 0.2, H * 0.85, 0, W * 0.2, H * 0.85, W * 0.6);
+      neb2.addColorStop(0, 'rgba(255,179,0,.07)'); neb2.addColorStop(1, 'rgba(255,179,0,0)');
+      g.fillStyle = neb2; g.fillRect(0, 0, W, H);
+      s.bg.stars.forEach(function (st) {
+        g.globalAlpha = 0.35 + 0.65 * Math.abs(Math.sin(s.t * 1.3 + st.p));
+        g.fillStyle = '#E6F7FF';
+        g.beginPath(); g.arc(st.x, st.y, st.r, 0, Math.PI * 2); g.fill();
+      });
+      g.globalAlpha = 1;
+    }
+  },
+  drawIntro: function (g, s, P) {
+    var a = this.active, W = s.W, H = s.H;
+    g.fillStyle = P.light ? 'rgba(255,251,245,.78)' : 'rgba(5,8,15,.66)';
+    g.fillRect(0, 0, W, H);
+    g.textAlign = 'center';
+    g.fillStyle = P.cy; g.font = '600 24px "Exo 2", sans-serif';
+    g.fillText(a.name.toLocaleUpperCase('tr-TR'), W / 2, H * 0.3);
+    g.fillStyle = P.tx; g.font = '16px system-ui, sans-serif';
+    (a.howto || []).forEach(function (line, i) { g.fillText(line, W / 2, H * 0.3 + 44 + i * 28); });
+    var pulse = 0.6 + 0.4 * Math.abs(Math.sin(s.t * 3));
+    var bw = 220, bh = 56, bx = W / 2 - bw / 2, by = H * 0.68;
+    g.globalAlpha = pulse;
+    rr(g, bx, by, bw, bh, 12); g.fillStyle = P.am; g.fill();
+    g.globalAlpha = 1;
+    g.fillStyle = P.light ? '#FFFFFF' : '#05080F'; g.font = '600 17px "Exo 2", sans-serif';
+    g.fillText('BAŞLAMAK İÇİN DOKUN', W / 2, by + 35);
+  },
+  burst: function (x, y, color, n, speed) {
+    var s = this.st; if (!s) return;
+    for (var i = 0; i < (n || 14); i++) {
+      var a = Math.random() * Math.PI * 2, v = (speed || 160) * (0.4 + Math.random() * 0.8), life = 0.45 + Math.random() * 0.35;
+      s.fx.push({ x: x, y: y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 60, r: 1.5 + Math.random() * 2.5, c: color, life: life, max: life });
+    }
+  },
+  pop: function (x, y, text, color) { if (this.st) this.st.pops.push({ x: x, y: y, text: text, c: color || gPal().am, life: 0.9 }); },
+  shake: function (v) { if (this.st) this.st.shake = Math.max(this.st.shake, v || 8); },
   stop: function () { cancelAnimationFrame(this.raf); this.over = true; },
   setScore: function (v) { this.st.score = v; var b = UI.pBody() && UI.pBody().querySelector('[data-gs]'); if (b) b.textContent = String(v); },
   setExtra: function (txt) { var b = UI.pBody() && UI.pBody().querySelector('[data-gx]'); if (b) b.textContent = txt; },
@@ -3271,217 +3384,399 @@ var Game = {
     var go = UI.pBody().querySelector('[data-go]');
     go.innerHTML = '<h2 class="hud">' + (better && prev !== undefined ? 'Yeni Rekor!' : 'Oyun Bitti') + '</h2>' +
       '<p>' + esc(game.scoreLabel || 'Skor') + ': ' + score + ' · Rekor: ' + this.recText(game) + '</p>' +
-      '<button class="btn pri" data-act="game-retry">Tekrar Oyna</button><button class="btn" data-act="back">Küreye Dön</button>';
+      '<button class="btn pri" data-act="game-retry">Tekrar Oyna</button><button class="btn" data-act="game-next">Sonraki Oyun</button><button class="btn" data-act="back">Küreye Dön</button>';
     go.classList.remove('hidden');
     UI.pBody().querySelector('[data-gr]').textContent = this.recText(game);
   }
 };
 Actions['game-retry'] = function () { Game.start(); };
+Actions['game-next'] = function () {
+  var game = Game.list[Game.idx % Game.list.length];
+  Game.idx = (Game.idx + 1) % Game.list.length;
+  Meta.set('gameIdx', Game.idx);
+  Game.active = game;
+  UI.setHead(esc(game.name) + '<small>' + esc(game.hint) + '</small>', '');
+  var sl = UI.pBody().querySelector('.game-hud span');
+  if (sl) sl.innerHTML = esc(game.scoreLabel || 'Skor') + ': <b data-gs>0</b>';
+  UI.pBody().querySelector('[data-gr]').textContent = Game.recText(game);
+  Game.start();
+};
 
-/* Ortak çizim yardımcıları */
-var GC = { cy: '#00E5FF', soft: '#4DD8F0', dim: '#0E7490', am: '#FFB300', amd: '#FF8F00', tx: '#E6F7FF', tx2: '#8FB3C7', ok: '#2EE6A6', blue: '#3D8BFF', bg: '#05080F', raised: '#0F1B33' };
+/* Ortak çizim yardımcıları — renkler temaya göre */
+function gPal() {
+  if (Settings.theme === 'light') return {
+    light: true, cy: '#00739E', soft: '#1B8FBF', dim: '#7FBFD8', am: '#D96F00', amd: '#B85C00', tx: '#102238', tx2: '#4A5F75',
+    ok: '#0F8A5C', blue: '#2456C8', red: '#D2263D', card: '#FFFFFF', cardBack: '#E3F0F7', outline: 'rgba(255,255,255,.9)', glow: 0
+  };
+  return {
+    light: false, cy: '#00E5FF', soft: '#4DD8F0', dim: '#0E7490', am: '#FFB300', amd: '#FF8F00', tx: '#E6F7FF', tx2: '#8FB3C7',
+    ok: '#2EE6A6', blue: '#3D8BFF', red: '#FF4D5E', card: '#0F1B33', cardBack: '#0B1830', outline: 'rgba(5,8,15,.9)', glow: 14
+  };
+}
+function rr(g, x, y, w, h, r) {
+  g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r);
+  g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
+}
+function glow(g, color, blur) { var P = gPal(); g.shadowColor = color; g.shadowBlur = P.glow ? (blur || P.glow) : 0; }
+function noGlow(g) { g.shadowBlur = 0; }
 function gGlyph(g, type, x, y, s, color, lw) {
-  g.save(); g.translate(x, y); g.strokeStyle = color; g.fillStyle = color; g.lineWidth = lw || 2.5; g.lineCap = 'round';
-  Sphere.drawGlyph(g, type, s);
+  g.save(); g.translate(x, y); g.strokeStyle = color; g.fillStyle = color; g.lineWidth = lw || 2.5; g.lineCap = 'round'; g.lineJoin = 'round';
+  if (type === 6) { // yıldız
+    g.beginPath();
+    for (var i = 0; i < 10; i++) { var a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? s * 0.45 : s; g.lineTo(Math.cos(a) * r, Math.sin(a) * r); }
+    g.closePath(); g.stroke();
+  } else if (type === 7) { // elmas
+    g.beginPath(); g.moveTo(0, -s); g.lineTo(s * 0.75, 0); g.lineTo(0, s); g.lineTo(-s * 0.75, 0); g.closePath(); g.stroke();
+    g.beginPath(); g.arc(0, 0, s * 0.18, 0, Math.PI * 2); g.fill();
+  } else Sphere.drawGlyph(g, type, s);
   g.restore();
 }
-function gCircle(g, x, y, r, fill, stroke, lw) {
-  g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2);
-  if (fill) { g.fillStyle = fill; g.fill(); }
-  if (stroke) { g.strokeStyle = stroke; g.lineWidth = lw || 2; g.stroke(); }
+function shade(g, x, y, r, c1, c2) {
+  var gr = g.createRadialGradient(x - r * 0.35, y - r * 0.35, r * 0.1, x, y, r);
+  gr.addColorStop(0, c1); gr.addColorStop(1, c2);
+  return gr;
+}
+// Küçük uzay kedisi kafası (oyuncu karakteri)
+function drawCat(g, x, y, r, P, tilt) {
+  g.save(); g.translate(x, y); g.rotate(tilt || 0);
+  glow(g, P.cy, 12);
+  g.fillStyle = P.light ? 'rgba(0,115,158,.12)' : 'rgba(0,229,255,.14)';
+  g.strokeStyle = P.cy; g.lineWidth = 2;
+  g.beginPath(); g.arc(0, 0, r, 0, Math.PI * 2); g.fill(); g.stroke();
+  noGlow(g);
+  g.fillStyle = P.light ? '#FFF4E6' : '#0F1B33'; g.strokeStyle = P.soft; g.lineWidth = 1.4;
+  g.beginPath(); g.moveTo(-r * 0.55, -r * 0.05); g.lineTo(-r * 0.5, -r * 0.6); g.lineTo(-r * 0.15, -r * 0.3);
+  g.lineTo(r * 0.15, -r * 0.3); g.lineTo(r * 0.5, -r * 0.6); g.lineTo(r * 0.55, -r * 0.05);
+  g.quadraticCurveTo(r * 0.6, r * 0.55, 0, r * 0.6); g.quadraticCurveTo(-r * 0.6, r * 0.55, -r * 0.55, -r * 0.05);
+  g.fill(); g.stroke();
+  g.fillStyle = P.am;
+  g.beginPath(); g.ellipse(-r * 0.22, r * 0.08, r * 0.1, r * 0.13, 0, 0, Math.PI * 2); g.ellipse(r * 0.22, r * 0.08, r * 0.1, r * 0.13, 0, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = P.light ? 'rgba(255,255,255,.9)' : 'rgba(230,247,255,.6)'; g.lineWidth = 1.6;
+  g.beginPath(); g.arc(0, 0, r * 0.78, -2.6, -1.9); g.stroke();
+  g.restore();
 }
 
-/* 1) Yumak Yakala: düşen yumakları kaseyle yakala, 3 kaçırınca biter */
+/* 1) Yumak Yakala: kase parmağı yumuşakça takip eder */
 Game.list.push({
-  id: 'yarn', name: 'Yumak Yakala', hint: 'Parmağını kaydırıp kaseyi taşı',
-  init: function (s) { s.px = s.W / 2; s.items = []; s.spawn = 0; s.lives = 3; Game.setExtra('Can: 3'); },
-  down: function (s, p) { s.px = p.x; }, move: function (s, p) { s.px = p.x; },
+  id: 'yarn', name: 'Yumak Yakala', hint: 'Parmağını sağa sola kaydır',
+  howto: ['Parmağını ekranda sağa sola kaydır,', 'kedi sepeti parmağını takip eder.', 'Düşen yumakları yakala.', 'Altın yumak +3 · 3 kaçırırsan biter.'],
+  init: function (s) {
+    s.px = s.W / 2; s.tx = s.W / 2; s.items = []; s.spawn = 0.6; s.lives = 3;
+    s.bw = Math.min(140, s.W * 0.36);
+    Game.setExtra('♥♥♥');
+  },
+  begin: function (s, p) { s.tx = p.x; },
+  down: function (s, p) { s.tx = p.x; },
+  move: function (s, p) { s.tx = p.x; },
   step: function (s, dt) {
+    s.px += (s.tx - s.px) * Math.min(1, dt * 14);
+    s.px = Math.max(s.bw / 2, Math.min(s.W - s.bw / 2, s.px));
     s.spawn -= dt;
-    if (s.spawn <= 0) { s.items.push({ x: 20 + Math.random() * (s.W - 40), y: -20, v: 120 + s.score * 6, r: 14, a: 0 }); s.spawn = Math.max(0.35, 1.1 - s.score * 0.03); }
-    var by = s.H - 50, self = this;
+    if (s.spawn <= 0) {
+      s.items.push({ x: 24 + Math.random() * (s.W - 48), y: -24, v: Math.min(320, 95 + s.score * 4), r: 17, a: Math.random() * 6, gold: Math.random() < 0.1, sw: Math.random() * 6 });
+      s.spawn = Math.max(0.5, 1.25 - s.score * 0.025);
+    }
+    var by = s.H - 64, P = gPal();
     s.items = s.items.filter(function (it) {
-      it.y += it.v * dt; it.a += dt * 3;
-      if (it.y > by - 12 && it.y < by + 10 && Math.abs(it.x - s.px) < 50) { Game.setScore(s.score + 1); Sound.play('pop'); haptic(10); return false; }
-      if (it.y > s.H + 20) { s.lives--; Game.setExtra('Can: ' + s.lives); fb('err'); if (s.lives <= 0) Game.end(s.score); return false; }
+      it.y += it.v * dt; it.a += dt * 3; it.x += Math.sin(s.t * 2 + it.sw) * 12 * dt;
+      if (it.y > by - 18 && it.y < by + 16 && Math.abs(it.x - s.px) < s.bw / 2 + 8) {
+        var add = it.gold ? 3 : 1;
+        Game.setScore(s.score + add); Game.burst(it.x, by - 6, it.gold ? P.am : P.cy, it.gold ? 22 : 12);
+        Game.pop(it.x, by - 30, '+' + add, it.gold ? P.am : P.cy); Sound.play('pop'); haptic(10);
+        return false;
+      }
+      if (it.y > s.H + 24) {
+        s.lives--; Game.setExtra('♥♥♥'.slice(0, Math.max(0, s.lives)) + '♡♡♡'.slice(0, 3 - Math.max(0, s.lives)));
+        Game.burst(it.x, s.H - 8, P.red, 16); Game.shake(10); fb('err');
+        if (s.lives <= 0) Game.end(s.score);
+        return false;
+      }
       return true;
     });
   },
-  draw: function (g, s) {
+  draw: function (g, s, P) {
     s.items.forEach(function (it) {
-      gCircle(g, it.x, it.y, it.r, GC.raised, GC.am, 2);
-      g.save(); g.translate(it.x, it.y); g.rotate(it.a); g.strokeStyle = GC.amd; g.lineWidth = 1.5;
-      g.beginPath(); g.arc(0, 0, it.r * 0.6, 0.3, 2.6); g.moveTo(-it.r * 0.8, 0); g.quadraticCurveTo(0, -it.r, it.r * 0.8, 0); g.stroke(); g.restore();
+      g.strokeStyle = it.gold ? P.am : P.soft; g.lineWidth = 1.2; g.globalAlpha = 0.6;
+      g.beginPath(); g.moveTo(it.x, it.y - it.r); g.quadraticCurveTo(it.x + 10, it.y - it.r - 18, it.x - 4, it.y - it.r - 32); g.stroke();
+      g.globalAlpha = 1;
+      glow(g, it.gold ? P.am : P.cy, it.gold ? 18 : 8);
+      g.fillStyle = shade(g, it.x, it.y, it.r, it.gold ? '#FFE08A' : (P.light ? '#8FD8F2' : '#4DD8F0'), it.gold ? P.amd : (P.light ? '#00739E' : '#0E7490'));
+      g.beginPath(); g.arc(it.x, it.y, it.r, 0, Math.PI * 2); g.fill();
+      noGlow(g);
+      g.save(); g.translate(it.x, it.y); g.rotate(it.a);
+      g.strokeStyle = it.gold ? 'rgba(255,255,255,.75)' : 'rgba(255,255,255,.55)'; g.lineWidth = 1.5;
+      for (var k = -2; k <= 2; k++) { g.beginPath(); g.ellipse(0, 0, it.r * 0.9, it.r * (0.25 + Math.abs(k) * 0.12), k * 0.5, 0, Math.PI); g.stroke(); }
+      g.restore();
     });
-    var by = s.H - 50;
-    g.strokeStyle = GC.cy; g.lineWidth = 3; g.beginPath();
-    g.moveTo(s.px - 48, by - 6); g.quadraticCurveTo(s.px, by + 26, s.px + 48, by - 6); g.stroke();
-    g.fillStyle = 'rgba(0,229,255,.15)'; g.fill();
+    // Kedi sepeti
+    var by = s.H - 64, x = s.px, w = s.bw;
+    g.strokeStyle = P.dim; g.lineWidth = 1; g.setLineDash([4, 6]);
+    g.beginPath(); g.moveTo(0, s.H - 30); g.lineTo(s.W, s.H - 30); g.stroke(); g.setLineDash([]);
+    glow(g, P.cy, 16);
+    var bg = g.createLinearGradient(0, by - 10, 0, by + 30);
+    bg.addColorStop(0, P.light ? '#FFFFFF' : 'rgba(15,27,51,.95)'); bg.addColorStop(1, P.light ? '#D6EAF6' : 'rgba(14,116,144,.9)');
+    g.fillStyle = bg; g.strokeStyle = P.cy; g.lineWidth = 2.5;
+    g.beginPath(); g.moveTo(x - w / 2, by - 8); g.lineTo(x + w / 2, by - 8);
+    g.quadraticCurveTo(x + w / 2 - 6, by + 30, x, by + 30); g.quadraticCurveTo(x - w / 2 + 6, by + 30, x - w / 2, by - 8);
+    g.closePath(); g.fill(); g.stroke(); noGlow(g);
+    g.fillStyle = P.light ? '#FFF4E6' : '#0F1B33'; g.strokeStyle = P.cy; g.lineWidth = 2;
+    [-1, 1].forEach(function (d) {
+      g.beginPath(); g.moveTo(x + d * w * 0.42, by - 8); g.lineTo(x + d * w * 0.36, by - 30); g.lineTo(x + d * w * 0.22, by - 8); g.closePath(); g.fill(); g.stroke();
+    });
+    g.fillStyle = P.am;
+    g.beginPath(); g.arc(x - 12, by + 8, 3.5, 0, Math.PI * 2); g.arc(x + 12, by + 8, 3.5, 0, Math.PI * 2); g.fill();
   }
 });
 
-/* 2) Glif Kapıları: dokunarak yüksel, kapılardaki boşluktan geç */
+/* 2) Glif Kapıları: dokun → yüksel; boşluklar geniş, yerçekimi yumuşak */
 Game.list.push({
-  id: 'gates', name: 'Glif Kapıları', hint: 'Dokununca yükselir',
-  init: function (s) { s.y = s.H / 2; s.vy = 0; s.gates = []; s.spawn = 0.6; s.started = false; Game.setExtra('Başlamak için dokun'); },
-  down: function (s) { s.started = true; s.vy = -330; Game.setExtra(''); Sound.play('tap'); },
+  id: 'gates', name: 'Glif Kapıları', hint: 'Dokununca kedi yükselir',
+  howto: ['Ekrana her dokunuşta kedi yükselir,', 'bırakınca yavaşça alçalır.', 'Kapılardaki boşluklardan geç.', 'Üst kenara çarpmak oyunu bitirmez.'],
+  init: function (s) { s.y = s.H * 0.45; s.vy = 0; s.gates = []; s.spawn = 1.0; s.trail = []; s.px = s.W * 0.28; },
+  begin: function (s) { s.vy = -250; },
+  down: function (s) { s.vy = -265; Sound.play('tap'); Game.burst(s.px - 10, s.y + 10, gPal().am, 5, 80); },
   step: function (s, dt) {
-    if (!s.started) return;
-    s.vy += 900 * dt; s.y += s.vy * dt;
+    s.vy = Math.min(380, s.vy + 640 * dt); s.y += s.vy * dt;
+    if (s.y < 18) { s.y = 18; s.vy = Math.max(0, s.vy); }
+    s.trail.push({ x: s.px, y: s.y }); if (s.trail.length > 14) s.trail.shift();
     s.spawn -= dt;
-    var gap = Math.max(130, 180 - s.score * 3);
-    if (s.spawn <= 0) { s.gates.push({ x: s.W + 30, gy: 60 + Math.random() * (s.H - 120 - gap), gap: gap, passed: false, k: Math.floor(Math.random() * 6) }); s.spawn = 1.6; }
-    var px = s.W * 0.3, r = 14;
+    var speed = Math.min(190, 115 + s.score * 2.5), gap = Math.max(150, 215 - s.score * 3);
+    if (s.spawn <= 0) { s.gates.push({ x: s.W + 40, gy: 70 + Math.random() * (s.H - 140 - gap), gap: gap, passed: false, k: Math.floor(Math.random() * 8) }); s.spawn = 1.9; }
+    var r = 11, P = gPal(); // çarpışma kutusu görünenden küçük: daha affedici
     for (var i = 0; i < s.gates.length; i++) {
       var gt = s.gates[i];
-      gt.x -= 150 * dt;
-      if (!gt.passed && gt.x + 27 < px) { gt.passed = true; Game.setScore(s.score + 1); Sound.play('pop'); }
-      if (px + r > gt.x - 27 && px - r < gt.x + 27 && (s.y - r < gt.gy || s.y + r > gt.gy + gt.gap)) { Game.end(s.score); return; }
+      gt.x -= speed * dt;
+      if (!gt.passed && gt.x + 28 < s.px) { gt.passed = true; Game.setScore(s.score + 1); Sound.play('pop'); Game.pop(s.px, s.y - 30, '+1', P.am); }
+      if (s.px + r > gt.x - 28 && s.px - r < gt.x + 28 && (s.y - r < gt.gy || s.y + r > gt.gy + gt.gap)) {
+        Game.burst(s.px, s.y, P.red, 24); Game.shake(12); fb('err'); Game.end(s.score); return;
+      }
     }
-    s.gates = s.gates.filter(function (gt) { return gt.x > -40; });
-    if (s.y > s.H - r || s.y < r) Game.end(s.score);
+    s.gates = s.gates.filter(function (gt) { return gt.x > -60; });
+    if (s.y > s.H - 14) { Game.burst(s.px, s.y, P.red, 24); Game.shake(12); fb('err'); Game.end(s.score); }
   },
-  draw: function (g, s) {
+  draw: function (g, s, P) {
     s.gates.forEach(function (gt) {
-      g.fillStyle = 'rgba(14,116,144,.45)'; g.strokeStyle = GC.cy; g.lineWidth = 1.5;
-      g.fillRect(gt.x - 27, 0, 54, gt.gy); g.strokeRect(gt.x - 27, 0, 54, gt.gy);
-      g.fillRect(gt.x - 27, gt.gy + gt.gap, 54, s.H); g.strokeRect(gt.x - 27, gt.gy + gt.gap, 54, s.H);
-      gGlyph(g, gt.k, gt.x, gt.gy - 24, 9, GC.am, 2);
-      gGlyph(g, (gt.k + 3) % 6, gt.x, gt.gy + gt.gap + 24, 9, GC.am, 2);
+      [[0, gt.gy], [gt.gy + gt.gap, s.H - gt.gy - gt.gap]].forEach(function (seg) {
+        var y = seg[0], h = seg[1];
+        var gr = g.createLinearGradient(gt.x - 28, 0, gt.x + 28, 0);
+        gr.addColorStop(0, P.light ? 'rgba(0,115,158,.55)' : 'rgba(14,116,144,.75)');
+        gr.addColorStop(0.5, P.light ? 'rgba(127,191,216,.55)' : 'rgba(0,229,255,.35)');
+        gr.addColorStop(1, P.light ? 'rgba(0,115,158,.55)' : 'rgba(14,116,144,.75)');
+        glow(g, P.cy, 12);
+        rr(g, gt.x - 28, y - 10, 56, h + 20, 10); g.fillStyle = gr; g.fill();
+        g.strokeStyle = P.cy; g.lineWidth = 2; g.stroke(); noGlow(g);
+      });
+      gGlyph(g, gt.k, gt.x, gt.gy - 26, 9, P.am, 2.2);
+      gGlyph(g, (gt.k + 3) % 8, gt.x, gt.gy + gt.gap + 26, 9, P.am, 2.2);
+      g.strokeStyle = P.am; g.lineWidth = 3; g.globalAlpha = 0.8;
+      g.beginPath(); g.moveTo(gt.x - 24, gt.gy); g.lineTo(gt.x + 24, gt.gy); g.moveTo(gt.x - 24, gt.gy + gt.gap); g.lineTo(gt.x + 24, gt.gy + gt.gap); g.stroke();
+      g.globalAlpha = 1;
     });
-    gCircle(g, s.W * 0.3, s.y, 14, 'rgba(255,179,0,.25)', GC.am, 2.5);
-    gGlyph(g, 4, s.W * 0.3, s.y, 7, GC.tx, 1.8);
+    s.trail.forEach(function (p, i) {
+      g.globalAlpha = i / s.trail.length * 0.5; g.fillStyle = P.am;
+      g.beginPath(); g.arc(p.x - (s.trail.length - i) * 5, p.y, 2 + i * 0.4, 0, Math.PI * 2); g.fill();
+    });
+    g.globalAlpha = 1;
+    drawCat(g, s.px, s.y, 17, P, Math.max(-0.5, Math.min(0.6, s.vy / 600)));
   }
 });
 
-/* 3) Glif Hafızası: eşleri bul (en az hamle) */
+/* 3) Glif Hafızası: başta kartlar 2 sn açık gösterilir; çevirme animasyonlu */
 Game.list.push({
   id: 'memory', name: 'Glif Hafızası', hint: 'Aynı glif çiftlerini bul', scoreLabel: 'Hamle', lowerBetter: true,
+  howto: ['Kartlar önce 2 saniye açık gösterilir.', 'Sonra kapanır; iki karta dokunarak', 'aynı renk ve glifteki eşleri bul.', 'Ne kadar az hamle, o kadar iyi.'],
   init: function (s) {
     var deck = [];
     for (var i = 0; i < 8; i++) { deck.push(i); deck.push(i); }
     for (var j = deck.length - 1; j > 0; j--) { var k = Math.floor(Math.random() * (j + 1)); var t = deck[j]; deck[j] = deck[k]; deck[k] = t; }
-    s.cards = deck.map(function (v) { return { v: v, open: false, done: false }; });
-    s.pick = []; s.wait = 0; s.moves = 0; s.found = 0;
-    Game.setExtra('');
+    s.cards = deck.map(function (v) { return { v: v, open: true, done: false, f: 1 }; });
+    s.pick = []; s.wait = 0; s.moves = 0; s.found = 0; s.preview = -1;
   },
+  begin: function (s) { s.preview = 2; Game.setExtra('Ezberle!'); },
   layout: function (s) {
-    var size = Math.min((s.W - 40) / 4, (s.H - 40) / 4), ox = (s.W - size * 4) / 2, oy = (s.H - size * 4) / 2;
-    return { size: size, ox: ox, oy: oy };
+    var size = Math.min((s.W - 24) / 4, (s.H - 24) / 4);
+    return { size: size, ox: (s.W - size * 4) / 2, oy: (s.H - size * 4) / 2 };
   },
+  colors: function (P) { return [P.cy, P.am, P.ok, P.blue, P.red, P.soft, P.amd, P.light ? '#7A3FB8' : '#C59BFF']; },
   down: function (s, p) {
-    if (s.wait > 0) return;
+    if (s.wait > 0 || s.preview > 0) return;
     var L = this.layout(s), cx = Math.floor((p.x - L.ox) / L.size), cy = Math.floor((p.y - L.oy) / L.size);
     if (cx < 0 || cy < 0 || cx > 3 || cy > 3) return;
     var c = s.cards[cy * 4 + cx];
     if (c.open || c.done) return;
-    c.open = true; s.pick.push(c); Sound.play('tap');
+    c.open = true; s.pick.push(c); Sound.play('tap'); haptic(8);
     if (s.pick.length === 2) {
       s.moves++; Game.setScore(s.moves);
-      if (s.pick[0].v === s.pick[1].v) {
-        s.pick.forEach(function (x) { x.done = true; }); s.pick = []; s.found++; fb('ok');
-        if (s.found === 8) setTimeout(function () { Game.end(s.moves); }, 400);
-      } else s.wait = 0.7;
+      var a = s.pick[0], b = s.pick[1], P = gPal(), col = this.colors(P)[a.v];
+      if (a.v === b.v) {
+        a.done = b.done = true; s.pick = []; s.found++; fb('ok');
+        [a, b].forEach(function (cc) { var i = s.cards.indexOf(cc); Game.burst(L.ox + (i % 4 + 0.5) * L.size, L.oy + (Math.floor(i / 4) + 0.5) * L.size, col, 14); });
+        if (s.found === 8) setTimeout(function () { Game.end(s.moves); }, 600);
+      } else s.wait = 0.8;
     }
   },
   step: function (s, dt) {
+    if (s.preview > 0) {
+      s.preview -= dt;
+      if (s.preview <= 0) { s.cards.forEach(function (c) { c.open = false; }); Game.setExtra(''); }
+    }
     if (s.wait > 0) { s.wait -= dt; if (s.wait <= 0) { s.pick.forEach(function (x) { x.open = false; }); s.pick = []; } }
+    s.cards.forEach(function (c) { var tgt = c.open || c.done ? 1 : 0; c.f += (tgt - c.f) * Math.min(1, dt * 10); });
   },
-  draw: function (g, s) {
-    var L = this.layout(s);
+  draw: function (g, s, P) {
+    var L = this.layout(s), cols = this.colors(P);
     s.cards.forEach(function (c, i) {
-      var x = L.ox + (i % 4) * L.size + 4, y = L.oy + Math.floor(i / 4) * L.size + 4, w = L.size - 8;
-      g.fillStyle = c.done ? 'rgba(46,230,166,.12)' : c.open ? 'rgba(0,229,255,.12)' : GC.raised;
-      g.strokeStyle = c.done ? GC.ok : c.open ? GC.cy : GC.dim; g.lineWidth = 1.5;
-      g.fillRect(x, y, w, w); g.strokeRect(x, y, w, w);
-      if (c.open || c.done) gGlyph(g, c.v % 6, x + w / 2, y + w / 2, w * 0.24, c.v < 6 ? GC.cy : GC.am, 2.5);
-      else gGlyph(g, 4, x + w / 2, y + w / 2, w * 0.12, GC.dim, 1.5);
+      var cx = L.ox + (i % 4 + 0.5) * L.size, cy = L.oy + (Math.floor(i / 4) + 0.5) * L.size, w = L.size - 10;
+      var sx = Math.max(0.04, Math.abs(c.f * 2 - 1)), face = c.f > 0.5, col = cols[c.v];
+      g.save(); g.translate(cx, cy); g.scale(sx, 1);
+      if (face) {
+        glow(g, col, c.done ? 16 : 8);
+        rr(g, -w / 2, -w / 2, w, w, 10); g.fillStyle = P.card; g.fill();
+        g.strokeStyle = col; g.lineWidth = c.done ? 3 : 2; g.stroke(); noGlow(g);
+        g.globalAlpha = 0.14; g.fillStyle = col; rr(g, -w / 2, -w / 2, w, w, 10); g.fill(); g.globalAlpha = 1;
+        gGlyph(g, c.v, 0, 0, w * 0.26, col, 3);
+      } else {
+        rr(g, -w / 2, -w / 2, w, w, 10);
+        var gr = g.createLinearGradient(0, -w / 2, 0, w / 2);
+        gr.addColorStop(0, P.cardBack); gr.addColorStop(1, P.light ? '#C9E2F0' : '#0F1B33');
+        g.fillStyle = gr; g.fill(); g.strokeStyle = P.dim; g.lineWidth = 1.5; g.stroke();
+        gGlyph(g, 4, 0, 0, w * 0.13, P.dim, 1.6);
+      }
+      g.restore();
     });
   }
 });
 
-/* 4) Sinyal Sırası: yanan sırayı tekrar et */
+/* 4) Sinyal Sırası: dört büyük dilim; 2 hata hakkı, hata olunca sıra tekrar gösterilir */
 Game.list.push({
-  id: 'signal', name: 'Sinyal Sırası', hint: 'Yanan sırayı aynı düzende tekrar et', scoreLabel: 'Seviye',
-  COLORS: [GC.cy, GC.am, GC.blue, GC.ok], FREQ: [523, 659, 784, 988],
-  init: function (s) { s.seq = []; s.pos = 0; s.lit = -1; s.litT = 0; s.mode = 'show'; s.showI = 0; s.timer = 0.8; this.grow(s); Game.setExtra('İzle'); },
-  grow: function (s) { s.seq.push(Math.floor(Math.random() * 4)); s.mode = 'show'; s.showI = 0; s.timer = 0.7; s.pos = 0; Game.setExtra('İzle'); },
-  pad: function (s, i) { var w = Math.min(s.W, s.H) * 0.4, cx = s.W / 2, cy = s.H / 2; return { x: cx + (i % 2 ? 6 : -w - 6), y: cy + (i < 2 ? -w - 6 : 6), w: w }; },
-  beep: function (i) { if (Sound.ctx && Settings.sound) { try { Sound.tone(this.FREQ[i], 0.22, 'triangle'); } catch (e) {} } },
+  id: 'signal', name: 'Sinyal Sırası', hint: 'Yanan sırayı tekrar et', scoreLabel: 'Seviye',
+  howto: ['Dilimler sırayla yanar, izle.', 'Sonra aynı sırayla dokun.', 'Her turda bir adım eklenir.', '2 hata hakkın var.'],
+  FREQ: [523, 659, 784, 988],
+  cols: function (P) { return [P.cy, P.am, P.blue, P.ok]; },
+  init: function (s) { s.seq = []; s.pos = 0; s.lit = -1; s.litT = 0; s.mode = 'idle'; s.showI = 0; s.timer = 0; s.lives = 2; Game.setExtra('Hak: ●●'); },
+  begin: function (s) { this.grow(s); },
+  grow: function (s) { s.seq.push(Math.floor(Math.random() * 4)); this.replay(s); },
+  replay: function (s) { s.mode = 'show'; s.showI = 0; s.timer = 0.8; s.pos = 0; },
+  geo: function (s) { var R = Math.min(s.W, s.H) * 0.44; return { cx: s.W / 2, cy: s.H / 2, R: R, r: R * 0.34 }; },
+  beep: function (i) { if (Sound.ctx && Settings.sound) { try { Sound.tone(this.FREQ[i], 0.3, 'triangle'); } catch (e) {} } },
   down: function (s, p) {
     if (s.mode !== 'input') return;
-    for (var i = 0; i < 4; i++) {
-      var r = this.pad(s, i);
-      if (p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.w) {
-        s.lit = i; s.litT = 0.25; this.beep(i); haptic(10);
-        if (s.seq[s.pos] !== i) { Game.end(s.seq.length - 1); return; }
-        s.pos++;
-        if (s.pos === s.seq.length) { Game.setScore(s.seq.length); s.mode = 'wait'; s.timer = 0.8; }
-        return;
-      }
+    var G = this.geo(s), dx = p.x - G.cx, dy = p.y - G.cy, d = Math.hypot(dx, dy);
+    if (d < G.r * 0.8 || d > G.R + 40) return;
+    // Dilim: 0 sol üst, 1 sağ üst, 2 sol alt, 3 sağ alt
+    var i = (dy < 0 ? 0 : 2) + (dx < 0 ? 0 : 1);
+    s.lit = i; s.litT = 0.28; this.beep(i); haptic(10);
+    if (s.seq[s.pos] !== i) {
+      s.lives--; Game.shake(10); fb('err');
+      Game.setExtra('Hak: ' + '●●'.slice(0, Math.max(0, s.lives)) + '○○'.slice(0, 2 - Math.max(0, s.lives)));
+      if (s.lives <= 0) { Game.end(s.seq.length - 1); return; }
+      Game.pop(G.cx, G.cy - G.R - 10, 'Tekrar izle', gPal().red);
+      s.mode = 'wait'; s.timer = 1.0; s.again = true;
+      return;
+    }
+    s.pos++;
+    if (s.pos === s.seq.length) {
+      Game.setScore(s.seq.length); Game.burst(G.cx, G.cy, gPal().ok, 20); Game.pop(G.cx, G.cy - G.r - 14, 'Seviye ' + s.seq.length, gPal().ok);
+      s.mode = 'wait'; s.timer = 0.9; s.again = false;
     }
   },
   step: function (s, dt) {
     if (s.litT > 0) { s.litT -= dt; if (s.litT <= 0) s.lit = -1; }
-    if (s.mode === 'wait') { s.timer -= dt; if (s.timer <= 0) this.grow(s); return; }
+    if (s.mode === 'wait') { s.timer -= dt; if (s.timer <= 0) { if (s.again) this.replay(s); else this.grow(s); } return; }
     if (s.mode !== 'show') return;
     s.timer -= dt;
     if (s.timer <= 0) {
-      if (s.showI >= s.seq.length) { s.mode = 'input'; Game.setExtra('Sıra sende'); return; }
+      if (s.showI >= s.seq.length) { s.mode = 'input'; return; }
       var i = s.seq[s.showI++];
-      s.lit = i; s.litT = 0.38; this.beep(i);
-      s.timer = 0.55;
+      s.lit = i; s.litT = 0.45; this.beep(i);
+      s.timer = 0.75;
     }
   },
-  draw: function (g, s) {
+  draw: function (g, s, P) {
+    var G = this.geo(s), cols = this.cols(P);
+    var angles = [[Math.PI, Math.PI * 1.5], [Math.PI * 1.5, Math.PI * 2], [Math.PI * 0.5, Math.PI], [0, Math.PI * 0.5]];
     for (var i = 0; i < 4; i++) {
-      var r = this.pad(s, i), on = s.lit === i, col = this.COLORS[i];
-      g.globalAlpha = on ? 0.55 : 0.12; g.fillStyle = col; g.fillRect(r.x, r.y, r.w, r.w);
-      g.globalAlpha = 1; g.strokeStyle = col; g.lineWidth = on ? 3 : 1.5; g.strokeRect(r.x, r.y, r.w, r.w);
-      gGlyph(g, i + 1, r.x + r.w / 2, r.y + r.w / 2, r.w * 0.18, on ? GC.tx : col, 3);
+      var on = s.lit === i, a = angles[i], gap = 0.06;
+      g.beginPath(); g.arc(G.cx, G.cy, G.R, a[0] + gap, a[1] - gap); g.arc(G.cx, G.cy, G.r, a[1] - gap, a[0] + gap, true); g.closePath();
+      if (on) glow(g, cols[i], 26);
+      g.globalAlpha = on ? 0.95 : (P.light ? 0.3 : 0.2); g.fillStyle = cols[i]; g.fill();
+      g.globalAlpha = 1; g.strokeStyle = cols[i]; g.lineWidth = on ? 3 : 2; g.stroke(); noGlow(g);
+      var mid = (a[0] + a[1]) / 2, gr = (G.R + G.r) / 2;
+      gGlyph(g, i + 1, G.cx + Math.cos(mid) * gr, G.cy + Math.sin(mid) * gr, G.R * 0.12, on ? (P.light ? '#FFFFFF' : '#05080F') : cols[i], 3);
     }
+    g.beginPath(); g.arc(G.cx, G.cy, G.r * 0.82, 0, Math.PI * 2);
+    g.fillStyle = P.card; g.fill(); g.strokeStyle = P.dim; g.lineWidth = 1.5; g.stroke();
+    g.textAlign = 'center'; g.fillStyle = s.mode === 'input' ? P.am : P.cy; g.font = '600 14px "Exo 2", sans-serif';
+    g.fillText(s.mode === 'input' ? 'SIRA SENDE' : 'İZLE', G.cx, G.cy - 4);
+    g.fillStyle = P.tx; g.font = '600 22px "Exo 2", sans-serif';
+    g.fillText(String(Math.max(1, s.seq.length)), G.cx, G.cy + 22);
   }
 });
 
-/* 5) Gezegen Patlat: 30 sn içinde yükselen gezegenlere dokun */
+/* 5) Gezegen Patlat: büyük gezegenler, geniş dokunma alanı, altın yıldız +3 sn */
 Game.list.push({
   id: 'planets', name: 'Gezegen Patlat', hint: '30 saniyede en çok gezegeni patlat',
-  init: function (s) { s.items = []; s.spawn = 0; s.left = 30; s.bursts = []; Game.setExtra('30 sn'); },
+  howto: ['Yükselen gezegenlere dokunup patlat.', '30 saniyede en çok puanı topla.', 'Altın yıldız: +3 saniye.', 'Hızlı art arda vuruş: bonus puan.'],
+  init: function (s) { s.items = []; s.spawn = 0; s.left = 30; s.combo = 0; s.lastHit = -9; Game.setExtra('30 sn'); },
   down: function (s, p) {
-    for (var i = s.items.length - 1; i >= 0; i--) {
-      var it = s.items[i];
-      if (Math.hypot(p.x - it.x, p.y - it.y) < it.r + 12) {
-        s.items.splice(i, 1); s.bursts.push({ x: it.x, y: it.y, t: 0, c: it.c });
-        Game.setScore(s.score + 1); Sound.play('pop'); haptic(12);
-        return;
-      }
+    var P = gPal(), best = -1, bd = 1e9;
+    for (var i = 0; i < s.items.length; i++) {
+      var it = s.items[i], d = Math.hypot(p.x - it.x, p.y - it.y);
+      if (d < it.r + 24 && d < bd) { bd = d; best = i; }
     }
+    if (best < 0) { s.combo = 0; return; }
+    var hit = s.items.splice(best, 1)[0];
+    if (hit.star) {
+      s.left += 3; Game.pop(hit.x, hit.y - 20, '+3 sn', P.am); Game.burst(hit.x, hit.y, P.am, 26, 220); fb('ok'); return;
+    }
+    s.combo = s.t - s.lastHit < 0.7 ? s.combo + 1 : 1;
+    s.lastHit = s.t;
+    var add = s.combo >= 3 ? 2 : 1;
+    Game.setScore(s.score + add);
+    Game.pop(hit.x, hit.y - hit.r - 6, add > 1 ? '+2 seri!' : '+1', add > 1 ? P.am : hit.c);
+    Game.burst(hit.x, hit.y, hit.c, 20, 200); Sound.play('pop'); haptic(12);
   },
   step: function (s, dt) {
     s.left -= dt;
     Game.setExtra(Math.max(0, Math.ceil(s.left)) + ' sn');
     if (s.left <= 0) { Game.end(s.score); return; }
     s.spawn -= dt;
+    var P = gPal();
     if (s.spawn <= 0) {
-      var r = 16 + Math.random() * 16;
-      s.items.push({ x: r + Math.random() * (s.W - 2 * r), y: s.H + r, r: r, v: 70 + Math.random() * 90 + (30 - s.left) * 3, c: Math.random() < 0.3 ? GC.am : GC.cy, ring: Math.random() < 0.5, ph: Math.random() * 6 });
-      s.spawn = 0.45;
+      var star = Math.random() < 0.07, r = star ? 20 : 24 + Math.random() * 16;
+      var cols = [P.cy, P.am, P.blue, P.ok];
+      s.items.push({ x: r + Math.random() * (s.W - 2 * r), y: s.H + r, r: r, v: 55 + Math.random() * 60 + (30 - Math.min(30, s.left)) * 2.2,
+        c: cols[Math.floor(Math.random() * cols.length)], ring: Math.random() < 0.45, ph: Math.random() * 6, star: star, rot: 0 });
+      s.spawn = 0.55;
     }
-    s.items.forEach(function (it) { it.y -= it.v * dt; it.x += Math.sin(s.t * 2 + it.ph) * 20 * dt; });
-    s.items = s.items.filter(function (it) { return it.y > -it.r - 10; });
-    s.bursts.forEach(function (b) { b.t += dt; });
-    s.bursts = s.bursts.filter(function (b) { return b.t < 0.35; });
+    s.items.forEach(function (it) { it.y -= it.v * dt; it.x += Math.sin(s.t * 1.6 + it.ph) * 18 * dt; it.rot += dt; });
+    s.items = s.items.filter(function (it) { return it.y > -it.r - 20; });
   },
-  draw: function (g, s) {
+  draw: function (g, s, P) {
+    // Süre çubuğu
+    var frac = Math.max(0, Math.min(1, s.left / 30));
+    rr(g, 12, 8, s.W - 24, 8, 4); g.fillStyle = P.light ? 'rgba(0,115,158,.15)' : 'rgba(0,229,255,.12)'; g.fill();
+    rr(g, 12, 8, (s.W - 24) * frac, 8, 4); g.fillStyle = frac < 0.25 ? P.red : P.am; g.fill();
     s.items.forEach(function (it) {
-      gCircle(g, it.x, it.y, it.r, 'rgba(15,27,51,.9)', it.c, 2);
-      if (it.ring) { g.save(); g.translate(it.x, it.y); g.scale(1, 0.32); g.beginPath(); g.arc(0, 0, it.r * 1.6, 0, Math.PI * 2); g.restore(); g.strokeStyle = it.c; g.lineWidth = 1.5; g.stroke(); }
-    });
-    s.bursts.forEach(function (b) {
-      var k = b.t / 0.35;
-      g.globalAlpha = 1 - k; g.strokeStyle = b.c; g.lineWidth = 2;
-      for (var i = 0; i < 8; i++) { var a = i / 8 * Math.PI * 2; g.beginPath(); g.moveTo(b.x + Math.cos(a) * 8 * k * 3, b.y + Math.sin(a) * 8 * k * 3); g.lineTo(b.x + Math.cos(a) * 14 * k * 3, b.y + Math.sin(a) * 14 * k * 3); g.stroke(); }
-      g.globalAlpha = 1;
+      if (it.star) {
+        glow(g, P.am, 20);
+        g.save(); g.translate(it.x, it.y); g.rotate(it.rot);
+        g.beginPath();
+        for (var i = 0; i < 10; i++) { var a = -Math.PI / 2 + i * Math.PI / 5, rr2 = i % 2 ? it.r * 0.45 : it.r; g.lineTo(Math.cos(a) * rr2, Math.sin(a) * rr2); }
+        g.closePath(); g.fillStyle = P.am; g.fill(); g.restore(); noGlow(g);
+        return;
+      }
+      glow(g, it.c, 12);
+      g.fillStyle = shade(g, it.x, it.y, it.r, P.light ? '#FFFFFF' : 'rgba(230,247,255,.9)', it.c);
+      g.beginPath(); g.arc(it.x, it.y, it.r, 0, Math.PI * 2); g.fill(); noGlow(g);
+      g.fillStyle = 'rgba(0,0,0,.12)';
+      g.beginPath(); g.arc(it.x + it.r * 0.3, it.y + it.r * 0.1, it.r * 0.18, 0, Math.PI * 2); g.arc(it.x - it.r * 0.25, it.y + it.r * 0.4, it.r * 0.12, 0, Math.PI * 2); g.fill();
+      if (it.ring) {
+        g.save(); g.translate(it.x, it.y); g.rotate(-0.35); g.scale(1, 0.3);
+        g.strokeStyle = it.c; g.lineWidth = 3; g.globalAlpha = 0.85;
+        g.beginPath(); g.arc(0, 0, it.r * 1.55, 0, Math.PI * 2); g.stroke();
+        g.restore(); g.globalAlpha = 1;
+      }
     });
   }
 });
