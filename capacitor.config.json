@@ -1,0 +1,14 @@
+{
+  "appId": "com.turkmavzercell.mitholo",
+  "appName": "MİT Holo",
+  "webDir": "www",
+  "backgroundColor": "#05080F",
+  "android": {
+    "backgroundColor": "#05080F",
+    "allowMixedContent": false,
+    "webContentsDebuggingEnabled": false
+  },
+  "server": {
+    "androidScheme": "https"
+  }
+}

@@ -1,27 +1,25 @@
 {
-  "name": "i̇ş-takip-asistanı",
+  "name": "mit-holo",
+  "version": "2.0.0",
   "private": true,
-  "version": "0.0.0",
+  "description": "MİT Holo - Müşteri & İmalat İş Takip Asistanı (hologram küre arayüzü)",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "lint": "tsc --noEmit",
-    "preview": "vite preview"
+    "build": "node tools/build.mjs",
+    "check": "node tools/check.mjs",
+    "cap:sync": "cap sync android"
   },
   "dependencies": {
-    "@google/genai": "^1.39.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-leaflet": "^4.2.1",
-    "leaflet": "^1.9.4",
-    "@react-pdf/renderer": "^3.4.4",
-    "html2canvas": "^1.4.1"
+    "@capacitor/android": "^6.1.2",
+    "@capacitor/camera": "^6.0.2",
+    "@capacitor/core": "^6.1.2",
+    "@capacitor/filesystem": "^6.0.1",
+    "@capacitor/share": "^6.0.2"
   },
   "devDependencies": {
-    "@types/node": "^22.14.0",
-    "@vitejs/plugin-react": "^5.0.0",
-    "typescript": "~5.8.2",
-    "vite": "^6.2.0"
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^6.1.2",
+    "@fontsource/exo-2": "^5.0.0",
+    "three": "0.149.0"
   }
 }
