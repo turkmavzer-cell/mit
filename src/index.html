@@ -255,6 +255,8 @@ body.kb .panel::after, body.kb .sheet::after { display: none; }
 .btn.blue { background: rgba(var(--print-rgb),.14); color: var(--st-print); border-color: var(--st-print); }
 .btn.ghost { border-color: transparent; background: none; }
 .btn.block { width: 100%; }
+.btn.invoice-ask { background: var(--am); color: var(--bg); border-color: var(--am); animation: iaPulse .7s ease-in-out infinite alternate; text-transform: none; letter-spacing: .02em; }
+:root[data-theme="light"] .btn.invoice-ask { color: #fff; }
 a.btn { text-decoration: none; }
 body.panel-open #nodes, body.panel-open #center-stats, body.panel-open #stage-top { visibility: hidden; }
 .btn.sm { min-height: 40px; font-size: 11px; padding: 0 10px; }
@@ -528,7 +530,7 @@ textarea.inp { padding: 12px; resize: none; line-height: 1.4; }
      "localStorage doldu, kayıt sessizce başarısız oldu" sorununun çözümü budur.
    - Her yazma işleminin sonucu kontrol edilir; hata olursa kullanıcı görür.
    ===================================================================== */
-var APP_VERSION = '2.6.0';
+var APP_VERSION = '2.7.0';
 var SCHEMA_VERSION = 2; // 1 = eski localStorage sürümü (MİT 1.0), 2 = IndexedDB
 
 var IN_FRAME = (function () { try { return window.self !== window.top; } catch (e) { return true; } })();
@@ -3062,8 +3064,25 @@ Inputs['jf-grams'] = function (el) {
   JF.draft.patternGroups.forEach(function (g) { rollPaint(g.id); });
   jfTotals();
 };
-Actions['jf-status'] = function () {
+Actions['jf-status'] = function (el) {
   var d = JF.draft;
+  // Teslimden önce fatura hatırlatması: ilk dokunuş uyarır, 4 sn içinde ikinci dokunuş teslim eder
+  if (d.status === 'active' && !(JF.invoiceAsk && Date.now() - JF.invoiceAsk < 4000)) {
+    JF.invoiceAsk = Date.now();
+    el.classList.add('invoice-ask');
+    el.innerHTML = icon('alert', 18) + ' Fatura kestin mi? Teslim için tekrar dokun';
+    UI.toast('Önce fatura kesmeyi unutma', 'info');
+    haptic(30);
+    var jf = JF;
+    setTimeout(function () {
+      if (JF !== jf || !el.isConnected || jf.draft.status !== 'active' || Date.now() - jf.invoiceAsk < 3900) return;
+      jf.invoiceAsk = 0;
+      el.classList.remove('invoice-ask');
+      el.innerHTML = icon('check', 18) + ' Teslim Edildi Olarak İşaretle';
+    }, 4000);
+    return;
+  }
+  JF.invoiceAsk = 0;
   if (d.status === 'active') { d.status = 'delivered'; d.deliveredAt = new Date().toISOString(); }
   else { d.status = 'active'; d.deliveredAt = null; }
   JF.dirty = true; jfPaint(); fb('ok');
