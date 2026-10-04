@@ -25,7 +25,7 @@ MİT Holo'da:
 | Kalıplar | Kalıp kütüphanesi (ad + fotoğraf, düzenle, sil) |
 | Rapor | Bu hafta / bu ay / geçen ay: metraj, yeni ve teslim edilen iş, müşteri ve kalıp dağılımı, görsel olarak paylaş |
 | Yedekleme | Otomatik yedek durumu, yedeği paylaş (fotoğraflar dahil), yedekten geri yükle (yalnızca eksikleri ekler) |
-| Ayarlar | Ses, titreşim, günlük yedek hatırlatıcısı, uzay kedisi, hakkında |
+| Ayarlar | Tema (koyu / açık gün doğumu), ses, titreşim, otomatik yedek, günlük yedek hatırlatıcısı, uzay kedisi, hakkında |
 
 İş formu: durum (imalatta/teslim), baskı durumu, kumaş türü/rengi/gramajı, atanmamış toplar,
 kalıp grupları (metre/kilo topları, uzun basınca düzenleme), kalıba top gönderme,
