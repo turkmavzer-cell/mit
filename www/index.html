@@ -544,7 +544,7 @@ textarea.inp { padding: 12px; resize: none; line-height: 1.4; }
      "localStorage doldu, kayıt sessizce başarısız oldu" sorununun çözümü budur.
    - Her yazma işleminin sonucu kontrol edilir; hata olursa kullanıcı görür.
    ===================================================================== */
-var APP_VERSION = '2.8.1';
+var APP_VERSION = '2.9.0';
 var SCHEMA_VERSION = 2; // 1 = eski localStorage sürümü (MİT 1.0), 2 = IndexedDB
 
 var IN_FRAME = (function () { try { return window.self !== window.top; } catch (e) { return true; } })();
@@ -3719,6 +3719,10 @@ var Game = {
       }
       if (self.active.down) self.active.down(self.st, p);
     });
+    this.cv.addEventListener('pointerup', function (e) {
+      if (self.over || !self.active || !self.st || !self.st.started) return;
+      if (self.active.up) self.active.up(self.st, pt(e));
+    });
     this.cv.addEventListener('pointermove', function (e) {
       if (self.over || !self.active || !self.st || !self.st.started) return;
       if (self.active.move) self.active.move(self.st, pt(e));
@@ -3941,22 +3945,26 @@ function drawCat(g, x, y, r, P, tilt) {
 /* 1) Yumak Yakala: kase parmağı yumuşakça takip eder */
 Game.list.push({
   id: 'yarn', name: 'Yumak Yakala', hint: 'Parmağını sağa sola kaydır',
-  howto: ['Parmağını ekranda sağa sola kaydır,', 'kedi sepeti parmağını takip eder.', 'Düşen yumakları yakala.', 'Altın yumak +3 · 3 kaçırırsan biter.'],
+  howto: ['Parmağını ekranda sağa sola kaydır,', 'kedi sepeti parmağını takip eder.', 'Her 6 puanda seviye ve hız artar.', 'Altın yumak +3 · 3 kaçırırsan biter.'],
   init: function (s) {
-    s.px = s.W / 2; s.tx = s.W / 2; s.items = []; s.spawn = 0.6; s.lives = 3;
+    s.px = s.W / 2; s.tx = s.W / 2; s.items = []; s.spawn = 0.6; s.lives = 3; s.lvl = 1;
     s.bw = Math.min(140, s.W * 0.36);
-    Game.setExtra('♥♥♥');
+    this.hud(s);
   },
+  hud: function (s) { Game.setExtra('Sv ' + s.lvl + ' · ' + '♥♥♥'.slice(0, Math.max(0, s.lives)) + '♡♡♡'.slice(0, 3 - Math.max(0, s.lives))); },
   begin: function (s, p) { s.tx = p.x; },
   down: function (s, p) { s.tx = p.x; },
   move: function (s, p) { s.tx = p.x; },
   step: function (s, dt) {
-    s.px += (s.tx - s.px) * Math.min(1, dt * 14);
+    // Seviye her 6 puanda artar; düşüş hızı ve sıklık belirgin şekilde artar
+    var lvl = 1 + Math.floor(s.score / 6);
+    if (lvl !== s.lvl) { s.lvl = lvl; this.hud(s); Game.pop(s.W / 2, s.H * 0.35, 'SEVİYE ' + lvl + '!', gPal().am); Sound.play('open'); }
+    s.px += (s.tx - s.px) * Math.min(1, dt * Math.min(32, 14 + lvl * 2));
     s.px = Math.max(s.bw / 2, Math.min(s.W - s.bw / 2, s.px));
     s.spawn -= dt;
     if (s.spawn <= 0) {
-      s.items.push({ x: 24 + Math.random() * (s.W - 48), y: -24, v: Math.min(320, 95 + s.score * 4), r: 17, a: Math.random() * 6, gold: Math.random() < 0.1, sw: Math.random() * 6 });
-      s.spawn = Math.max(0.5, 1.25 - s.score * 0.025);
+      s.items.push({ x: 24 + Math.random() * (s.W - 48), y: -24, v: Math.min(780, 150 + s.lvl * 48 + Math.random() * 40), r: 17, a: Math.random() * 6, gold: Math.random() < 0.1, sw: Math.random() * 6 });
+      s.spawn = Math.max(0.24, 0.95 - s.lvl * 0.08) * (0.8 + Math.random() * 0.4);
     }
     var by = s.H - 64, P = gPal();
     s.items = s.items.filter(function (it) {
@@ -3968,7 +3976,7 @@ Game.list.push({
         return false;
       }
       if (it.y > s.H + 24) {
-        s.lives--; Game.setExtra('♥♥♥'.slice(0, Math.max(0, s.lives)) + '♡♡♡'.slice(0, 3 - Math.max(0, s.lives)));
+        s.lives--; Game.list[0].hud(s);
         Game.burst(it.x, s.H - 8, P.red, 16); Game.shake(10); fb('err');
         if (s.lives <= 0) Game.end(s.score);
         return false;
@@ -4198,8 +4206,8 @@ Game.list.push({
 /* 5) Gezegen Patlat: büyük gezegenler, geniş dokunma alanı, altın yıldız +3 sn */
 Game.list.push({
   id: 'planets', name: 'Gezegen Patlat', hint: '30 saniyede en çok gezegeni patlat',
-  howto: ['Yükselen gezegenlere dokunup patlat.', '30 saniyede en çok puanı topla.', 'Altın yıldız: +3 saniye.', 'Hızlı art arda vuruş: bonus puan.'],
-  init: function (s) { s.items = []; s.spawn = 0; s.left = 30; s.combo = 0; s.lastHit = -9; Game.setExtra('30 sn'); },
+  howto: ['Yükselen gezegenlere dokunup patlat.', 'Her 5 saniyede hız artar.', 'Altın yıldız +3 sn · kırmızı bomba −3 sn!', 'Hızlı art arda vuruş: bonus puan.'],
+  init: function (s) { s.items = []; s.spawn = 0; s.left = 30; s.combo = 0; s.lastHit = -9; s.el = 0; s.lvl = 1; Game.setExtra('30 sn'); },
   down: function (s, p) {
     var P = gPal(), best = -1, bd = 1e9;
     for (var i = 0; i < s.items.length; i++) {
@@ -4208,6 +4216,10 @@ Game.list.push({
     }
     if (best < 0) { s.combo = 0; return; }
     var hit = s.items.splice(best, 1)[0];
+    if (hit.bomb) {
+      s.left = Math.max(0.5, s.left - 3); s.combo = 0;
+      Game.pop(hit.x, hit.y - 20, '−3 sn', P.red); Game.burst(hit.x, hit.y, P.red, 30, 260); Game.shake(14); fb('err'); return;
+    }
     if (hit.star) {
       s.left += 3; Game.pop(hit.x, hit.y - 20, '+3 sn', P.am); Game.burst(hit.x, hit.y, P.am, 26, 220); fb('ok'); return;
     }
@@ -4219,19 +4231,27 @@ Game.list.push({
     Game.burst(hit.x, hit.y, hit.c, 20, 200); Sound.play('pop'); haptic(12);
   },
   step: function (s, dt) {
-    s.left -= dt;
-    Game.setExtra(Math.max(0, Math.ceil(s.left)) + ' sn');
+    s.left -= dt; s.el += dt;
+    // Her 5 saniyede seviye: hız, sıklık ve aynı anda çıkan gezegen sayısı artar
+    var lvl = 1 + Math.floor(s.el / 5);
+    if (lvl !== s.lvl) { s.lvl = lvl; Game.pop(s.W / 2, s.H * 0.4, 'HIZ ' + lvl + '!', gPal().am); Sound.play('open'); }
+    Game.setExtra('Sv ' + s.lvl + ' · ' + Math.max(0, Math.ceil(s.left)) + ' sn');
     if (s.left <= 0) { Game.end(s.score); return; }
     s.spawn -= dt;
     var P = gPal();
     if (s.spawn <= 0) {
-      var star = Math.random() < 0.07, r = star ? 20 : 24 + Math.random() * 16;
-      var cols = [P.cy, P.am, P.blue, P.ok];
-      s.items.push({ x: r + Math.random() * (s.W - 2 * r), y: s.H + r, r: r, v: 55 + Math.random() * 60 + (30 - Math.min(30, s.left)) * 2.2,
-        c: cols[Math.floor(Math.random() * cols.length)], ring: Math.random() < 0.45, ph: Math.random() * 6, star: star, rot: 0 });
-      s.spawn = 0.55;
+      var many = s.lvl >= 4 ? 2 : 1;
+      for (var m = 0; m < many; m++) {
+        var roll = Math.random(), star = roll < 0.06, bomb = !star && s.lvl >= 2 && roll < 0.06 + Math.min(0.2, s.lvl * 0.035);
+        var r = star ? 20 : bomb ? 22 : Math.max(18, 26 + Math.random() * 14 - s.lvl);
+        var cols = [P.cy, P.am, P.blue, P.ok];
+        s.items.push({ x: r + Math.random() * (s.W - 2 * r), y: s.H + r + m * 40, r: r, v: 110 + Math.random() * 70 + s.lvl * 55,
+          c: bomb ? P.red : cols[Math.floor(Math.random() * cols.length)], ring: !bomb && Math.random() < 0.45, ph: Math.random() * 6,
+          star: star, bomb: bomb, rot: 0, sway: 18 + s.lvl * 10 });
+      }
+      s.spawn = Math.max(0.2, 0.6 - s.lvl * 0.06);
     }
-    s.items.forEach(function (it) { it.y -= it.v * dt; it.x += Math.sin(s.t * 1.6 + it.ph) * 18 * dt; it.rot += dt; });
+    s.items.forEach(function (it) { it.y -= it.v * dt; it.x += Math.sin(s.t * (1.6 + s.lvl * 0.25) + it.ph) * it.sway * dt; it.rot += dt; });
     s.items = s.items.filter(function (it) { return it.y > -it.r - 20; });
   },
   draw: function (g, s, P) {
@@ -4240,6 +4260,18 @@ Game.list.push({
     rr(g, 12, 8, s.W - 24, 8, 4); g.fillStyle = P.light ? 'rgba(0,115,158,.15)' : 'rgba(0,229,255,.12)'; g.fill();
     rr(g, 12, 8, (s.W - 24) * frac, 8, 4); g.fillStyle = frac < 0.25 ? P.red : P.am; g.fill();
     s.items.forEach(function (it) {
+      if (it.bomb) {
+        glow(g, P.red, 16);
+        g.fillStyle = shade(g, it.x, it.y, it.r, P.light ? '#FFD0D6' : '#5A1A24', P.red);
+        g.beginPath(); g.arc(it.x, it.y, it.r, 0, Math.PI * 2); g.fill(); noGlow(g);
+        g.strokeStyle = P.light ? '#FFFFFF' : '#05080F'; g.lineWidth = 3.5; g.lineCap = 'round';
+        g.beginPath(); g.moveTo(it.x - it.r * 0.4, it.y - it.r * 0.4); g.lineTo(it.x + it.r * 0.4, it.y + it.r * 0.4);
+        g.moveTo(it.x + it.r * 0.4, it.y - it.r * 0.4); g.lineTo(it.x - it.r * 0.4, it.y + it.r * 0.4); g.stroke();
+        g.strokeStyle = P.am; g.lineWidth = 2;
+        g.beginPath(); g.moveTo(it.x, it.y - it.r); g.quadraticCurveTo(it.x + 8, it.y - it.r - 10, it.x + 4, it.y - it.r - 16); g.stroke();
+        if (Math.sin(s.t * 20) > 0) { g.fillStyle = P.am; g.beginPath(); g.arc(it.x + 4, it.y - it.r - 17, 3, 0, Math.PI * 2); g.fill(); }
+        return;
+      }
       if (it.star) {
         glow(g, P.am, 20);
         g.save(); g.translate(it.x, it.y); g.rotate(it.rot);
@@ -4260,6 +4292,246 @@ Game.list.push({
         g.restore(); g.globalAlpha = 1;
       }
     });
+  }
+});
+
+/* 6) Yılan: klasik yılan. Kaydır veya dokun → yön; duvardan geçer, kendine çarparsa biter */
+Game.list.push({
+  id: 'snake', name: 'Yılan', hint: 'Kaydırarak ya da dokunarak yön ver', scoreLabel: 'Yem',
+  howto: ['Parmağını kaydırarak yön ver', 'ya da yılanın yanına dokun, o yöne döner.', 'Kenarlardan öbür tarafa geçebilirsin.', 'Her yemde hız artar · kendine çarpma!'],
+  init: function (s) {
+    s.cols = 15; s.cell = Math.floor(Math.min(s.W / s.cols, (s.H - 10) / 22));
+    s.rows = Math.floor((s.H - 10) / s.cell); s.ox = (s.W - s.cols * s.cell) / 2; s.oy = (s.H - s.rows * s.cell) / 2;
+    var cx = Math.floor(s.cols / 2), cy = Math.floor(s.rows / 2);
+    s.body = [{ x: cx, y: cy }, { x: cx, y: cy + 1 }, { x: cx, y: cy + 2 }];
+    s.dir = { x: 0, y: -1 }; s.queue = []; s.acc = 0; s.speed = 0.17; s.grow = 0; s.gold = null; s.goldT = 0;
+    this.food(s); Game.setExtra('Uzunluk 3');
+  },
+  food: function (s) {
+    var free = function () {
+      for (var tries = 0; tries < 500; tries++) {
+        var f = { x: Math.floor(Math.random() * s.cols), y: Math.floor(Math.random() * s.rows) };
+        if (!s.body.some(function (b) { return b.x === f.x && b.y === f.y; })) return f;
+      }
+      return { x: 0, y: 0 };
+    };
+    s.food = free();
+    if (!s.gold && Math.random() < 0.18) { s.gold = free(); s.goldT = 6; }
+  },
+  turn: function (s, d) {
+    var last = s.queue.length ? s.queue[s.queue.length - 1] : s.dir;
+    if (d.x === -last.x && d.y === -last.y) return; // geri dönüş yok
+    if (d.x === last.x && d.y === last.y) return;
+    if (s.queue.length < 2) { s.queue.push(d); Sound.play('tap'); }
+  },
+  down: function (s, p) { s.sx = p.x; s.sy = p.y; s.swiped = false; s.downAt = s.t; },
+  move: function (s, p) {
+    if (s.swiped || s.sx === undefined) return;
+    var dx = p.x - s.sx, dy = p.y - s.sy;
+    if (Math.abs(dx) < 22 && Math.abs(dy) < 22) return;
+    s.swiped = true;
+    this.turn(s, Math.abs(dx) > Math.abs(dy) ? { x: dx > 0 ? 1 : -1, y: 0 } : { x: 0, y: dy > 0 ? 1 : -1 });
+  },
+  up: function (s, p) {
+    if (s.swiped || s.sx === undefined) { s.sx = undefined; return; }
+    // Dokunma: yılanın başına göre dokunulan tarafa dön
+    var h = s.body[0], hx = s.ox + (h.x + 0.5) * s.cell, hy = s.oy + (h.y + 0.5) * s.cell, dir = s.queue.length ? s.queue[s.queue.length - 1] : s.dir;
+    if (dir.x !== 0) this.turn(s, { x: 0, y: p.y > hy ? 1 : -1 });
+    else this.turn(s, { x: p.x > hx ? 1 : -1, y: 0 });
+    s.sx = undefined;
+  },
+  step: function (s, dt) {
+    if (s.gold) { s.goldT -= dt; if (s.goldT <= 0) s.gold = null; }
+    s.acc += dt;
+    while (s.acc >= s.speed) {
+      s.acc -= s.speed;
+      if (s.queue.length) s.dir = s.queue.shift();
+      var h = s.body[0], n = { x: (h.x + s.dir.x + s.cols) % s.cols, y: (h.y + s.dir.y + s.rows) % s.rows };
+      for (var i = 0; i < s.body.length - (s.grow ? 0 : 1); i++) {
+        if (s.body[i].x === n.x && s.body[i].y === n.y) {
+          var P = gPal();
+          Game.burst(s.ox + (n.x + 0.5) * s.cell, s.oy + (n.y + 0.5) * s.cell, P.red, 30); Game.shake(12); fb('err');
+          Game.end(s.score); return;
+        }
+      }
+      s.body.unshift(n);
+      if (s.grow) s.grow--; else s.body.pop();
+      var P2 = gPal(), px = s.ox + (n.x + 0.5) * s.cell, py = s.oy + (n.y + 0.5) * s.cell;
+      if (n.x === s.food.x && n.y === s.food.y) {
+        Game.setScore(s.score + 1); s.grow += 2; this.food(s);
+        s.speed = Math.max(0.055, s.speed * 0.95);
+        Game.burst(px, py, P2.cy, 14); Game.pop(px, py - 20, '+1', P2.cy); Sound.play('pop'); haptic(10);
+      } else if (s.gold && n.x === s.gold.x && n.y === s.gold.y) {
+        Game.setScore(s.score + 3); s.grow += 3; s.gold = null;
+        Game.burst(px, py, P2.am, 24); Game.pop(px, py - 20, '+3', P2.am); fb('ok');
+      }
+      Game.setExtra('Uzunluk ' + (s.body.length + s.grow));
+    }
+  },
+  draw: function (g, s, P) {
+    // Oyun alanı
+    rr(g, s.ox - 2, s.oy - 2, s.cols * s.cell + 4, s.rows * s.cell + 4, 8);
+    g.fillStyle = P.light ? 'rgba(255,255,255,.35)' : 'rgba(10,18,36,.55)'; g.fill();
+    g.strokeStyle = P.dim; g.lineWidth = 1.5; g.stroke();
+    g.fillStyle = P.light ? 'rgba(0,115,158,.08)' : 'rgba(0,229,255,.06)';
+    for (var x = 0; x < s.cols; x++) for (var y = 0; y < s.rows; y++) if ((x + y) % 2 === 0) g.fillRect(s.ox + x * s.cell, s.oy + y * s.cell, s.cell, s.cell);
+    var c = s.cell, cx = function (v) { return s.ox + (v + 0.5) * c; }, cy = function (v) { return s.oy + (v + 0.5) * c; };
+    // Yem
+    var pulse = 1 + 0.12 * Math.sin(s.t * 6);
+    glow(g, P.am, 14); g.fillStyle = shade(g, cx(s.food.x), cy(s.food.y), c * 0.38, P.light ? '#FFE0B0' : '#FFE08A', P.am);
+    g.beginPath(); g.arc(cx(s.food.x), cy(s.food.y), c * 0.36 * pulse, 0, Math.PI * 2); g.fill(); noGlow(g);
+    if (s.gold) {
+      g.globalAlpha = s.goldT < 2 ? 0.4 + 0.6 * Math.abs(Math.sin(s.t * 10)) : 1;
+      gGlyph(g, 6, cx(s.gold.x), cy(s.gold.y), c * 0.42, P.am, 2.5);
+      g.globalAlpha = 1;
+    }
+    // Gövde: baştan kuyruğa renk geçişi
+    var n = s.body.length;
+    for (var i = n - 1; i >= 0; i--) {
+      var b = s.body[i], k = i / Math.max(1, n - 1), pad = 1 + k * c * 0.12;
+      g.globalAlpha = 1 - k * 0.45;
+      if (i === 0) glow(g, P.cy, 14);
+      rr(g, s.ox + b.x * c + pad, s.oy + b.y * c + pad, c - pad * 2, c - pad * 2, c * 0.3);
+      g.fillStyle = i === 0 ? P.cy : (i % 2 ? P.soft : P.cy); g.fill(); noGlow(g);
+    }
+    g.globalAlpha = 1;
+    // Göz
+    var h = s.body[0], ex = s.dir.y !== 0 ? c * 0.18 : 0, ey = s.dir.x !== 0 ? c * 0.18 : 0;
+    g.fillStyle = P.light ? '#FFFFFF' : '#05080F';
+    g.beginPath(); g.arc(cx(h.x) + s.dir.x * c * 0.15 + ex, cy(h.y) + s.dir.y * c * 0.15 + ey, c * 0.1, 0, Math.PI * 2);
+    g.arc(cx(h.x) + s.dir.x * c * 0.15 - ex, cy(h.y) + s.dir.y * c * 0.15 - ey, c * 0.1, 0, Math.PI * 2); g.fill();
+  }
+});
+
+/* 7) Uzay Savaşı: gemi parmağı takip eder ve otomatik ateş eder; düşmanları vur */
+Game.list.push({
+  id: 'shooter', name: 'Uzay Savaşı', hint: 'Gemiyi sürükle, otomatik ateş eder',
+  howto: ['Parmağını sağa sola kaydır, gemi takip eder.', 'Gemi kendiliğinden ateş eder.', 'Düşmanları vur, mermilerinden kaç.', 'Turuncu "G" çift atış verir · 3 can.'],
+  init: function (s) {
+    s.px = s.W / 2; s.tx = s.W / 2; s.py = s.H - 70; s.shots = []; s.foes = []; s.eshots = []; s.drops = [];
+    s.fire = 0; s.spawn = 1; s.lives = 3; s.inv = 0; s.power = 0; s.lvl = 1; s.kills = 0;
+    this.hud(s);
+  },
+  hud: function (s) { Game.setExtra('Sv ' + s.lvl + ' · ' + '♥♥♥'.slice(0, Math.max(0, s.lives)) + '♡♡♡'.slice(0, 3 - Math.max(0, s.lives))); },
+  begin: function (s, p) { s.tx = p.x; },
+  down: function (s, p) { s.tx = p.x; },
+  move: function (s, p) { s.tx = p.x; },
+  hit: function (s) {
+    if (s.inv > 0) return;
+    var P = gPal();
+    s.lives--; s.inv = 1.6; this.hud(s);
+    Game.burst(s.px, s.py, P.red, 26); Game.shake(12); fb('err');
+    if (s.lives <= 0) Game.end(s.score);
+  },
+  step: function (s, dt) {
+    var P = gPal(), self = this;
+    s.px += (s.tx - s.px) * Math.min(1, dt * 16);
+    s.px = Math.max(22, Math.min(s.W - 22, s.px));
+    if (s.inv > 0) s.inv -= dt;
+    if (s.power > 0) s.power -= dt;
+    var lvl = 1 + Math.floor(s.kills / 10);
+    if (lvl !== s.lvl) { s.lvl = lvl; this.hud(s); Game.pop(s.W / 2, s.H * 0.35, 'DALGA ' + lvl + '!', P.am); Sound.play('open'); }
+    // Ateş
+    s.fire -= dt;
+    if (s.fire <= 0) {
+      s.fire = 0.2;
+      if (s.power > 0) { s.shots.push({ x: s.px - 10, y: s.py - 18 }, { x: s.px + 10, y: s.py - 18 }); }
+      else s.shots.push({ x: s.px, y: s.py - 22 });
+    }
+    s.shots.forEach(function (b) { b.y -= 640 * dt; });
+    s.shots = s.shots.filter(function (b) { return b.y > -20; });
+    // Düşman üretimi: dalga ilerledikçe hızlı ve sık
+    s.spawn -= dt;
+    if (s.spawn <= 0) {
+      var type = Math.random() < Math.min(0.45, 0.1 + s.lvl * 0.05) ? 'big' : 'small';
+      s.foes.push({ x: 30 + Math.random() * (s.W - 60), y: -30, x0: 0, v: 70 + s.lvl * 22 + Math.random() * 40, ph: Math.random() * 6,
+        amp: 20 + Math.random() * 50, hp: type === 'big' ? 3 : 1, big: type === 'big', r: type === 'big' ? 22 : 16,
+        cd: 1 + Math.random() * 2, k: Math.floor(Math.random() * 8) });
+      s.foes[s.foes.length - 1].x0 = s.foes[s.foes.length - 1].x;
+      s.spawn = Math.max(0.28, 1.15 - s.lvl * 0.1);
+    }
+    s.foes.forEach(function (f) {
+      f.y += f.v * dt; f.x = f.x0 + Math.sin(s.t * 1.8 + f.ph) * f.amp;
+      f.cd -= dt;
+      if (f.cd <= 0 && s.lvl >= 2 && f.y > 0 && f.y < s.H * 0.6) {
+        f.cd = Math.max(0.9, 2.6 - s.lvl * 0.2) + Math.random();
+        var dx = s.px - f.x, dy = s.py - f.y, d = Math.hypot(dx, dy) || 1, sp = 170 + s.lvl * 15;
+        s.eshots.push({ x: f.x, y: f.y + f.r, vx: dx / d * sp, vy: dy / d * sp });
+      }
+    });
+    // Çarpışmalar: mermi → düşman
+    s.shots = s.shots.filter(function (b) {
+      for (var i = 0; i < s.foes.length; i++) {
+        var f = s.foes[i];
+        if (Math.abs(b.x - f.x) < f.r + 3 && Math.abs(b.y - f.y) < f.r + 6) {
+          f.hp--;
+          Game.burst(b.x, b.y, P.cy, 4, 90);
+          if (f.hp <= 0) {
+            s.foes.splice(i, 1); s.kills++;
+            var add = f.big ? 3 : 1;
+            Game.setScore(s.score + add);
+            Game.burst(f.x, f.y, f.big ? P.am : P.ok, f.big ? 30 : 18, 220); Game.pop(f.x, f.y - 20, '+' + add, f.big ? P.am : P.ok);
+            Sound.play('pop'); haptic(10);
+            if (Math.random() < (f.big ? 0.35 : 0.07)) s.drops.push({ x: f.x, y: f.y });
+          }
+          return false;
+        }
+      }
+      return true;
+    });
+    // Düşman gemiye çarptı / kaçtı
+    s.foes = s.foes.filter(function (f) {
+      if (Math.hypot(f.x - s.px, f.y - s.py) < f.r + 16) { Game.burst(f.x, f.y, P.red, 20); self.hit(s); return false; }
+      if (f.y > s.H + 30) return false;
+      return true;
+    });
+    if (Game.over) return;
+    s.eshots.forEach(function (b) { b.x += b.vx * dt; b.y += b.vy * dt; });
+    s.eshots = s.eshots.filter(function (b) {
+      if (Math.hypot(b.x - s.px, b.y - s.py) < 16) { self.hit(s); return false; }
+      return b.y < s.H + 20 && b.y > -20 && b.x > -20 && b.x < s.W + 20;
+    });
+    if (Game.over) return;
+    s.drops.forEach(function (d) { d.y += 120 * dt; });
+    s.drops = s.drops.filter(function (d) {
+      if (Math.hypot(d.x - s.px, d.y - s.py) < 30) { s.power = 8; Game.pop(d.x, d.y - 20, 'ÇİFT ATIŞ', P.am); fb('ok'); return false; }
+      return d.y < s.H + 20;
+    });
+  },
+  draw: function (g, s, P) {
+    // Mermiler
+    glow(g, P.cy, 10); g.strokeStyle = P.cy; g.lineWidth = 3; g.lineCap = 'round';
+    s.shots.forEach(function (b) { g.beginPath(); g.moveTo(b.x, b.y); g.lineTo(b.x, b.y + 12); g.stroke(); });
+    noGlow(g);
+    glow(g, P.red, 10); g.fillStyle = P.red;
+    s.eshots.forEach(function (b) { g.beginPath(); g.arc(b.x, b.y, 4.5, 0, Math.PI * 2); g.fill(); });
+    noGlow(g);
+    // Güçlendirme
+    s.drops.forEach(function (d) {
+      glow(g, P.am, 14); g.fillStyle = P.am; g.beginPath(); g.arc(d.x, d.y, 12, 0, Math.PI * 2); g.fill(); noGlow(g);
+      g.fillStyle = P.light ? '#FFFFFF' : '#05080F'; g.font = '600 13px "Exo 2", sans-serif'; g.textAlign = 'center'; g.fillText('G', d.x, d.y + 5);
+    });
+    // Düşmanlar: glif işaretli uzaylı daireleri
+    s.foes.forEach(function (f) {
+      var col = f.big ? P.am : P.ok;
+      glow(g, col, 12);
+      g.fillStyle = shade(g, f.x, f.y, f.r, P.light ? '#FFFFFF' : 'rgba(230,247,255,.85)', col);
+      g.beginPath(); g.ellipse(f.x, f.y, f.r * 1.25, f.r * 0.6, 0, 0, Math.PI * 2); g.fill(); noGlow(g);
+      g.fillStyle = P.light ? 'rgba(0,115,158,.35)' : 'rgba(0,229,255,.35)';
+      g.beginPath(); g.ellipse(f.x, f.y - f.r * 0.35, f.r * 0.6, f.r * 0.5, 0, Math.PI, 0); g.fill();
+      gGlyph(g, f.k, f.x, f.y + f.r * 0.05, f.r * 0.32, P.light ? '#102238' : '#05080F', 2);
+      if (f.big && f.hp < 3) { g.fillStyle = P.red; for (var i = 0; i < 3 - f.hp; i++) g.fillRect(f.x - 10 + i * 8, f.y - f.r - 8, 6, 3); }
+    });
+    // Oyuncu gemisi
+    if (s.inv > 0 && Math.sin(s.t * 30) > 0) return;
+    var x = s.px, y = s.py;
+    g.fillStyle = P.am; g.globalAlpha = 0.6 + 0.4 * Math.random();
+    g.beginPath(); g.moveTo(x - 7, y + 16); g.lineTo(x, y + 30 + Math.random() * 8); g.lineTo(x + 7, y + 16); g.fill(); g.globalAlpha = 1;
+    glow(g, P.cy, 16);
+    g.fillStyle = P.light ? '#FFFFFF' : '#0F1B33'; g.strokeStyle = P.cy; g.lineWidth = 2.5;
+    g.beginPath(); g.moveTo(x, y - 24); g.lineTo(x + 20, y + 16); g.lineTo(x + 7, y + 10); g.lineTo(x, y + 18); g.lineTo(x - 7, y + 10); g.lineTo(x - 20, y + 16); g.closePath();
+    g.fill(); g.stroke(); noGlow(g);
+    g.fillStyle = s.power > 0 ? P.am : P.cy; g.beginPath(); g.ellipse(x, y - 4, 4, 7, 0, 0, Math.PI * 2); g.fill();
   }
 });
 
