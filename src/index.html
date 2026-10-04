@@ -88,6 +88,10 @@ svg { flex-shrink: 0; }
   pointer-events: auto; will-change: transform, opacity; color: var(--tx);
 }
 .node.back { pointer-events: none; }
+.node.back .node-badge { visibility: hidden; }
+#stage-hint { position: absolute; left: 0; right: 0; bottom: calc(var(--sab) + 20px); z-index: 3; text-align: center; font-size: 13px; color: var(--tx2); pointer-events: none; }
+body.no-gl #stage-hint, body.panel-open #stage-hint { display: none; }
+#center-stats { transition: opacity 200ms; }
 .node-ring {
   position: relative; width: 52px; height: 52px; border-radius: 50%;
   border: 1.5px solid var(--cy-soft); background: rgba(5,8,15,.78);
@@ -443,6 +447,7 @@ textarea.inp { padding: 12px; resize: none; line-height: 1.4; }
     </div>
   </div>
   <div id="nodes"></div>
+  <div id="stage-hint">Küreyi parmağınla çevir · menüye dokun</div>
 </div>
 <div id="fx"></div>
 <div id="panel-root"></div>
@@ -460,7 +465,7 @@ textarea.inp { padding: 12px; resize: none; line-height: 1.4; }
      "localStorage doldu, kayıt sessizce başarısız oldu" sorununun çözümü budur.
    - Her yazma işleminin sonucu kontrol edilir; hata olursa kullanıcı görür.
    ===================================================================== */
-var APP_VERSION = '2.0.0';
+var APP_VERSION = '2.1.0';
 var SCHEMA_VERSION = 2; // 1 = eski localStorage sürümü (MİT 1.0), 2 = IndexedDB
 
 var IN_FRAME = (function () { try { return window.self !== window.top; } catch (e) { return true; } })();
@@ -1005,14 +1010,11 @@ function glyph(name, size) {
 }
 
 var NODES = [
-  { id: 'jobs', label: 'Aktif İşler', g: 'jobs' },
+  { id: 'jobs', label: 'İşler', g: 'jobs' },
   { id: 'customers', label: 'Müşteriler', g: 'customers' },
-  { id: 'addCustomer', label: 'Yeni Müşteri', g: 'addCustomer' },
-  { id: 'delivered', label: 'Teslim Edilen', g: 'delivered' },
   { id: 'patterns', label: 'Kalıplar', g: 'patterns' },
   { id: 'backup', label: 'Yedekleme', g: 'backup' },
-  { id: 'settings', label: 'Ayarlar', g: 'settings' },
-  { id: 'about', label: 'Hakkında', g: 'about' }
+  { id: 'settings', label: 'Ayarlar', g: 'settings' }
 ];
 
 var Sphere = {
@@ -1276,6 +1278,15 @@ var Sphere = {
       el.style.opacity = op.toFixed(2);
       el.style.zIndex = String(Math.round(f * 100));
       el.classList.toggle('back', depth < 0);
+    }
+    // Öndeki düğüm merkezdeki sayıların üstüne gelince sayılar soluklaşır
+    if (bestI >= 0) {
+      var fv = this.nodeVecs[bestI];
+      v.set(fv[0], fv[1], fv[2]).applyQuaternion(this.globe.quaternion).project(this.camera);
+      var dist = Math.hypot(v.x * 0.5 * w, v.y * 0.5 * h);
+      var cs = this.centerEl || (this.centerEl = document.getElementById('center-stats'));
+      var o = Math.max(0.15, Math.min(1, (dist - 40) / 60)).toFixed(2);
+      if (cs.style.opacity !== o) cs.style.opacity = o;
     }
     if (bestI !== this.frontIdx) {
       if (this.frontIdx >= 0) this.nodeEls[this.frontIdx].classList.remove('front');
@@ -1714,8 +1725,8 @@ var App = {
     set('cs-a', fmtNum(Math.round(Data.periodMeters('week'))) + '<span>MT · HAFTA</span>');
     set('cs-b', Data.customers.length + '<span>MÜŞTERİ</span>');
     var badges = {
-      jobs: active, customers: Data.customers.length, delivered: Data.deliveredJobs().length,
-      patterns: Data.patterns.length, addCustomer: '', backup: '', settings: '', about: ''
+      jobs: active, customers: Data.customers.length,
+      patterns: Data.patterns.length, backup: '', settings: ''
     };
     Object.keys(badges).forEach(function (k) {
       var b = document.querySelector('[data-badge="' + k + '"]');
@@ -1733,18 +1744,17 @@ var App = {
     fb('open');
     Sphere.focus(idx).then(function () {
       Sphere.busy = false;
-      Screens.open(id === 'addCustomer' ? 'customers' : id);
-      if (id === 'addCustomer') Forms.customer(null);
+      Screens.open(id);
     });
   }
 };
 Actions.node = function (el) { App.openNode(el.getAttribute('data-id')); };
 
 var Screens = {
-  st: { jobsQ: '', period: 'week', custQ: '', sort: 'alphabetical', detailTab: 'active', delQ: '', cid: null },
+  st: { jobsQ: '', jobTab: 'active', period: 'week', custQ: '', sort: 'alphabetical', detailTab: 'active', delQ: '', cid: null },
 
   open: function (id) {
-    var titles = { jobs: 'Aktif İşler', customers: 'Müşteriler', delivered: 'Teslim Edilen', patterns: 'Kalıp Kütüphanesi', backup: 'Veri Yedekleme', settings: 'Ayarlar', about: 'Hakkında' };
+    var titles = { jobs: 'İşler', customers: 'Müşteriler', patterns: 'Kalıp Kütüphanesi', backup: 'Veri Yedekleme', settings: 'Ayarlar' };
     UI.openPanel({ id: id, title: titles[id] });
     this.render();
   },
@@ -1754,11 +1764,9 @@ var Screens = {
     var id = UI.panel.id, body = UI.pBody();
     if (id === 'jobs') this.jobs(body);
     else if (id === 'customers') this.customers(body);
-    else if (id === 'delivered') this.delivered(body);
     else if (id === 'patterns') this.patterns(body);
     else if (id === 'backup') this.backup(body);
     else if (id === 'settings') this.settings(body);
-    else if (id === 'about') this.about(body);
     this.renderDetail();
   },
   refresh: function () {
@@ -1766,8 +1774,7 @@ var Screens = {
     var id = UI.panel.id;
     if (id === 'jobs') this.paintJobs();
     else if (id === 'customers') this.paintCustomers();
-    else if (id === 'delivered') this.paintDelivered();
-    else if (id === 'patterns' || id === 'backup' || id === 'about') this.render();
+    else if (id === 'patterns' || id === 'backup' || id === 'settings') this.render();
     this.renderDetail();
   },
   searchHtml: function (key, val, ph) {
@@ -1797,49 +1804,40 @@ var Screens = {
       j.patternGroups.some(function (g) { return low(g.patternName).indexOf(q) >= 0; });
   },
 
-  /* ---------- Aktif İşler ---------- */
+  /* ---------- İşler (imalatta + teslim edilen tek ekranda) ---------- */
   jobs: function (body) {
-    UI.setHead('Aktif İşler<small>' + Data.activeJobs().length + ' iş imalatta</small>',
-      '<button class="ibtn" data-act="new-job" aria-label="Yeni iş">' + icon('plus', 26) + '</button>');
     body.innerHTML = this.searchHtml('jobs-q', this.st.jobsQ, 'İş, müşteri veya kumaş ara...') +
-      '<div class="tabs" data-period-tabs></div><div class="cards" data-list></div>';
+      '<p class="hint" data-period style="margin:0 0 10px"></p>' +
+      '<div class="tabs" data-job-tabs></div><div class="cards" data-list></div>';
     this.paintJobs();
   },
   paintJobs: function () {
-    var body = UI.pBody(); if (!body) return;
-    var p = this.st.period;
-    body.querySelector('[data-period-tabs]').innerHTML =
-      '<button class="tab' + (p === 'week' ? ' on' : '') + '" data-act="period" data-p="week"><b>' + fmtNum(Data.periodMeters('week')) + '</b><span>mt · Bu Hafta</span></button>' +
-      '<button class="tab' + (p === 'month' ? ' on' : '') + '" data-act="period" data-p="month"><b>' + fmtNum(Data.periodMeters('month')) + '</b><span>mt · Bu Ay</span></button>';
-    var all = Data.activeJobs();
-    all.sort(function (a, b) {
-      var pa = a.job.printed ? 1 : 0, pb = b.job.printed ? 1 : 0;
-      if (pa !== pb) return pa - pb; // baskı bekleyenler üstte
-      return new Date(b.job.createdAt) - new Date(a.job.createdAt);
-    });
+    var body = UI.pBody(); if (!body || !body.querySelector('[data-job-tabs]')) return;
+    var tab = this.st.jobTab, act = Data.activeJobs(), done = Data.deliveredJobs();
+    UI.setHead('İşler<small>' + act.length + ' imalatta · ' + done.length + ' teslim</small>',
+      '<button class="ibtn" data-act="new-job" aria-label="Yeni iş">' + icon('plus', 26) + '</button>');
+    body.querySelector('[data-period]').innerHTML = 'Üretilen: bu hafta <b style="color:var(--cy)">' + fmtNum(Data.periodMeters('week')) +
+      ' mt</b> · bu ay <b style="color:var(--cy)">' + fmtNum(Data.periodMeters('month')) + ' mt</b>';
+    body.querySelector('[data-job-tabs]').innerHTML =
+      '<button class="tab t-am' + (tab === 'active' ? ' on' : '') + '" data-act="job-tab" data-t="active"><b>' + act.length + '</b><span>İmalatta</span></button>' +
+      '<button class="tab t-ok' + (tab === 'delivered' ? ' on' : '') + '" data-act="job-tab" data-t="delivered"><b>' + done.length + '</b><span>Teslim Edildi</span></button>';
+    var all = tab === 'active' ? act : done;
+    if (tab === 'active') {
+      all.sort(function (a, b) {
+        var pa = a.job.printed ? 1 : 0, pb = b.job.printed ? 1 : 0;
+        if (pa !== pb) return pa - pb; // baskı bekleyenler üstte
+        return new Date(b.job.createdAt) - new Date(a.job.createdAt);
+      });
+    } else {
+      all.sort(function (a, b) { return new Date(b.job.deliveredAt || b.job.createdAt) - new Date(a.job.deliveredAt || a.job.createdAt); });
+    }
     var q = low(this.st.jobsQ).trim(), self = this;
     var list = all.filter(function (x) { return self.jobMatches(x, q); });
     body.querySelector('[data-list]').innerHTML = list.length
       ? list.map(function (x, i) { return self.jobCard(x.job, x.customer, i, true); }).join('')
-      : '<p class="empty">' + (all.length ? 'Sonuç bulunamadı' : 'Aktif iş bulunmuyor.<br>Sağ üstteki + ile yeni iş ekle.') + '</p>';
-    UI.setHead('Aktif İşler<small>' + all.length + ' iş imalatta</small>',
-      '<button class="ibtn" data-act="new-job" aria-label="Yeni iş">' + icon('plus', 26) + '</button>');
-  },
-
-  /* ---------- Teslim Edilen ---------- */
-  delivered: function (body) {
-    body.innerHTML = this.searchHtml('del-q', this.st.delQ, 'Teslim edilen işlerde ara...') + '<div class="cards" data-list></div>';
-    this.paintDelivered();
-  },
-  paintDelivered: function () {
-    var body = UI.pBody(); if (!body) return;
-    var all = Data.deliveredJobs(), q = low(this.st.delQ).trim(), self = this;
-    all.sort(function (a, b) { return new Date(b.job.deliveredAt || b.job.createdAt) - new Date(a.job.deliveredAt || a.job.createdAt); });
-    var list = all.filter(function (x) { return self.jobMatches(x, q); });
-    UI.setHead('Teslim Edilen<small>' + all.length + ' iş</small>', '');
-    body.querySelector('[data-list]').innerHTML = list.length
-      ? list.map(function (x, i) { return self.jobCard(x.job, x.customer, i, true); }).join('')
-      : '<p class="empty">' + (all.length ? 'Sonuç bulunamadı' : 'Teslim edilmiş iş bulunmuyor') + '</p>';
+      : (all.length ? '<p class="empty">Sonuç bulunamadı</p>'
+        : tab === 'active' ? '<p class="empty">İmalatta iş yok.</p><button class="btn pri block" data-act="new-job">' + icon('plus', 18) + ' Yeni İş Ekle</button>'
+        : '<p class="empty">Teslim edilmiş iş yok</p>');
   },
 
   /* ---------- Müşteriler ---------- */
@@ -1973,9 +1971,9 @@ var Screens = {
     } else el.innerHTML = Store.mem ? '<p class="err">UYARI: Veritabanı açılamadı, kayıtlar geçici bellekte.</p>' : '';
   },
 
-  /* ---------- Ayarlar ---------- */
+  /* ---------- Ayarlar (+ Hakkında) ---------- */
   settings: function (body) {
-    UI.setHead('Ayarlar', '');
+    UI.setHead('Ayarlar<small>Sürüm ' + APP_VERSION + '</small>', '');
     var sw = function (key, title, sub) {
       return '<div class="set-row"><div class="grow"><b>' + title + '</b><span>' + sub + '</span></div>' +
         '<button class="sw' + (Settings[key] ? ' on' : '') + '" data-act="toggle-set" data-k="' + key + '" role="switch" aria-checked="' + !!Settings[key] + '" aria-label="' + esc(title) + '"><i></i></button></div>';
@@ -1985,30 +1983,18 @@ var Screens = {
       sw('vibrate', 'Titreşim', 'Dokunmada kısa titreşim') +
       sw('reminder', 'Günlük Yedek Hatırlatıcısı', 'Her gün ilk açılışta yedek almayı hatırlatır') +
       sw('cat', 'Uzay Kedisi', 'Küre ekranında ara sıra görünür, dokununca mini oyun açılır') +
-      '<button class="btn block" data-act="open-backup-sub">' + icon('download', 18) + ' Veri Yedekleme</button>' +
-      '</div>';
-  },
-
-  /* ---------- Hakkında ---------- */
-  about: function (body) {
-    UI.setHead('Hakkında', '');
-    body.innerHTML = '<div class="stack">' +
-      '<div class="blk" style="align-items:center;text-align:center"><span style="color:var(--cy)">' + glyph('about', 56) + '</span>' +
-      '<h3 class="hud" style="font-size:20px">MİT Holo</h3><p>Müşteri &amp; İmalat İş Takip Asistanı</p>' +
-      '<p class="hud" style="font-size:11px">Sürüm ' + APP_VERSION + ' · Şema ' + SCHEMA_VERSION + '</p></div>' +
-      '<div class="blk"><h3 class="hud">Uygulama Hakkında</h3><p>Tekstil ve konfeksiyon atölyeleri için çevrimdışı çalışan müşteri ve imalat iş takip uygulaması. Tüm veriler yalnızca bu cihazda saklanır; düzenli yedek almayı unutma.</p></div>' +
-      '<div class="blk"><h3 class="hud">Bu Cihazdaki Veriler</h3><p>' + Data.customers.length + ' müşteri · ' + Data.totalJobs() + ' iş · ' + Data.patterns.length + ' kalıp</p></div>' +
-      '<div class="blk"><h3 class="hud">Bize Ulaşın</h3><p>Öneri, hata bildirimi veya destek için:</p>' +
-      '<a class="btn block" href="mailto:krmzchn@gmail.com"' + (IN_FRAME ? ' target="_blank" rel="noopener"' : '') + '>krmzchn@gmail.com</a></div>' +
+      '<div class="blk"><h3 class="hud">Hakkında</h3>' +
+      '<p>MİT Holo · Müşteri &amp; İmalat İş Takip Asistanı<br>Sürüm ' + APP_VERSION + ' · Şema ' + SCHEMA_VERSION + '</p>' +
+      '<p>Çevrimdışı çalışır; tüm veriler yalnızca bu cihazda saklanır. Bu cihazda: ' + Data.customers.length + ' müşteri · ' + Data.totalJobs() + ' iş · ' + Data.patterns.length + ' kalıp.</p>' +
+      '<a class="btn block" href="mailto:krmzchn@gmail.com"' + (IN_FRAME ? ' target="_blank" rel="noopener"' : '') + '>Bize ulaşın: krmzchn@gmail.com</a></div>' +
       '</div>';
   }
 };
 
 /* ---------- Ekran olayları ---------- */
 Inputs['jobs-q'] = function (el) { Screens.st.jobsQ = el.value; Screens.paintJobs(); };
-Inputs['del-q'] = function (el) { Screens.st.delQ = el.value; Screens.paintDelivered(); };
 Inputs['cust-q'] = function (el) { Screens.st.custQ = el.value; Screens.paintCustomers(); };
-Actions.period = function (el) { Screens.st.period = el.getAttribute('data-p'); Screens.paintJobs(); };
+Actions['job-tab'] = function (el) { Screens.st.jobTab = el.getAttribute('data-t'); Screens.paintJobs(); };
 Actions.sort = function (el) { Screens.st.sort = el.getAttribute('data-s'); Screens.paintCustomers(); };
 Actions['open-customer'] = function (el) { Screens.openCustomer(el.getAttribute('data-c')); };
 Actions['detail-tab'] = function (el) { Screens.st.detailTab = el.getAttribute('data-t'); Screens.renderDetail(); };
@@ -2053,10 +2039,6 @@ Actions['toggle-set'] = function (el) {
   Meta.set('settings', Settings).catch(function () { UI.toast('Ayar kaydedilemedi', 'err'); });
   if (k === 'cat') Fx.setEnabled(Settings.cat);
   if (Settings[k]) fb('ok');
-};
-Actions['open-backup-sub'] = function () {
-  var sub = UI.openSub('Veri Yedekleme', '', '');
-  Screens.backup(sub.querySelector('[data-pbody]'));
 };
 
 /* Kalıp kütüphanesi */

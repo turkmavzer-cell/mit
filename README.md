@@ -17,14 +17,11 @@ MİT Holo'da:
 ## Menü (küre düğümleri)
 | Düğüm | İçerik |
 |---|---|
-| Aktif İşler | Haftalık/aylık metraj, arama, imalattaki işler (baskı bekleyenler üstte), + yeni iş |
-| Müşteriler | Arama, 5 sıralama, müşteri detayı (Ara, Konum, İmalatta/Teslim sekmeleri, + Yeni İş, düzenle, sil) |
-| Yeni Müşteri | Müşteri formu (ad zorunlu, telefon, adres, GPS konumu) |
-| Teslim Edilen | Teslim edilen tüm işler |
+| İşler | Haftalık/aylık metraj, arama, İmalatta / Teslim Edildi sekmeleri (baskı bekleyenler üstte), + yeni iş |
+| Müşteriler | + yeni müşteri, arama, 5 sıralama, müşteri detayı (Ara, Konum, İmalatta/Teslim sekmeleri, + Yeni İş, düzenle, sil) |
 | Kalıplar | Kalıp kütüphanesi (ad + fotoğraf, düzenle, sil) |
 | Yedekleme | Yedek al (fotoğraflar dahil), yedekten geri yükle (yalnızca eksikleri ekler) |
-| Ayarlar | Ses, titreşim, günlük yedek hatırlatıcısı, uzay kedisi |
-| Hakkında | Sürüm, veri sayıları, iletişim |
+| Ayarlar | Ses, titreşim, günlük yedek hatırlatıcısı, uzay kedisi, hakkında |
 
 İş formu: durum (imalatta/teslim), baskı durumu, kumaş türü/rengi/gramajı, atanmamış toplar,
 kalıp grupları (metre/kilo topları, uzun basınca düzenleme), kalıba top gönderme,
