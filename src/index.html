@@ -72,18 +72,16 @@ svg { flex-shrink: 0; }
 #stage-top .brand small { display: block; font-size: 10px; color: var(--tx2); letter-spacing: .12em; }
 #stage-top .ver { font-size: 10px; color: var(--tx2); }
 #center-stats {
-  position: absolute; left: 50%; top: calc(var(--sat) + 22vh); transform: translate(-50%, -50%);
-  z-index: 3; text-align: center; pointer-events: none; min-width: 260px;
-  padding: 12px 18px; border: 1px solid var(--cy-a40); background: rgba(10,18,36,.6);
-  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  z-index: 1; text-align: center; pointer-events: none; transition: opacity 200ms;
 }
 #center-stats .big { font-family: var(--hud); font-weight: 600; font-size: 44px; line-height: 1; color: var(--tx); text-shadow: 0 0 4px var(--bg), 0 0 12px var(--bg), 0 0 18px var(--cy-a40); }
 #center-stats .big-l, #center-stats .s { text-shadow: 0 0 4px var(--bg), 0 0 8px var(--bg); }
 #center-stats .big-l { font-size: 10px; color: var(--cy-soft); margin-top: 4px; }
-#center-stats .smalls { display: flex; gap: 22px; justify-content: center; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--cy-a20); }
-#center-stats .s { font-family: var(--hud); font-weight: 600; font-size: 24px; line-height: 1.1; color: var(--am); }
+#center-stats .smalls { display: flex; gap: 14px; justify-content: center; margin-top: 8px; }
+#center-stats .s { font-family: var(--hud); font-weight: 600; font-size: 16px; color: var(--am); }
 #center-stats .s.s-print { color: var(--st-print); }
-#center-stats .s span { display: block; font-size: 10px; color: var(--tx2); letter-spacing: .08em; }
+#center-stats .s span { display: block; font-size: 9px; color: var(--tx2); letter-spacing: .08em; }
 #nodes { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
 .node {
   position: absolute; left: 0; top: 0; width: 88px; margin-left: -44px; margin-top: -26px;
@@ -115,10 +113,9 @@ body.no-gl #stage-hint, body.panel-open #stage-hint { display: none; }
 }
 .node-badge:empty { display: none; }
 /* WebGL yoksa: 2 sütunlu düz ızgara */
-body.no-gl #gl { display: none; }
-body.no-gl #center-stats { position: relative; left: auto; top: auto; transform: none; margin: calc(var(--sat) + 76px) 16px 0; }
+body.no-gl #gl, body.no-gl #center-stats { display: none; }
 body.no-gl #nodes {
-  position: absolute; inset: 0; top: calc(var(--sat) + 236px); pointer-events: auto; overflow-y: auto;
+  position: absolute; inset: 0; top: calc(var(--sat) + 72px); pointer-events: auto; overflow-y: auto;
   display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 8px 16px 24px; align-content: start;
 }
 body.no-gl .node { position: relative; width: auto; margin: 0; transform: none !important; opacity: 1 !important; padding: 14px 4px; background: var(--panel); border: 1px solid var(--cy-a40); border-radius: var(--r12); min-height: 112px; justify-content: center; }
@@ -468,7 +465,7 @@ textarea.inp { padding: 12px; resize: none; line-height: 1.4; }
      "localStorage doldu, kayıt sessizce başarısız oldu" sorununun çözümü budur.
    - Her yazma işleminin sonucu kontrol edilir; hata olursa kullanıcı görür.
    ===================================================================== */
-var APP_VERSION = '2.2.0';
+var APP_VERSION = '2.3.0';
 var SCHEMA_VERSION = 2; // 1 = eski localStorage sürümü (MİT 1.0), 2 = IndexedDB
 
 var IN_FRAME = (function () { try { return window.self !== window.top; } catch (e) { return true; } })();
@@ -587,7 +584,7 @@ var Photos = {
 };
 
 /* ---------- Ayarlar ve meta ---------- */
-var Settings = { sound: true, vibrate: true, reminder: true, cat: true };
+var Settings = { sound: true, vibrate: true, reminder: false, cat: true, autoBackup: true };
 var Meta = {
   get: function (key) { return Store.get('meta', key).then(function (r) { return r ? r.value : undefined; }); },
   set: function (key, value) { return Store.put('meta', { id: key, value: value }); }
@@ -728,30 +725,31 @@ var Data = {
     UI.toast('Kayıt yazılamadı: ' + (err && err.message ? err.message : 'depolama hatası'), 'err');
     throw err;
   },
+  _changed: function () { AutoBackup.dirty = true; App.refreshStats(); },
   saveCustomer: function (c) {
     c.updatedAt = new Date().toISOString();
     var idx = -1;
     for (var i = 0; i < this.customers.length; i++) if (this.customers[i].id === c.id) idx = i;
     if (idx < 0) this.customers.push(c); else this.customers[idx] = c;
     var self = this;
-    return Store.put('customers', clone(c)).then(function () { App.refreshStats(); }, function (e) { self._fail(e); });
+    return Store.put('customers', clone(c)).then(function () { self._changed(); }, function (e) { self._fail(e); });
   },
   deleteCustomer: function (id) {
     this.customers = this.customers.filter(function (c) { return c.id !== id; });
     var self = this;
-    return Store.del('customers', id).then(function () { App.refreshStats(); }, function (e) { self._fail(e); });
+    return Store.del('customers', id).then(function () { self._changed(); }, function (e) { self._fail(e); });
   },
   savePattern: function (p) {
     var idx = -1;
     for (var i = 0; i < this.patterns.length; i++) if (this.patterns[i].id === p.id) idx = i;
     if (idx < 0) this.patterns.push(p); else this.patterns[idx] = p;
     var self = this;
-    return Store.put('patterns', p).then(function () { App.refreshStats(); }, function (e) { self._fail(e); });
+    return Store.put('patterns', p).then(function () { self._changed(); }, function (e) { self._fail(e); });
   },
   deletePattern: function (id) {
     this.patterns = this.patterns.filter(function (p) { return p.id !== id; });
     var self = this;
-    return Store.del('patterns', id).then(function () { App.refreshStats(); }, function (e) { self._fail(e); });
+    return Store.del('patterns', id).then(function () { self._changed(); }, function (e) { self._fail(e); });
   },
 
   /* İçe aktarma: yalnızca eksik müşteri/iş/kalıp eklenir, mevcut kayıt
@@ -809,7 +807,7 @@ var Data = {
     }).then(function () {
       return Store.putMany('patterns', newPatterns);
     }).then(function () {
-      App.refreshStats();
+      self._changed();
       return { customers: addedCustomers, jobs: addedJobs, patterns: addedPatterns };
     }, function (e) { self._fail(e); });
   },
@@ -1004,6 +1002,7 @@ var GLYPH_SVG = {
   addCustomer: '<path d="M12 3 21 19H3Z"/><path d="M12 9v6M9 12h6"/>',
   delivered: '<circle cx="12" cy="12" r="9"/><path d="m7.5 12.5 3 3 6-7"/><path d="M12 1v2M12 21v2"/>',
   patterns: '<path d="M6 3h12l3 6-9 12L3 9Z"/><path d="M3 9h18M9 3l3 6 3-6M12 9v12"/>',
+  report: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/><circle cx="16" cy="8" r="2"/>',
   backup: '<path d="M4 7h16v12H4Z"/><path d="M8 7V4h8v3"/><path d="M12 10v6M9 13l3 3 3-3"/>',
   settings: '<circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/>',
   about: '<path d="M4 20 12 4l8 16Z"/><circle cx="12" cy="14" r="2"/><path d="M12 8v2"/>'
@@ -1016,6 +1015,7 @@ var NODES = [
   { id: 'jobs', label: 'İşler', g: 'jobs' },
   { id: 'customers', label: 'Müşteriler', g: 'customers' },
   { id: 'patterns', label: 'Kalıplar', g: 'patterns' },
+  { id: 'report', label: 'Rapor', g: 'report' },
   { id: 'backup', label: 'Yedekleme', g: 'backup' },
   { id: 'settings', label: 'Ayarlar', g: 'settings' }
 ];
@@ -1281,6 +1281,15 @@ var Sphere = {
       el.style.opacity = op.toFixed(2);
       el.style.zIndex = String(Math.round(f * 100));
       el.classList.toggle('back', depth < 0);
+    }
+    // Öndeki düğüm merkezdeki sayıların üstüne gelince sayılar soluklaşır
+    if (bestI >= 0) {
+      var fv = this.nodeVecs[bestI];
+      v.set(fv[0], fv[1], fv[2]).applyQuaternion(this.globe.quaternion).project(this.camera);
+      var dist = Math.hypot(v.x * 0.5 * w, v.y * 0.5 * h);
+      var cs = this.centerEl || (this.centerEl = document.getElementById('center-stats'));
+      var o = Math.max(0.15, Math.min(1, (dist - 40) / 60)).toFixed(2);
+      if (cs.style.opacity !== o) cs.style.opacity = o;
     }
     if (bestI !== this.frontIdx) {
       if (this.frontIdx >= 0) this.nodeEls[this.frontIdx].classList.remove('front');
@@ -1723,7 +1732,7 @@ var App = {
     set('cs-b', printed + '<span>BASKISI YAPILAN</span>');
     var badges = {
       jobs: active, customers: Data.customers.length,
-      patterns: Data.patterns.length, backup: '', settings: ''
+      patterns: Data.patterns.length, report: '', backup: '', settings: ''
     };
     Object.keys(badges).forEach(function (k) {
       var b = document.querySelector('[data-badge="' + k + '"]');
@@ -1751,7 +1760,7 @@ var Screens = {
   st: { jobsQ: '', jobTab: 'active', period: 'week', custQ: '', sort: 'alphabetical', detailTab: 'active', delQ: '', cid: null },
 
   open: function (id) {
-    var titles = { jobs: 'İşler', customers: 'Müşteriler', patterns: 'Kalıp Kütüphanesi', backup: 'Veri Yedekleme', settings: 'Ayarlar' };
+    var titles = { jobs: 'İşler', customers: 'Müşteriler', patterns: 'Kalıp Kütüphanesi', report: 'Rapor', backup: 'Veri Yedekleme', settings: 'Ayarlar' };
     UI.openPanel({ id: id, title: titles[id] });
     this.render();
   },
@@ -1760,6 +1769,7 @@ var Screens = {
     if (!UI.panel) return;
     var id = UI.panel.id, body = UI.pBody();
     if (id === 'jobs') this.jobs(body);
+    else if (id === 'report') this.report(body);
     else if (id === 'customers') this.customers(body);
     else if (id === 'patterns') this.patterns(body);
     else if (id === 'backup') this.backup(body);
@@ -1771,7 +1781,7 @@ var Screens = {
     var id = UI.panel.id;
     if (id === 'jobs') this.paintJobs();
     else if (id === 'customers') this.paintCustomers();
-    else if (id === 'patterns' || id === 'backup' || id === 'settings') this.render();
+    else if (id === 'patterns' || id === 'backup' || id === 'settings' || id === 'report') this.render();
     this.renderDetail();
   },
   searchHtml: function (key, val, ph) {
@@ -1789,7 +1799,8 @@ var Screens = {
         : '<p class="c-title">' + esc(jobDisplayName(job)) + '</p>') +
       (fabric ? '<p class="c-sub">' + esc(fabric) + '</p>' : '') +
       '</div><div class="c-side"><span class="chip-st st-' + sk + '">' + jobStatusLabel(job) + '</span>' +
-      '<button class="ibtn" data-act="job-info" data-c="' + customer.id + '" data-j="' + job.id + '" aria-label="İş özeti">' + icon('info', 20) + '</button></div></div>' +
+      '<div class="row" style="gap:0"><button class="ibtn" data-act="job-share" data-c="' + customer.id + '" data-j="' + job.id + '" aria-label="Paylaş (WhatsApp vb.)">' + icon('share', 20) + '</button>' +
+      '<button class="ibtn" data-act="job-info" data-c="' + customer.id + '" data-j="' + job.id + '" aria-label="İş özeti">' + icon('info', 20) + '</button></div></div></div>' +
       '<p class="c-meta">' + fmtDate(job.createdAt) + (t.grandTotalMeters > 0 ? ' · ' + fmtNum(t.grandTotalMeters) + ' mt' : '') +
       (job.photos.length ? ' · ' + job.photos.length + ' fotoğraf' : '') + '</p></div>';
   },
@@ -1945,10 +1956,14 @@ var Screens = {
   /* ---------- Yedekleme ---------- */
   backup: function (body) {
     UI.setHead('Veri Yedekleme', '');
+    var self = this;
+    AutoBackup.loadInfo().then(function () { var a = body.querySelector('[data-auto]'); if (a) a.innerHTML = AutoBackup.statusHtml(); });
     var html = '<div class="stack">' +
       '<div class="blk"><h3 class="hud">Bu Cihazda</h3><p>' + Data.customers.length + ' müşteri · ' + Data.totalJobs() + ' iş · ' + Data.patterns.length + ' kalıp</p>' +
       '<div data-storage><p class="muted">Depolama hesaplanıyor...</p></div></div>' +
-      '<div class="blk"><h3 class="hud">Yedek Al</h3><p>Fotoğraflar dahil tüm kayıtlar tek bir dosyaya yazılır ve paylaşım penceresi açılır (Drive, WhatsApp, e-posta...).</p>' +
+      '<div class="blk"><h3 class="hud">Otomatik Yedek</h3><div data-auto>' + AutoBackup.statusHtml() + '</div>' +
+      (AutoBackup.available() ? '<button class="btn block" data-act="auto-now">' + icon('download', 18) + ' Otomatik Yedeği Şimdi Güncelle</button>' : '') + '</div>' +
+      '<div class="blk"><h3 class="hud">Yedeği Paylaş</h3><p>Fotoğraflar dahil tüm kayıtlar tek bir dosyaya yazılır ve paylaşım penceresi açılır (Drive, WhatsApp, e-posta...).</p>' +
       '<button class="btn pri block" data-act="export">' + icon('download', 20) + ' Yedekle</button></div>' +
       '<div class="blk"><h3 class="hud">Yedekten Geri Yükle</h3><p>Yalnızca eksik kayıtlar eklenir; mevcut veriler hiçbir zaman silinmez veya değiştirilmez. Eski MİT uygulamasının yedek dosyası da kabul edilir.</p>' +
       '<button class="btn block" data-act="import">' + icon('upload', 20) + ' Yedek Dosyası Seç</button>' +
@@ -1978,7 +1993,8 @@ var Screens = {
     body.innerHTML = '<div class="stack">' +
       sw('sound', 'Ses', 'Dokunma ve geçiş sesleri') +
       sw('vibrate', 'Titreşim', 'Dokunmada kısa titreşim') +
-      sw('reminder', 'Günlük Yedek Hatırlatıcısı', 'Her gün ilk açılışta yedek almayı hatırlatır') +
+      sw('autoBackup', 'Otomatik Yedek', 'Sormadan telefona yedek yazar, eskisinin üstüne kaydeder') +
+      sw('reminder', 'Günlük Yedek Hatırlatıcısı', 'Her gün ilk açılışta yedeği paylaşmayı hatırlatır') +
       sw('cat', 'Uzay Kedisi', 'Küre ekranında ara sıra görünür, dokununca mini oyun açılır') +
       '<div class="blk"><h3 class="hud">Hakkında</h3>' +
       '<p>MİT Holo · Müşteri &amp; İmalat İş Takip Asistanı<br>Sürüm ' + APP_VERSION + ' · Şema ' + SCHEMA_VERSION + '</p>' +
@@ -2085,6 +2101,191 @@ Actions['pat-del'] = function (el) {
       Screens.patterns(UI.pBody());
       if (p) UI.undoToast('Kalıp silindi', function () { Data.savePattern(p).then(function () { Screens.patterns(UI.pBody()); }); });
     });
+  });
+};
+
+/* ---------- Rapor (haftalık / aylık) ---------- */
+function reportRange(key) {
+  var now = new Date();
+  if (key === 'lastMonth') return { from: new Date(now.getFullYear(), now.getMonth() - 1, 1), to: new Date(now.getFullYear(), now.getMonth(), 1), label: 'Geçen Ay' };
+  if (key === 'month') return { from: periodStart('month'), to: new Date(8.64e15), label: 'Bu Ay' };
+  return { from: periodStart('week'), to: new Date(8.64e15), label: 'Bu Hafta' };
+}
+function buildReport(key) {
+  var r = reportRange(key), inR = function (iso) { if (!iso) return false; var d = new Date(iso); return d >= r.from && d < r.to; };
+  var rep = { label: r.label, from: r.from, meters: 0, mt: 0, kg: 0, rolls: 0, newJobs: 0, delivered: 0, customers: {}, patterns: {} };
+  Data.customers.forEach(function (c) {
+    c.jobs.forEach(function (j) {
+      if (inR(j.deliveredAt)) rep.delivered++;
+      if (!inR(j.createdAt)) return;
+      rep.newJobs++;
+      var t = calcJobTotals(j);
+      rep.meters += t.grandTotalMeters; rep.mt += t.totalMeters; rep.kg += t.totalKg; rep.rolls += t.meterRolls.length + t.kgRolls.length;
+      var cc = rep.customers[c.id] || (rep.customers[c.id] = { name: c.name, meters: 0, jobs: 0 });
+      cc.meters += t.grandTotalMeters; cc.jobs++;
+      j.patternGroups.forEach(function (g) {
+        var gt = calcRollTotals(g.fabricRolls, j.fabricGramsPerMeter).grandTotalMeters;
+        if (!gt) return;
+        var n = (g.patternName || 'İsimsiz Kalıp').trim(), k = low(n);
+        var pp = rep.patterns[k] || (rep.patterns[k] = { name: n, meters: 0 });
+        pp.meters += gt;
+      });
+      var ut = calcRollTotals(j.unassignedRolls, j.fabricGramsPerMeter).grandTotalMeters;
+      if (ut) { var u = rep.patterns['\u0000'] || (rep.patterns['\u0000'] = { name: 'Atanmamış toplar', meters: 0 }); u.meters += ut; }
+    });
+  });
+  var sortM = function (o) { return Object.keys(o).map(function (k) { return o[k]; }).sort(function (a, b) { return b.meters - a.meters; }); };
+  rep.customerList = sortM(rep.customers);
+  rep.patternList = sortM(rep.patterns);
+  return rep;
+}
+Screens.report = function (body) {
+  var key = this.st.reportKey || 'week', rep = buildReport(key);
+  UI.setHead('Rapor<small>' + rep.label + ' · ' + fmtDate(rep.from) + ' sonrası</small>',
+    '<button class="ibtn" data-act="report-share" aria-label="Raporu paylaş">' + icon('share', 22) + '</button>');
+  var tab = function (k, label) { var x = buildReport(k); return '<button class="tab' + (k === key ? ' on' : '') + '" data-act="report-tab" data-k="' + k + '"><b>' + fmtNum(Math.round(x.meters)) + '</b><span>' + label + '</span></button>'; };
+  var bars = function (list, color) {
+    if (!list.length) return '<p class="hint">Bu dönemde kayıt yok</p>';
+    var max = list[0].meters || 1;
+    return list.slice(0, 8).map(function (x) {
+      return '<div style="margin:6px 0"><div class="between" style="font-size:15px"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(x.name) + '</span><b style="color:' + color + ';white-space:nowrap">' + fmtNum(x.meters) + ' mt</b></div>' +
+        '<div class="storage-bar" style="margin-top:4px"><i style="width:' + Math.max(2, x.meters / max * 100).toFixed(1) + '%;background:' + color + '"></i></div></div>';
+    }).join('');
+  };
+  var tile = function (v, l, c) { return '<div class="blk" style="gap:2px;padding:12px"><b class="hud" style="font-size:22px;color:' + c + '">' + v + '</b><p style="font-size:13px">' + l + '</p></div>'; };
+  body.innerHTML = '<div class="tabs">' + tab('week', 'mt · Bu Hafta') + tab('month', 'mt · Bu Ay') + tab('lastMonth', 'mt · Geçen Ay') + '</div>' +
+    '<div class="grid2" style="margin-bottom:12px">' +
+    tile(fmtNum(rep.meters), 'Toplam metraj (mt)', 'var(--cy)') + tile(rep.newJobs, 'Yeni iş', 'var(--am)') +
+    tile(rep.delivered, 'Teslim edilen iş', 'var(--st-done)') + tile(rep.customerList.length, 'İş veren müşteri', 'var(--st-print)') + '</div>' +
+    '<div class="stack"><div class="blk"><h3 class="hud">Müşterilere Göre</h3>' + bars(rep.customerList, 'var(--cy)') + '</div>' +
+    '<div class="blk"><h3 class="hud">Kalıplara Göre</h3>' + bars(rep.patternList, 'var(--am)') + '</div>' +
+    '<div class="blk"><h3 class="hud">Toplar</h3><p>' + rep.rolls + ' top · ' + fmtNum(rep.mt) + ' mt + ' + fmtNum(rep.kg) + ' kg</p>' +
+    '<p class="hint">Metraj, dönem içinde açılan işlere göre hesaplanır; kilo topları gramajla metreye çevrilir.</p></div>' +
+    '<button class="btn pri block" data-act="report-share">' + icon('share', 18) + ' Raporu Paylaş</button></div>';
+};
+Actions['report-tab'] = function (el) { Screens.st.reportKey = el.getAttribute('data-k'); Screens.report(UI.pBody()); };
+Actions['report-share'] = function (el) {
+  var rep = buildReport(Screens.st.reportKey || 'week');
+  var lines = [{ t: 'MİT · ' + rep.label.toLocaleUpperCase('tr-TR') + ' RAPORU', s: 22, b: true, c: '#00E5FF', center: true, after: 6 },
+    { t: fmtDate(rep.from) + ' – ' + fmtDate(new Date()), s: 15, c: '#8FB3C7', center: true, after: 16 },
+    { t: 'Toplam metraj: ' + fmtNum(rep.meters) + ' mt', s: 20, b: true },
+    { t: 'Yeni iş: ' + rep.newJobs + ' · Teslim edilen: ' + rep.delivered + ' · Müşteri: ' + rep.customerList.length, s: 16 },
+    { t: 'Toplar: ' + rep.rolls + ' (' + fmtNum(rep.mt) + ' mt + ' + fmtNum(rep.kg) + ' kg)', s: 16, after: 16 },
+    { t: 'MÜŞTERİLERE GÖRE', s: 15, b: true, c: '#00E5FF', after: 6 }];
+  rep.customerList.slice(0, 10).forEach(function (x) { lines.push({ t: x.name + ': ' + fmtNum(x.meters) + ' mt (' + x.jobs + ' iş)', s: 16 }); });
+  lines.push({ t: 'KALIPLARA GÖRE', s: 15, b: true, c: '#FFB300', before: 14, after: 6 });
+  rep.patternList.slice(0, 10).forEach(function (x) { lines.push({ t: x.name + ': ' + fmtNum(x.meters) + ' mt', s: 16 }); });
+  el.disabled = true;
+  return drawLinesImage(lines).then(function (blob) {
+    return shareOrDownload(blob, 'mit-rapor-' + new Date().toISOString().slice(0, 10) + '.png', 'MİT Rapor');
+  }).then(function (r) {
+    if (r === 'blocked') UI.toast('Önizlemede dosya paylaşımı kapalı', 'info');
+    else if (r === 'downloaded') UI.toast('Rapor görseli indirildi');
+  }).then(function () { el.disabled = false; }, function (e) { el.disabled = false; throw e; });
+};
+// Satır listesinden paylaşılabilir PNG üretir
+function drawLinesImage(lines) {
+  var W = 720, pad = 32, lineH = 30;
+  var font = function (l) { return (l.b ? '600 ' : '') + l.s + 'px "Exo 2", Arial, sans-serif'; };
+  var m = document.createElement('canvas').getContext('2d'), H = pad;
+  lines.forEach(function (l) {
+    H += l.before || 0; m.font = font(l);
+    wrapText(m, l.t, W - pad * 2).forEach(function () { H += lineH * (l.s > 18 ? 1.2 : 1); });
+    H += l.after || 4;
+  });
+  H += pad;
+  var cv = document.createElement('canvas'); cv.width = W; cv.height = Math.ceil(H);
+  var g = cv.getContext('2d');
+  g.fillStyle = '#0A1224'; g.fillRect(0, 0, W, cv.height);
+  g.strokeStyle = 'rgba(0,229,255,.4)'; g.lineWidth = 2; g.strokeRect(8, 8, W - 16, cv.height - 16);
+  var y = pad;
+  lines.forEach(function (l) {
+    y += l.before || 0; g.font = font(l); g.fillStyle = l.c || '#E6F7FF';
+    wrapText(g, l.t, W - pad * 2).forEach(function (p) {
+      y += lineH * (l.s > 18 ? 1.2 : 1);
+      if (l.center) { g.textAlign = 'center'; g.fillText(p, W / 2, y); g.textAlign = 'left'; } else g.fillText(p, pad, y);
+    });
+    y += l.after || 4;
+  });
+  return new Promise(function (resolve, reject) { cv.toBlob(function (b) { if (b) resolve(b); else reject(new Error('Görsel oluşturulamadı')); }, 'image/png'); });
+}
+
+/* İş kartındaki paylaş düğmesi: özet görseli → paylaşım penceresi (WhatsApp vb.) */
+Actions['job-share'] = function (el, e) {
+  e.stopPropagation();
+  var c = Data.find(el.getAttribute('data-c')), j = Data.findJob(el.getAttribute('data-c'), el.getAttribute('data-j'));
+  if (!c || !j) return;
+  el.disabled = true;
+  return shareJobImage(c, j).then(function (r) {
+    if (r === 'blocked') UI.toast('Önizlemede dosya paylaşımı kapalı', 'info');
+    else if (r === 'downloaded') UI.toast('Görsel indirildi');
+  }).then(function () { el.disabled = false; }, function (err) { el.disabled = false; throw err; });
+};
+
+/* ---------- Otomatik yedek ----------
+   APK'da sormadan telefonun Belgeler klasörüne yazar; her seferinde eski
+   dosyanın üzerine kaydeder. Açılışta günde bir kez ve uygulama arka plana
+   geçerken (değişiklik varsa, en fazla 10 dakikada bir) çalışır. */
+var AutoBackup = {
+  PATH: 'MIT-Holo/mit-holo-otomatik-yedek.json',
+  dirty: false, running: false, lastTs: 0, info: null,
+  available: function () { return isNative() && !!plugin('Filesystem'); },
+  loadInfo: function () { var self = this; return Meta.get('autoBackup').then(function (v) { self.info = v || null; }); },
+  statusHtml: function () {
+    if (!this.available()) return '<p>Otomatik yedek yalnızca telefondaki uygulamada (APK) çalışır.</p>';
+    if (!Settings.autoBackup) return '<p>Kapalı. Ayarlar ekranından açabilirsin.</p>';
+    var i = this.info;
+    return '<p>Sormadan telefona yazılır; her seferinde eski dosyanın üzerine kaydedilir.</p>' +
+      (i ? '<p>Son yedek: <b style="color:var(--st-done)">' + new Date(i.at).toLocaleString('tr-TR') + '</b><br>Konum: ' + esc(i.where) + '</p>'
+        : '<p class="hint">Henüz otomatik yedek alınmadı.</p>') +
+      (i && i.err ? '<p class="err">Son deneme başarısız: ' + esc(i.err) + '</p>' : '');
+  },
+  write: function (dir, path, json) {
+    var fs = plugin('Filesystem');
+    var opts = { path: path, data: json, directory: dir, encoding: 'utf8', recursive: true };
+    return fs.writeFile(opts).catch(function () {
+      // Eski dosya silinip yeniden yazılır
+      return fs.deleteFile({ path: path, directory: dir }).catch(function () {}).then(function () { return fs.writeFile(opts); });
+    });
+  },
+  run: function (force) {
+    var self = this;
+    if (!this.available() || this.running || (!Settings.autoBackup && !force)) return Promise.resolve(false);
+    if (!Data.customers.length && !Data.patterns.length) return Promise.resolve(false);
+    this.running = true;
+    var wasDirty = this.dirty;
+    this.dirty = false;
+    return Data.buildBackup().then(function (b) {
+      var json = JSON.stringify(b);
+      return self.write('DOCUMENTS', self.PATH, json).then(function () { return 'Belgeler/' + self.PATH; }, function () {
+        // Belgeler klasörüne yazılamazsa uygulamanın dış klasörüne yaz
+        return self.write('EXTERNAL', self.PATH, json).then(function () { return 'Android/data/com.turkmavzercell.mitholo/files/' + self.PATH; });
+      });
+    }).then(function (where) {
+      self.info = { at: new Date().toISOString(), where: where };
+      self.lastTs = Date.now();
+      return Meta.set('autoBackup', self.info).then(function () { return true; });
+    }, function (e) {
+      console.error(e);
+      self.dirty = self.dirty || wasDirty;
+      self.info = Object.assign({}, self.info || {}, { err: e && e.message ? e.message : 'yazılamadı' });
+      return Meta.set('autoBackup', self.info).then(function () { return false; });
+    }).then(function (ok) { self.running = false; return ok; });
+  },
+  daily: function () {
+    var self = this;
+    return this.loadInfo().then(function () {
+      if (!self.info || !self.info.at || new Date(self.info.at).toDateString() !== new Date().toDateString()) return self.run();
+    });
+  },
+  onHide: function () { if (this.dirty && Date.now() - this.lastTs > 10 * 60 * 1000) this.run(); }
+};
+Actions['auto-now'] = function (el) {
+  el.disabled = true;
+  return AutoBackup.run(true).then(function (ok) {
+    el.disabled = false;
+    UI.toast(ok ? 'Otomatik yedek güncellendi' : 'Otomatik yedek yazılamadı', ok ? 'ok' : 'err');
+    var a = document.querySelector('[data-auto]'); if (a) a.innerHTML = AutoBackup.statusHtml();
   });
 };
 
@@ -2765,7 +2966,7 @@ function shareJobImage(customer, job) {
   return new Promise(function (resolve, reject) {
     cv.toBlob(function (blob) {
       if (!blob) { reject(new Error('Görsel oluşturulamadı')); return; }
-      var fname = (jobDisplayName(job) || 'is-ozeti').replace(/[^\wğüşıöçĞÜŞİÖÇ\- ]/g, '') + '.png';
+      var fname = 'is-ozeti-' + new Date().toISOString().slice(0, 10) + '.png';
       shareOrDownload(blob, fname, 'İş Özeti').then(resolve, reject);
     }, 'image/png');
   });
@@ -3199,7 +3400,7 @@ function boot() {
   var rt = null;
   window.addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(function () { Sphere.resize(); }, 120); });
   document.addEventListener('visibilitychange', function () {
-    if (document.hidden) Sphere.stop();
+    if (document.hidden) { Sphere.stop(); AutoBackup.onHide(); }
     else if (!UI.panelOpen()) Sphere.start();
   });
   window.addEventListener('error', function (e) { console.error(e.error || e.message); });
@@ -3225,6 +3426,7 @@ function boot() {
     Fx.init();
     if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(function () {});
     setTimeout(cleanOrphanPhotos, 4000);
+    setTimeout(function () { AutoBackup.daily(); }, 6000);
     return Meta.get('lastReminder');
   }).then(function (last) {
     if (Settings.reminder && new Date().getHours() >= 6 && last !== todayStr() && Data.customers.length) {

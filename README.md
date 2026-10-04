@@ -13,6 +13,9 @@ MİT Holo'da:
 - Fotoğraflar ayrı depoda; işte yalnızca fotoğraf kimliği saklanır.
 - Her yazma kontrol edilir; hata olursa ekranda uyarı çıkar.
 - Yedekleme ekranında kullanılan depolama alanı görünür.
+- **Otomatik yedek:** APK sormadan `Belgeler/MIT-Holo/mit-holo-otomatik-yedek.json` dosyasına yazar
+  (açılışta günde bir, uygulama arka plana geçerken değişiklik varsa); her seferinde eskisinin üzerine kaydeder.
+- Küre ortasında: işi olan müşteri sayısı, baskı bekleyen ve baskısı yapılan iş sayısı.
 
 ## Menü (küre düğümleri)
 | Düğüm | İçerik |
@@ -20,7 +23,8 @@ MİT Holo'da:
 | İşler | Haftalık/aylık metraj, arama, İmalatta / Teslim Edildi sekmeleri (baskı bekleyenler üstte), + yeni iş |
 | Müşteriler | + yeni müşteri, arama, 5 sıralama, müşteri detayı (Ara, Konum, İmalatta/Teslim sekmeleri, + Yeni İş, düzenle, sil) |
 | Kalıplar | Kalıp kütüphanesi (ad + fotoğraf, düzenle, sil) |
-| Yedekleme | Yedek al (fotoğraflar dahil), yedekten geri yükle (yalnızca eksikleri ekler) |
+| Rapor | Bu hafta / bu ay / geçen ay: metraj, yeni ve teslim edilen iş, müşteri ve kalıp dağılımı, görsel olarak paylaş |
+| Yedekleme | Otomatik yedek durumu, yedeği paylaş (fotoğraflar dahil), yedekten geri yükle (yalnızca eksikleri ekler) |
 | Ayarlar | Ses, titreşim, günlük yedek hatırlatıcısı, uzay kedisi, hakkında |
 
 İş formu: durum (imalatta/teslim), baskı durumu, kumaş türü/rengi/gramajı, atanmamış toplar,
