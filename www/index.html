@@ -77,15 +77,18 @@ svg { flex-shrink: 0; }
 #stage-top .brand small { display: block; font-size: 10px; color: var(--tx2); letter-spacing: .12em; }
 #stage-top .ver { font-size: 10px; color: var(--tx2); }
 #center-stats {
-  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-  z-index: 1; text-align: center; pointer-events: none;
+  position: absolute; left: 50%; top: calc(var(--sat) + 22vh); transform: translate(-50%, -50%);
+  z-index: 3; text-align: center; pointer-events: none; min-width: 260px;
+  padding: 12px 18px; border: 1px solid var(--cy-a40); background: rgba(10,18,36,.6);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
 }
 #center-stats .big { font-family: var(--hud); font-weight: 600; font-size: 44px; line-height: 1; color: var(--tx); text-shadow: 0 0 4px var(--bg), 0 0 12px var(--bg), 0 0 18px var(--cy-a40); }
 #center-stats .big-l, #center-stats .s { text-shadow: 0 0 4px var(--bg), 0 0 8px var(--bg); }
 #center-stats .big-l { font-size: 10px; color: var(--cy-soft); margin-top: 4px; }
-#center-stats .smalls { display: flex; gap: 14px; justify-content: center; margin-top: 8px; }
-#center-stats .s { font-family: var(--hud); font-weight: 600; font-size: 14px; color: var(--am); }
-#center-stats .s span { display: block; font-size: 9px; color: var(--tx2); letter-spacing: .08em; }
+#center-stats .smalls { display: flex; gap: 22px; justify-content: center; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--cy-a20); }
+#center-stats .s { font-family: var(--hud); font-weight: 600; font-size: 24px; line-height: 1.1; color: var(--am); }
+#center-stats .s.s-print { color: var(--st-print); }
+#center-stats .s span { display: block; font-size: 10px; color: var(--tx2); letter-spacing: .08em; }
 #nodes { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
 .node {
   position: absolute; left: 0; top: 0; width: 88px; margin-left: -44px; margin-top: -26px;
@@ -96,7 +99,6 @@ svg { flex-shrink: 0; }
 .node.back .node-badge { visibility: hidden; }
 #stage-hint { position: absolute; left: 0; right: 0; bottom: calc(var(--sab) + 20px); z-index: 3; text-align: center; font-size: 13px; color: var(--tx2); pointer-events: none; }
 body.no-gl #stage-hint, body.panel-open #stage-hint { display: none; }
-#center-stats { transition: opacity 200ms; }
 .node-ring {
   position: relative; width: 52px; height: 52px; border-radius: 50%;
   border: 1.5px solid var(--cy-soft); background: rgba(5,8,15,.78);
@@ -118,9 +120,10 @@ body.no-gl #stage-hint, body.panel-open #stage-hint { display: none; }
 }
 .node-badge:empty { display: none; }
 /* WebGL yoksa: 2 sütunlu düz ızgara */
-body.no-gl #gl, body.no-gl #center-stats { display: none; }
+body.no-gl #gl { display: none; }
+body.no-gl #center-stats { position: relative; left: auto; top: auto; transform: none; margin: calc(var(--sat) + 76px) 16px 0; }
 body.no-gl #nodes {
-  position: absolute; inset: 0; top: calc(var(--sat) + 72px); pointer-events: auto; overflow-y: auto;
+  position: absolute; inset: 0; top: calc(var(--sat) + 236px); pointer-events: auto; overflow-y: auto;
   display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 8px 16px 24px; align-content: start;
 }
 body.no-gl .node { position: relative; width: auto; margin: 0; transform: none !important; opacity: 1 !important; padding: 14px 4px; background: var(--panel); border: 1px solid var(--cy-a40); border-radius: var(--r12); min-height: 112px; justify-content: center; }
@@ -445,10 +448,10 @@ textarea.inp { padding: 12px; resize: none; line-height: 1.4; }
   </div>
   <div id="center-stats">
     <div class="big" id="cs-big">0</div>
-    <div class="big-l hud">Aktif İş</div>
+    <div class="big-l hud">Müşterinin İşi Var</div>
     <div class="smalls">
-      <div class="s" id="cs-a">0<span>MT · HAFTA</span></div>
-      <div class="s" id="cs-b">0<span>MÜŞTERİ</span></div>
+      <div class="s" id="cs-a">0<span>BASKI BEKLEYEN</span></div>
+      <div class="s s-print" id="cs-b">0<span>BASKISI YAPILAN</span></div>
     </div>
   </div>
   <div id="nodes"></div>
@@ -476,7 +479,7 @@ textarea.inp { padding: 12px; resize: none; line-height: 1.4; }
      "localStorage doldu, kayıt sessizce başarısız oldu" sorununun çözümü budur.
    - Her yazma işleminin sonucu kontrol edilir; hata olursa kullanıcı görür.
    ===================================================================== */
-var APP_VERSION = '2.1.0';
+var APP_VERSION = '2.2.0';
 var SCHEMA_VERSION = 2; // 1 = eski localStorage sürümü (MİT 1.0), 2 = IndexedDB
 
 var IN_FRAME = (function () { try { return window.self !== window.top; } catch (e) { return true; } })();
@@ -1290,15 +1293,6 @@ var Sphere = {
       el.style.zIndex = String(Math.round(f * 100));
       el.classList.toggle('back', depth < 0);
     }
-    // Öndeki düğüm merkezdeki sayıların üstüne gelince sayılar soluklaşır
-    if (bestI >= 0) {
-      var fv = this.nodeVecs[bestI];
-      v.set(fv[0], fv[1], fv[2]).applyQuaternion(this.globe.quaternion).project(this.camera);
-      var dist = Math.hypot(v.x * 0.5 * w, v.y * 0.5 * h);
-      var cs = this.centerEl || (this.centerEl = document.getElementById('center-stats'));
-      var o = Math.max(0.15, Math.min(1, (dist - 40) / 60)).toFixed(2);
-      if (cs.style.opacity !== o) cs.style.opacity = o;
-    }
     if (bestI !== this.frontIdx) {
       if (this.frontIdx >= 0) this.nodeEls[this.frontIdx].classList.remove('front');
       this.frontIdx = bestI;
@@ -1732,9 +1726,12 @@ var App = {
   refreshStats: function () {
     var active = Data.activeJobs().length;
     var set = function (id, html) { var el = document.getElementById(id); if (el) el.innerHTML = html; };
-    set('cs-big', String(active));
-    set('cs-a', fmtNum(Math.round(Data.periodMeters('week'))) + '<span>MT · HAFTA</span>');
-    set('cs-b', Data.customers.length + '<span>MÜŞTERİ</span>');
+    // Merkez: içeride işi olan müşteri sayısı + baskı bekleyen / baskısı yapılan iş
+    var actList = Data.activeJobs(), withJob = {}, waiting = 0, printed = 0;
+    actList.forEach(function (x) { withJob[x.customer.id] = true; if (x.job.printed) printed++; else waiting++; });
+    set('cs-big', String(Object.keys(withJob).length));
+    set('cs-a', waiting + '<span>BASKI BEKLEYEN</span>');
+    set('cs-b', printed + '<span>BASKISI YAPILAN</span>');
     var badges = {
       jobs: active, customers: Data.customers.length,
       patterns: Data.patterns.length, backup: '', settings: ''
