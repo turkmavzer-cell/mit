@@ -533,7 +533,7 @@ textarea.inp { padding: 12px; resize: none; line-height: 1.4; }
      "localStorage doldu, kayıt sessizce başarısız oldu" sorununun çözümü budur.
    - Her yazma işleminin sonucu kontrol edilir; hata olursa kullanıcı görür.
    ===================================================================== */
-var APP_VERSION = '2.8.0';
+var APP_VERSION = '2.8.1';
 var SCHEMA_VERSION = 2; // 1 = eski localStorage sürümü (MİT 1.0), 2 = IndexedDB
 
 var IN_FRAME = (function () { try { return window.self !== window.top; } catch (e) { return true; } })();
@@ -1721,11 +1721,11 @@ var Impact = {
 /* ---------- Yörünge oyunu ----------
    Bir menü düğümüne 2 sn basılı tut → düğüm yerinden kopar, parmakla çekilir.
    Bırakınca yaylanarak yerine döner; yolda başka bir düğüme çarparsa tüm
-   düğümler yörüngeden çıkar, ekranda sekip birbirine çarpar ve toplam 7 sn
+   düğümler yörüngeden çıkar, ekranda sekip birbirine çarpar ve toplam 3 sn
    içinde yörüngelerine geri döner. Hesap ekran (piksel) uzayında yapılır. */
 var Orbit = {
   phase: 'idle', // idle | hold | grab | fly | chaos
-  idx: -1, t: 0, timer: null, off: [], home: [], R: 30, CHAOS: 7,
+  idx: -1, t: 0, timer: null, off: [], home: [], R: 30, CHAOS: 3, FREE: 1.5,
   last: null, px: 0, py: 0,
   init: function () {
     for (var i = 0; i < NODES.length; i++) { this.off.push({ x: 0, y: 0, vx: 0, vy: 0 }); this.home.push({ x: 0, y: 0 }); }
@@ -1798,13 +1798,14 @@ var Orbit = {
       return;
     }
     // chaos
-    var k = this.t < 4.2 ? 1.5 : 1.5 + (this.t - 4.2) / (this.CHAOS - 4.2) * 70;
-    var c = this.t < 4.2 ? 0.35 : 0.35 + (this.t - 4.2) / (this.CHAOS - 4.2) * 9;
+    var r = Math.max(0, (this.t - this.FREE) / (this.CHAOS - this.FREE));
+    var k = 1.5 + r * r * 160;
+    var c = 0.35 + r * 20;
     this.off.forEach(function (o, i) {
       o.vx += (-k * o.x - c * o.vx) * dt; o.vy += (-k * o.y - c * o.vy) * dt;
       o.x += o.vx * dt; o.y += o.vy * dt;
-      // Ekran kenarından sekme (ilk 4,2 sn)
-      if (self.t < 4.2) {
+      // Ekran kenarından sekme (serbest uçuş süresince)
+      if (self.t < self.FREE) {
         var p = self.pos(i), m = self.R + 4;
         if (p.x < m && o.vx < 0) { o.x += m - p.x; o.vx = -o.vx * 0.85; Orbit.bump(); }
         if (p.x > W - m && o.vx > 0) { o.x -= p.x - (W - m); o.vx = -o.vx * 0.85; Orbit.bump(); }
@@ -1813,7 +1814,7 @@ var Orbit = {
       }
     });
     // Düğümler birbirine çarpar (esnek)
-    if (this.t < 5) {
+    if (this.t < this.FREE + 0.4) {
       for (var a = 0; a < n; a++) for (var b = a + 1; b < n; b++) {
         var pa = this.pos(a), pb = this.pos(b), dx = pb.x - pa.x, dy = pb.y - pa.y, d = Math.hypot(dx, dy) || 1;
         if (d < this.R * 2) {
@@ -1830,7 +1831,7 @@ var Orbit = {
       this.phase = 'idle'; Sphere.wobble = 0;
       document.body.classList.remove('orbit-chaos');
       UI.toast('Yörünge düzeldi');
-    } else if (this.t > 4.2 && !this.backMsg) { this.backMsg = true; UI.toast('Yörüngeye dönülüyor', 'info'); }
+    } else if (this.t > this.FREE && !this.backMsg) { this.backMsg = true; UI.toast('Yörüngeye dönülüyor', 'info'); }
   },
   chaos: function (x, y) {
     var self = this;
