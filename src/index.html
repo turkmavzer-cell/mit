@@ -533,7 +533,7 @@ textarea.inp { padding: 12px; resize: none; line-height: 1.4; }
      "localStorage doldu, kayıt sessizce başarısız oldu" sorununun çözümü budur.
    - Her yazma işleminin sonucu kontrol edilir; hata olursa kullanıcı görür.
    ===================================================================== */
-var APP_VERSION = '2.9.0';
+var APP_VERSION = '2.10.0';
 var SCHEMA_VERSION = 2; // 1 = eski localStorage sürümü (MİT 1.0), 2 = IndexedDB
 
 var IN_FRAME = (function () { try { return window.self !== window.top; } catch (e) { return true; } })();
@@ -1520,15 +1520,20 @@ var Impact = {
     } else if (this.phase === 'boom') {
       if (this.t > 1.6) this.finish('Asteroit yok edildi');
     } else if (this.phase === 'scatter') {
-      this.spread = Math.min(1, this.spread + dt * 3);
-      this.globeScale(1 - 0.85 * this.spread);
-      if (this.t > 3) { this.phase = 'gather'; this.t = 0; this.el.querySelector('[data-ia-text]').textContent = 'Küre toparlanıyor'; }
-    } else if (this.phase === 'gather') {
-      var k = Math.min(1, this.t / 1.0), e = Sphere.ease(k);
-      this.spread = 1 - e;
-      this.globeScale(0.15 + 0.85 * e);
-      this.shards.forEach(function (s) { s.mesh.position.lerpVectors(s.far, s.home, e); s.mesh.material.opacity = 1 - e * 0.9; });
-      if (k >= 1) { this.clearShards(); this.globeScale(1); this.spread = 0; this.finish(''); }
+      // 3 sn boyunca sürekli hareket: parçalar yavaşça açılır ve hiç durmadan geri birleşir
+      var u = Math.min(1, this.t / 3), f = Math.pow(Math.sin(Math.PI * u), 0.9);
+      this.spread = f;
+      this.globeScale(1 - 0.85 * f);
+      var sw = this.t * 1.6;
+      this.shards.forEach(function (sh) {
+        var d = sh.dist * f;
+        sh.mesh.position.copy(sh.home).addScaledVector(sh.dir, d);
+        sh.mesh.position.x += Math.sin(sw + sh.ph) * 0.15 * f; sh.mesh.position.y += Math.cos(sw + sh.ph) * 0.15 * f;
+        sh.mesh.rotation.x += sh.rx * dt; sh.mesh.rotation.y += sh.ry * dt;
+        sh.mesh.material.opacity = 0.35 + 0.65 * f;
+      });
+      if (u > 0.5 && !this.gatherMsg) { this.gatherMsg = true; this.el.querySelector('[data-ia-text]').textContent = 'Küre toparlanıyor'; }
+      if (u >= 1) { this.clearShards(); this.globeScale(1); this.spread = 0; this.finish(''); }
     }
     // Saçılan parçalar
     var self = this;
@@ -1542,9 +1547,6 @@ var Impact = {
       if (f.life <= 0) { Sphere.scene.remove(f.mesh); f.mesh.geometry.dispose(); f.mesh.material.dispose(); return false; }
       return true;
     });
-    if (this.phase === 'scatter') {
-      this.shards.forEach(function (s) { s.mesh.position.addScaledVector(s.v, dt); s.v.multiplyScalar(0.93); s.mesh.rotation.x += s.rx * dt; s.mesh.rotation.y += s.ry * dt; s.far.copy(s.mesh.position); });
-    }
   },
   begin: function () {
     var T = THREE, P = this.pal();
@@ -1645,9 +1647,9 @@ var Impact = {
       m.position.copy(home);
       var away = home.clone().sub(at.clone().multiplyScalar(0.4)).normalize();
       Sphere.scene.add(m);
-      this.shards.push({ mesh: m, home: home, far: home.clone(), v: away.multiplyScalar(2.2 + Math.random() * 2.5), rx: Math.random() * 6, ry: Math.random() * 6 });
+      this.shards.push({ mesh: m, home: home, dir: away, dist: 1.0 + Math.random() * 1.8, ph: Math.random() * 6, rx: Math.random() * 6, ry: Math.random() * 6 });
     }
-    this.phase = 'scatter'; this.t = 0; this.spread = 0;
+    this.phase = 'scatter'; this.t = 0; this.spread = 0; this.gatherMsg = false;
     this.el.querySelector('[data-ia-text]').textContent = 'Çarpma!';
     this.el.querySelector('[data-ia-count]').classList.add('hidden');
     this.el.querySelector('.ia-rocket').classList.add('hidden');
@@ -3680,13 +3682,30 @@ Actions.cat = function (el) {
 var Game = {
   active: null, idx: 0, records: {}, raf: 0, cv: null, g: null, W: 0, H: 0, last: 0, over: false, st: null,
   list: [],
-  open: function () {
-    var game = this.list[this.idx % this.list.length];
-    this.idx = (this.idx + 1) % this.list.length;
-    Meta.set('gameIdx', this.idx);
+  recent: [], cur: 0,
+  // Kedi: rastgele oyun; son 3 oynanan oyun tekrar gelmez
+  randomIdx: function () {
+    var self = this, pool = [];
+    this.list.forEach(function (g, i) { if (self.recent.indexOf(i) < 0) pool.push(i); });
+    if (!pool.length) pool = this.list.map(function (g, i) { return i; });
+    return pool[Math.floor(Math.random() * pool.length)];
+  },
+  remember: function (i) {
+    this.cur = i;
+    this.recent = this.recent.filter(function (x) { return x !== i; });
+    this.recent.push(i);
+    if (this.recent.length > 3) this.recent.shift();
+  },
+  headHtml: function () {
+    return '<button class="btn sm" data-act="game-next" aria-label="Sonraki oyun">Sonraki ' + icon('right', 16) + '</button>';
+  },
+  open: function (idx) {
+    if (idx === undefined) idx = this.randomIdx();
+    var game = this.list[idx];
+    this.remember(idx);
     var self = this;
     UI.openPanel({ id: 'game', title: game.name, onClose: function () { self.stop(); self.active = null; } });
-    UI.setHead(esc(game.name) + '<small>' + esc(game.hint) + '</small>', '');
+    UI.setHead(esc(game.name) + '<small>' + esc(game.hint) + '</small>', this.headHtml());
     var body = UI.pBody();
     body.style.padding = '0';
     body.style.display = 'flex';
@@ -3865,12 +3884,14 @@ var Game = {
   }
 };
 Actions['game-retry'] = function () { Game.start(); };
+// Sonraki oyun: listeyi sırayla dolaşır (7 oyunun hepsi sırayla gelir)
 Actions['game-next'] = function () {
-  var game = Game.list[Game.idx % Game.list.length];
-  Game.idx = (Game.idx + 1) % Game.list.length;
-  Meta.set('gameIdx', Game.idx);
+  if (!UI.panel || UI.panel.id !== 'game') return;
+  var idx = (Game.cur + 1) % Game.list.length, game = Game.list[idx];
+  Game.remember(idx);
+  Game.stop();
   Game.active = game;
-  UI.setHead(esc(game.name) + '<small>' + esc(game.hint) + '</small>', '');
+  UI.setHead(esc(game.name) + '<small>' + esc(game.hint) + '</small>', Game.headHtml());
   var sl = UI.pBody().querySelector('.game-hud span');
   if (sl) sl.innerHTML = esc(game.scoreLabel || 'Skor') + ': <b data-gs>0</b>';
   UI.pBody().querySelector('[data-gr]').textContent = Game.recText(game);
@@ -3934,7 +3955,7 @@ function drawCat(g, x, y, r, P, tilt) {
 /* 1) Yumak Yakala: kase parmağı yumuşakça takip eder */
 Game.list.push({
   id: 'yarn', name: 'Yumak Yakala', hint: 'Parmağını sağa sola kaydır',
-  howto: ['Parmağını ekranda sağa sola kaydır,', 'kedi sepeti parmağını takip eder.', 'Her 6 puanda seviye ve hız artar.', 'Altın yumak +3 · 3 kaçırırsan biter.'],
+  howto: ['Parmağını ekranda sağa sola kaydır,', 'kedi sepeti parmağını takip eder.', 'Her 5 puanda seviye ve hız artar.', 'Altın yumak +3 · 3 kaçırırsan biter.'],
   init: function (s) {
     s.px = s.W / 2; s.tx = s.W / 2; s.items = []; s.spawn = 0.6; s.lives = 3; s.lvl = 1;
     s.bw = Math.min(140, s.W * 0.36);
@@ -3946,14 +3967,14 @@ Game.list.push({
   move: function (s, p) { s.tx = p.x; },
   step: function (s, dt) {
     // Seviye her 6 puanda artar; düşüş hızı ve sıklık belirgin şekilde artar
-    var lvl = 1 + Math.floor(s.score / 6);
+    var lvl = 1 + Math.floor(s.score / 5);
     if (lvl !== s.lvl) { s.lvl = lvl; this.hud(s); Game.pop(s.W / 2, s.H * 0.35, 'SEVİYE ' + lvl + '!', gPal().am); Sound.play('open'); }
-    s.px += (s.tx - s.px) * Math.min(1, dt * Math.min(32, 14 + lvl * 2));
+    s.px += (s.tx - s.px) * Math.min(1, dt * Math.min(40, 22 + lvl * 3));
     s.px = Math.max(s.bw / 2, Math.min(s.W - s.bw / 2, s.px));
     s.spawn -= dt;
     if (s.spawn <= 0) {
-      s.items.push({ x: 24 + Math.random() * (s.W - 48), y: -24, v: Math.min(780, 150 + s.lvl * 48 + Math.random() * 40), r: 17, a: Math.random() * 6, gold: Math.random() < 0.1, sw: Math.random() * 6 });
-      s.spawn = Math.max(0.24, 0.95 - s.lvl * 0.08) * (0.8 + Math.random() * 0.4);
+      s.items.push({ x: 24 + Math.random() * (s.W - 48), y: -24, v: Math.min(1350, 300 + s.lvl * 85 + Math.random() * 60), r: 17, a: Math.random() * 6, gold: Math.random() < 0.1, sw: Math.random() * 6 });
+      s.spawn = Math.max(0.17, 0.7 - s.lvl * 0.07) * (0.8 + Math.random() * 0.4);
     }
     var by = s.H - 64, P = gPal();
     s.items = s.items.filter(function (it) {
@@ -4068,10 +4089,10 @@ Game.list.push({
     var deck = [];
     for (var i = 0; i < 8; i++) { deck.push(i); deck.push(i); }
     for (var j = deck.length - 1; j > 0; j--) { var k = Math.floor(Math.random() * (j + 1)); var t = deck[j]; deck[j] = deck[k]; deck[k] = t; }
-    s.cards = deck.map(function (v) { return { v: v, open: true, done: false, f: 1 }; });
+    s.cards = deck.map(function (v) { return { v: v, open: false, done: false, f: 0 }; });
     s.pick = []; s.wait = 0; s.moves = 0; s.found = 0; s.preview = -1;
   },
-  begin: function (s) { s.preview = 2; Game.setExtra('Ezberle!'); },
+  begin: function (s) { s.preview = 2; s.cards.forEach(function (c) { c.open = true; }); Game.setExtra('Ezberle!'); },
   layout: function (s) {
     var size = Math.min((s.W - 24) / 4, (s.H - 24) / 4);
     return { size: size, ox: (s.W - size * 4) / 2, oy: (s.H - size * 4) / 2 };
@@ -4195,7 +4216,7 @@ Game.list.push({
 /* 5) Gezegen Patlat: büyük gezegenler, geniş dokunma alanı, altın yıldız +3 sn */
 Game.list.push({
   id: 'planets', name: 'Gezegen Patlat', hint: '30 saniyede en çok gezegeni patlat',
-  howto: ['Yükselen gezegenlere dokunup patlat.', 'Her 5 saniyede hız artar.', 'Altın yıldız +3 sn · kırmızı bomba −3 sn!', 'Hızlı art arda vuruş: bonus puan.'],
+  howto: ['Yükselen gezegenlere dokunup patlat.', 'Her 4 saniyede hız artar.', 'Altın yıldız +3 sn · kırmızı bomba −3 sn!', 'Hızlı art arda vuruş: bonus puan.'],
   init: function (s) { s.items = []; s.spawn = 0; s.left = 30; s.combo = 0; s.lastHit = -9; s.el = 0; s.lvl = 1; Game.setExtra('30 sn'); },
   down: function (s, p) {
     var P = gPal(), best = -1, bd = 1e9;
@@ -4222,23 +4243,23 @@ Game.list.push({
   step: function (s, dt) {
     s.left -= dt; s.el += dt;
     // Her 5 saniyede seviye: hız, sıklık ve aynı anda çıkan gezegen sayısı artar
-    var lvl = 1 + Math.floor(s.el / 5);
+    var lvl = 1 + Math.floor(s.el / 4);
     if (lvl !== s.lvl) { s.lvl = lvl; Game.pop(s.W / 2, s.H * 0.4, 'HIZ ' + lvl + '!', gPal().am); Sound.play('open'); }
     Game.setExtra('Sv ' + s.lvl + ' · ' + Math.max(0, Math.ceil(s.left)) + ' sn');
     if (s.left <= 0) { Game.end(s.score); return; }
     s.spawn -= dt;
     var P = gPal();
     if (s.spawn <= 0) {
-      var many = s.lvl >= 4 ? 2 : 1;
+      var many = s.lvl >= 6 ? 3 : s.lvl >= 3 ? 2 : 1;
       for (var m = 0; m < many; m++) {
         var roll = Math.random(), star = roll < 0.06, bomb = !star && s.lvl >= 2 && roll < 0.06 + Math.min(0.2, s.lvl * 0.035);
         var r = star ? 20 : bomb ? 22 : Math.max(18, 26 + Math.random() * 14 - s.lvl);
         var cols = [P.cy, P.am, P.blue, P.ok];
-        s.items.push({ x: r + Math.random() * (s.W - 2 * r), y: s.H + r + m * 40, r: r, v: 110 + Math.random() * 70 + s.lvl * 55,
+        s.items.push({ x: r + Math.random() * (s.W - 2 * r), y: s.H + r + m * 40, r: r, v: Math.min(1500, 230 + Math.random() * 110 + s.lvl * 95),
           c: bomb ? P.red : cols[Math.floor(Math.random() * cols.length)], ring: !bomb && Math.random() < 0.45, ph: Math.random() * 6,
           star: star, bomb: bomb, rot: 0, sway: 18 + s.lvl * 10 });
       }
-      s.spawn = Math.max(0.2, 0.6 - s.lvl * 0.06);
+      s.spawn = Math.max(0.14, 0.42 - s.lvl * 0.05);
     }
     s.items.forEach(function (it) { it.y -= it.v * dt; it.x += Math.sin(s.t * (1.6 + s.lvl * 0.25) + it.ph) * it.sway * dt; it.rot += dt; });
     s.items = s.items.filter(function (it) { return it.y > -it.r - 20; });
