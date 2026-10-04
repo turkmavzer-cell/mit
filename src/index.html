@@ -135,6 +135,9 @@ svg { flex-shrink: 0; }
 }
 .node.back { pointer-events: none; }
 .node.back .node-badge { visibility: hidden; }
+.node { -webkit-touch-callout: none; touch-action: none; }
+.node.grabbed .node-ring { border-color: var(--am); box-shadow: 0 0 24px rgba(var(--am-rgb),.6); }
+body.orbit-chaos .node { pointer-events: none; }
 #impact-alert {
   position: absolute; left: 50%; top: calc(var(--sat) + 70px); transform: translateX(-50%); z-index: 6;
   display: flex; flex-direction: column; align-items: center; gap: 10px; width: min(92vw, 380px); pointer-events: none;
@@ -381,7 +384,7 @@ textarea.inp { padding: 12px; resize: none; line-height: 1.4; }
 .set-row span { font-size: 14px; color: var(--tx2); }
 
 /* Toast */
-#toast-root { position: fixed; left: 0; right: 0; bottom: calc(88px + var(--sab)); z-index: 90; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 0 16px; pointer-events: none; }
+#toast-root { position: fixed; left: 0; right: 0; bottom: calc(88px + var(--sab)); z-index: 300; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 0 16px; pointer-events: none; }
 .toast {
   max-width: 420px; width: 100%; padding: 12px 16px; border-radius: var(--r6); pointer-events: auto;
   background: var(--raised); border: 1px solid var(--cy); color: var(--tx); font-size: 15px; text-align: center;
@@ -530,7 +533,7 @@ textarea.inp { padding: 12px; resize: none; line-height: 1.4; }
      "localStorage doldu, kayıt sessizce başarısız oldu" sorununun çözümü budur.
    - Her yazma işleminin sonucu kontrol edilir; hata olursa kullanıcı görür.
    ===================================================================== */
-var APP_VERSION = '2.7.0';
+var APP_VERSION = '2.8.0';
 var SCHEMA_VERSION = 2; // 1 = eski localStorage sürümü (MİT 1.0), 2 = IndexedDB
 
 var IN_FRAME = (function () { try { return window.self !== window.top; } catch (e) { return true; } })();
@@ -1288,11 +1291,12 @@ var Sphere = {
   bindInput: function () {
     var self = this, stage = document.getElementById('stage');
     stage.addEventListener('pointerdown', function (e) {
-      if (self.busy || UI.panelOpen()) return;
+      if (self.busy || UI.panelOpen() || Orbit.phase === 'fly' || Orbit.phase === 'chaos') return;
       self.drag = { x: e.clientX, y: e.clientY, t: performance.now(), id: e.pointerId };
       self.moved = false; self.vx = self.vy = 0; self.lastInput = performance.now();
     });
     window.addEventListener('pointermove', function (e) {
+      if (Orbit.move(e)) return; // tutulan düğüm parmakla taşınıyor
       var d = self.drag;
       if (!d || d.id !== e.pointerId) return;
       var dx = e.clientX - d.x, dy = e.clientY - d.y;
@@ -1346,10 +1350,14 @@ var Sphere = {
     }
     if (this.anim) this.stepAnim(now);
     Impact.update(dt);
+    Orbit.step(dt);
     var t = now / 1000;
     this.core.rotation.y += dt * 0.15; this.core.rotation.x += dt * 0.05;
-    this.rings[0].mesh.rotation.z += dt * this.rings[0].speed;
-    this.rings[1].mesh.rotation.z += dt * this.rings[1].speed;
+    var wob = this.wobble || 0;
+    this.rings[0].mesh.rotation.z += dt * this.rings[0].speed * (1 + wob * 18);
+    this.rings[1].mesh.rotation.z += dt * this.rings[1].speed * (1 + wob * 18);
+    this.rings[0].mesh.position.set(Math.sin(t * 9) * 0.08 * wob, Math.cos(t * 7) * 0.08 * wob, 0);
+    this.rings[1].mesh.position.set(Math.cos(t * 8) * 0.1 * wob, Math.sin(t * 6) * 0.1 * wob, 0);
     this.particles.rotation.y += dt * 0.012;
     var p = 1 + 0.12 * Math.sin(t * Math.PI * 2 / 4);
     this.light.scale.setScalar(p);
@@ -1362,7 +1370,7 @@ var Sphere = {
     if (now - this.fpsT >= 2000) {
       var fps = this.frames * 1000 / (now - this.fpsT);
       this.frames = 0; this.fpsT = now;
-      if (fps < 45 && this.perfLevel < 2 && !this.anim && !Impact.active()) {
+      if (fps < 45 && this.perfLevel < 2 && !this.anim && !Impact.active() && !Orbit.active()) {
         this.perfLevel++;
         if (this.perfLevel === 1) this.particles.geometry.setDrawRange(0, 300);
         else { this.renderer.setPixelRatio(1); this.resize(); }
@@ -1386,6 +1394,14 @@ var Sphere = {
       var f = Math.max(0, Math.min(1, (depth + 1) / 2));
       var sc = 0.72 + 0.5 * f;
       var op = depth < 0 ? 0.35 : 0.55 + 0.45 * f;
+      if (Orbit.off.length) {
+        Orbit.home[i].x = x; Orbit.home[i].y = y;
+        var oo = Orbit.off[i];
+        if (Orbit.phase === 'chaos' || (Orbit.idx === i && Orbit.phase !== 'idle' && Orbit.phase !== 'hold')) {
+          x += oo.x; y += oo.y; sc = Orbit.idx === i && Orbit.phase === 'grab' ? 1.3 : 1; op = 1; depth = Math.max(depth, 0.01);
+          f = 1;
+        }
+      }
       var el = this.nodeEls[i];
       el.style.transform = 'translate3d(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px,0) scale(' + sc.toFixed(3) + ')';
       el.style.opacity = op.toFixed(2);
@@ -1476,7 +1492,7 @@ var Impact = {
   update: function (dt) {
     if (!Sphere.ok || !this.el) return;
     if (this.phase === 'idle') {
-      if (!Settings.asteroid || REDUCED || UI.panelOpen() || document.hidden) return;
+      if (!Settings.asteroid || REDUCED || UI.panelOpen() || document.hidden || Orbit.phase !== 'idle') return;
       this.wait -= dt;
       if (this.wait <= 0) this.begin();
       return;
@@ -1702,6 +1718,155 @@ var Impact = {
   }
 };
 
+/* ---------- Yörünge oyunu ----------
+   Bir menü düğümüne 2 sn basılı tut → düğüm yerinden kopar, parmakla çekilir.
+   Bırakınca yaylanarak yerine döner; yolda başka bir düğüme çarparsa tüm
+   düğümler yörüngeden çıkar, ekranda sekip birbirine çarpar ve toplam 7 sn
+   içinde yörüngelerine geri döner. Hesap ekran (piksel) uzayında yapılır. */
+var Orbit = {
+  phase: 'idle', // idle | hold | grab | fly | chaos
+  idx: -1, t: 0, timer: null, off: [], home: [], R: 30, CHAOS: 7,
+  last: null, px: 0, py: 0,
+  init: function () {
+    for (var i = 0; i < NODES.length; i++) { this.off.push({ x: 0, y: 0, vx: 0, vy: 0 }); this.home.push({ x: 0, y: 0 }); }
+    var self = this, wrap = document.getElementById('nodes');
+    wrap.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+    wrap.addEventListener('pointerdown', function (e) {
+      var el = e.target.closest('.node');
+      if (!el || self.phase !== 'idle' || Impact.active() || UI.panelOpen() || !Sphere.ok) return;
+      var idx = Sphere.nodeEls.indexOf(el);
+      if (idx < 0) return;
+      self.phase = 'hold'; self.idx = idx; self.px = e.clientX; self.py = e.clientY; self.pid = e.pointerId;
+      clearTimeout(self.timer);
+      self.timer = setTimeout(function () {
+        // 2 sn içinde parmak kaydıysa (küre çevrildiyse) iptal
+        if (self.phase !== 'hold' || Sphere.moved) { self.phase = 'idle'; return; }
+        self.phase = 'grab';
+        Sphere.moved = true; // bırakınca menü açılmasın
+        Sphere.vx = Sphere.vy = 0;
+        Sphere.nodeEls[idx].classList.add('grabbed');
+        self.last = { x: e.clientX, y: e.clientY, t: performance.now(), vx: 0, vy: 0 };
+        haptic(40); Sound.play('open');
+        UI.toast('Menüyü çek ve bırak');
+      }, 2000);
+    });
+    var end = function (e) {
+      if (e.pointerId !== self.pid) return;
+      if (self.phase === 'hold') { clearTimeout(self.timer); self.phase = 'idle'; }
+      else if (self.phase === 'grab') self.release();
+    };
+    window.addEventListener('pointerup', end);
+    window.addEventListener('pointercancel', end);
+  },
+  active: function () { return this.phase === 'grab' || this.phase === 'fly' || this.phase === 'chaos'; },
+  // Sphere'in pointermove'u çağırır; true dönerse küre dönmez
+  move: function (e) {
+    if (this.phase === 'hold' && e.pointerId === this.pid && Math.abs(e.clientX - this.px) + Math.abs(e.clientY - this.py) > 10) {
+      clearTimeout(this.timer); this.phase = 'idle'; return false;
+    }
+    if (this.phase !== 'grab' || e.pointerId !== this.pid) return false;
+    var o = this.off[this.idx], h = this.home[this.idx], now = performance.now(), L = this.last, dt = Math.max(1, now - L.t) / 1000;
+    var nx = e.clientX - h.x, ny = e.clientY - h.y;
+    L.vx = (nx - o.x) / dt * 0.6 + L.vx * 0.4; L.vy = (ny - o.y) / dt * 0.6 + L.vy * 0.4;
+    o.x = nx; o.y = ny; L.t = now;
+    return true;
+  },
+  release: function () {
+    var o = this.off[this.idx];
+    o.vx = Math.max(-1500, Math.min(1500, this.last.vx)); o.vy = Math.max(-1500, Math.min(1500, this.last.vy));
+    Sphere.nodeEls[this.idx].classList.remove('grabbed');
+    this.phase = 'fly'; this.t = 0;
+    Sound.play('back');
+  },
+  pos: function (i) { return { x: this.home[i].x + this.off[i].x, y: this.home[i].y + this.off[i].y }; },
+  step: function (dt) {
+    if (this.phase === 'idle' || this.phase === 'hold' || this.phase === 'grab') return;
+    this.t += dt;
+    var self = this, n = this.off.length, W = window.innerWidth, H = window.innerHeight;
+    if (this.phase === 'fly') {
+      var o = this.off[this.idx];
+      // Yay: hafif sönümlü, hedefi aşar (çarpma ihtimali yüksek)
+      o.vx += (-55 * o.x - 2.2 * o.vx) * dt; o.vy += (-55 * o.y - 2.2 * o.vy) * dt;
+      o.x += o.vx * dt; o.y += o.vy * dt;
+      var p = this.pos(this.idx), sp = Math.hypot(o.vx, o.vy);
+      for (var j = 0; j < n; j++) {
+        if (j === this.idx) continue;
+        var q = this.pos(j);
+        if (Math.hypot(p.x - q.x, p.y - q.y) < this.R * 2 && sp > 180) { this.chaos(p.x, p.y); return; }
+      }
+      if (this.t > 2.5 || (Math.hypot(o.x, o.y) < 1 && sp < 5)) { o.x = o.y = o.vx = o.vy = 0; this.phase = 'idle'; }
+      return;
+    }
+    // chaos
+    var k = this.t < 4.2 ? 1.5 : 1.5 + (this.t - 4.2) / (this.CHAOS - 4.2) * 70;
+    var c = this.t < 4.2 ? 0.35 : 0.35 + (this.t - 4.2) / (this.CHAOS - 4.2) * 9;
+    this.off.forEach(function (o, i) {
+      o.vx += (-k * o.x - c * o.vx) * dt; o.vy += (-k * o.y - c * o.vy) * dt;
+      o.x += o.vx * dt; o.y += o.vy * dt;
+      // Ekran kenarından sekme (ilk 4,2 sn)
+      if (self.t < 4.2) {
+        var p = self.pos(i), m = self.R + 4;
+        if (p.x < m && o.vx < 0) { o.x += m - p.x; o.vx = -o.vx * 0.85; Orbit.bump(); }
+        if (p.x > W - m && o.vx > 0) { o.x -= p.x - (W - m); o.vx = -o.vx * 0.85; Orbit.bump(); }
+        if (p.y < m + 50 && o.vy < 0) { o.y += m + 50 - p.y; o.vy = -o.vy * 0.85; Orbit.bump(); }
+        if (p.y > H - m && o.vy > 0) { o.y -= p.y - (H - m); o.vy = -o.vy * 0.85; Orbit.bump(); }
+      }
+    });
+    // Düğümler birbirine çarpar (esnek)
+    if (this.t < 5) {
+      for (var a = 0; a < n; a++) for (var b = a + 1; b < n; b++) {
+        var pa = this.pos(a), pb = this.pos(b), dx = pb.x - pa.x, dy = pb.y - pa.y, d = Math.hypot(dx, dy) || 1;
+        if (d < this.R * 2) {
+          var nx = dx / d, ny = dy / d, ov = this.R * 2 - d, A = this.off[a], B = this.off[b];
+          A.x -= nx * ov / 2; A.y -= ny * ov / 2; B.x += nx * ov / 2; B.y += ny * ov / 2;
+          var rv = (B.vx - A.vx) * nx + (B.vy - A.vy) * ny;
+          if (rv < 0) { A.vx += rv * nx; A.vy += rv * ny; B.vx -= rv * nx; B.vy -= rv * ny; if (-rv > 120) this.bump(); }
+        }
+      }
+    }
+    Sphere.wobble = Math.max(0, 1 - this.t / this.CHAOS);
+    if (this.t >= this.CHAOS) {
+      this.off.forEach(function (o) { o.x = o.y = o.vx = o.vy = 0; });
+      this.phase = 'idle'; Sphere.wobble = 0;
+      document.body.classList.remove('orbit-chaos');
+      UI.toast('Yörünge düzeldi');
+    } else if (this.t > 4.2 && !this.backMsg) { this.backMsg = true; UI.toast('Yörüngeye dönülüyor', 'info'); }
+  },
+  chaos: function (x, y) {
+    var self = this;
+    this.phase = 'chaos'; this.t = 0; this.backMsg = false;
+    document.body.classList.add('orbit-chaos');
+    var g = this.off[this.idx], gs = Math.hypot(g.vx, g.vy);
+    this.off.forEach(function (o, i) {
+      var p = self.pos(i), dx = p.x - x, dy = p.y - y, d = Math.hypot(dx, dy) || 1;
+      var power = (i === self.idx ? 0.6 : 1) * (380 + Math.random() * 420 + gs * 0.4) * (1 / (1 + d / 260));
+      o.vx += dx / d * power + (Math.random() - 0.5) * 200;
+      o.vy += dy / d * power + (Math.random() - 0.5) * 200;
+    });
+    Sphere.vy += 0.06 * (Math.random() < 0.5 ? -1 : 1); Sphere.vx += 0.03;
+    Sphere.wobble = 1;
+    var st = document.getElementById('stage');
+    st.classList.remove('shake'); void st.offsetWidth; st.classList.add('shake');
+    Impact.boomSound(0.5); fb('err'); haptic(40);
+    UI.toast('Çarpışma! Yörünge bozuldu', 'err');
+  },
+  lastBump: 0,
+  bump: function () {
+    var now = performance.now();
+    if (now - this.lastBump < 90) return;
+    this.lastBump = now;
+    if (Sound.ctx && Settings.sound) { try { Sound.tone(160 + Math.random() * 200, 0.08, 'triangle'); } catch (e) {} }
+    haptic(10);
+  },
+  reset: function () {
+    clearTimeout(this.timer);
+    this.off.forEach(function (o) { o.x = o.y = o.vx = o.vy = 0; });
+    if (this.idx >= 0 && Sphere.nodeEls[this.idx]) Sphere.nodeEls[this.idx].classList.remove('grabbed');
+    this.phase = 'idle'; Sphere.wobble = 0;
+    document.body.classList.remove('orbit-chaos');
+  }
+};
+
 /* =====================================================================
    PANELLER
    Katman yığını (panel → alt sayfa → alt sayfa/çekmece …). Android geri tuşu
@@ -1829,6 +1994,7 @@ var UI = {
     Sphere.stop();
     Fx.pause();
     Impact.reset();
+    Orbit.reset();
     document.body.classList.add('panel-open');
     return el;
   },
@@ -2112,7 +2278,7 @@ var App = {
   },
   openNode: function (id) {
     if (Sphere.busy || UI.panelOpen()) return;
-    if (Sphere.moved) return;
+    if (Sphere.moved || Orbit.active()) return;
     if (Impact.phase === 'scatter' || Impact.phase === 'gather') return; // sürükleme bitişi tıklama sayılmaz
     var idx = -1;
     NODES.forEach(function (n, i) { if (n.id === id) idx = i; });
@@ -3499,7 +3665,7 @@ var Fx = {
   }
 };
 Actions.cat = function (el) {
-  if (Impact.active()) return;
+  if (Impact.active() || Orbit.active()) return;
   if (!el.classList.contains('live') || UI.panelOpen()) return;
   fb('open');
   Fx.reset();
@@ -4105,6 +4271,7 @@ function boot() {
 
   Sphere.init();
   Impact.init();
+  Orbit.init();
   App.refreshStats();
 
   Store.init().then(function (ok) {
