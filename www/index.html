@@ -544,7 +544,7 @@ textarea.inp { padding: 12px; resize: none; line-height: 1.4; }
      "localStorage doldu, kayıt sessizce başarısız oldu" sorununun çözümü budur.
    - Her yazma işleminin sonucu kontrol edilir; hata olursa kullanıcı görür.
    ===================================================================== */
-var APP_VERSION = '2.10.0';
+var APP_VERSION = '2.11.0';
 var SCHEMA_VERSION = 2; // 1 = eski localStorage sürümü (MİT 1.0), 2 = IndexedDB
 
 var IN_FRAME = (function () { try { return window.self !== window.top; } catch (e) { return true; } })();
@@ -3920,6 +3920,11 @@ function gPal() {
     ok: '#2EE6A6', blue: '#3D8BFF', red: '#FF4D5E', card: '#0F1B33', cardBack: '#0B1830', outline: 'rgba(5,8,15,.9)', glow: 14
   };
 }
+// Noktanın doğru parçasına uzaklığı (kesme isabeti için)
+function segDist(px, py, ax, ay, bx, by) {
+  var dx = bx - ax, dy = by - ay, l = dx * dx + dy * dy, t = l ? Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / l)) : 0;
+  return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
+}
 function rr(g, x, y, w, h, r) {
   g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r);
   g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
@@ -4224,62 +4229,86 @@ Game.list.push({
   }
 });
 
-/* 5) Gezegen Patlat: büyük gezegenler, geniş dokunma alanı, altın yıldız +3 sn */
+/* 5) Gezegen Patlat: meyve kesme mantığı — parmağı sürükleyerek gezegenleri kes.
+   Gezegenler aşağıdan fırlatılır, yükselip geri düşer; zaman ölçeği seviyeyle artar. */
 Game.list.push({
-  id: 'planets', name: 'Gezegen Patlat', hint: '30 saniyede en çok gezegeni patlat',
-  howto: ['Yükselen gezegenlere dokunup patlat.', 'Her 4 saniyede hız artar.', 'Altın yıldız +3 sn · kırmızı bomba −3 sn!', 'Hızlı art arda vuruş: bonus puan.'],
-  init: function (s) { s.items = []; s.spawn = 0; s.left = 30; s.combo = 0; s.lastHit = -9; s.el = 0; s.lvl = 1; Game.setExtra('30 sn'); },
-  down: function (s, p) {
-    var P = gPal(), best = -1, bd = 1e9;
-    for (var i = 0; i < s.items.length; i++) {
-      var it = s.items[i], d = Math.hypot(p.x - it.x, p.y - it.y);
-      if (d < it.r + 24 && d < bd) { bd = d; best = i; }
+  id: 'planets', name: 'Gezegen Patlat', hint: 'Parmağını sürükleyerek gezegenleri kes',
+  howto: ['Parmağını basılı tutup gezegenlerin', 'üzerinden geçir: kesilip patlarlar.', 'Altın yıldız +3 sn · kırmızı bomba −3 sn!', 'Tek çizgide 3+ gezegen: bonus · hız artar.'],
+  init: function (s) { s.items = []; s.spawn = 0.4; s.left = 30; s.el = 0; s.lvl = 1; s.trail = []; s.cut = false; s.stroke = 0; Game.setExtra('30 sn'); },
+  speed: function (s) { return Math.min(2.6, 0.8 + (s.lvl - 1) * 0.17); },
+  down: function (s, p) { s.cut = true; s.stroke = 0; s.trail = [{ x: p.x, y: p.y, t: s.t }]; },
+  up: function (s) { s.cut = false; },
+  move: function (s, p) {
+    if (!s.cut) return;
+    var last = s.trail[s.trail.length - 1] || p;
+    s.trail.push({ x: p.x, y: p.y, t: s.t });
+    var P = gPal(), self = this;
+    // Son parmak hareketi (doğru parçası) gezegene değdi mi?
+    for (var i = s.items.length - 1; i >= 0; i--) {
+      var it = s.items[i];
+      if (segDist(it.x, it.y, last.x, last.y, p.x, p.y) > it.r + 6) continue;
+      s.items.splice(i, 1);
+      self.slice(s, it, P);
     }
-    if (best < 0) { s.combo = 0; return; }
-    var hit = s.items.splice(best, 1)[0];
+  },
+  slice: function (s, hit, P) {
     if (hit.bomb) {
-      s.left = Math.max(0.5, s.left - 3); s.combo = 0;
-      Game.pop(hit.x, hit.y - 20, '−3 sn', P.red); Game.burst(hit.x, hit.y, P.red, 30, 260); Game.shake(14); fb('err'); return;
+      s.left = Math.max(0.5, s.left - 3); s.stroke = 0;
+      Game.pop(hit.x, hit.y - 20, '−3 sn', P.red); Game.burst(hit.x, hit.y, P.red, 34, 280); Game.shake(14); fb('err'); return;
     }
     if (hit.star) {
       s.left += 3; Game.pop(hit.x, hit.y - 20, '+3 sn', P.am); Game.burst(hit.x, hit.y, P.am, 26, 220); fb('ok'); return;
     }
-    s.combo = s.t - s.lastHit < 0.7 ? s.combo + 1 : 1;
-    s.lastHit = s.t;
-    var add = s.combo >= 3 ? 2 : 1;
+    s.stroke++;
+    var add = s.stroke >= 3 ? 2 : 1;
     Game.setScore(s.score + add);
     Game.pop(hit.x, hit.y - hit.r - 6, add > 1 ? '+2 seri!' : '+1', add > 1 ? P.am : hit.c);
-    Game.burst(hit.x, hit.y, hit.c, 20, 200); Sound.play('pop'); haptic(12);
+    Game.burst(hit.x, hit.y, hit.c, 22, 230); Sound.play('pop'); haptic(12);
+    // İki yarım: kesilen gezegen ikiye ayrılıp düşer
+    s.halves = s.halves || [];
+    s.halves.push({ x: hit.x - 4, y: hit.y, vx: -90, vy: -40, r: hit.r, c: hit.c, a: 0, side: -1, life: 0.8 });
+    s.halves.push({ x: hit.x + 4, y: hit.y, vx: 90, vy: -40, r: hit.r, c: hit.c, a: 0, side: 1, life: 0.8 });
   },
   step: function (s, dt) {
     s.left -= dt; s.el += dt;
-    // Her 5 saniyede seviye: hız, sıklık ve aynı anda çıkan gezegen sayısı artar
     var lvl = 1 + Math.floor(s.el / 4);
     if (lvl !== s.lvl) { s.lvl = lvl; Game.pop(s.W / 2, s.H * 0.4, 'HIZ ' + lvl + '!', gPal().am); Sound.play('open'); }
     Game.setExtra('Sv ' + s.lvl + ' · ' + Math.max(0, Math.ceil(s.left)) + ' sn');
     if (s.left <= 0) { Game.end(s.score); return; }
-    s.spawn -= dt;
-    var P = gPal();
+    var sp = this.speed(s), gdt = dt * sp, G = 900, P = gPal();
+    s.spawn -= gdt;
     if (s.spawn <= 0) {
-      var many = s.lvl >= 6 ? 3 : s.lvl >= 3 ? 2 : 1;
+      var many = s.lvl >= 7 ? 3 : s.lvl >= 3 ? 2 : 1;
       for (var m = 0; m < many; m++) {
         var roll = Math.random(), star = roll < 0.06, bomb = !star && s.lvl >= 2 && roll < 0.06 + Math.min(0.2, s.lvl * 0.035);
-        var r = star ? 20 : bomb ? 22 : Math.max(18, 26 + Math.random() * 14 - s.lvl);
+        var r = star ? 20 : bomb ? 22 : Math.max(20, 30 + Math.random() * 12 - s.lvl);
         var cols = [P.cy, P.am, P.blue, P.ok];
-        s.items.push({ x: r + Math.random() * (s.W - 2 * r), y: s.H + r + m * 40, r: r, v: Math.min(1500, 230 + Math.random() * 110 + s.lvl * 95),
-          c: bomb ? P.red : cols[Math.floor(Math.random() * cols.length)], ring: !bomb && Math.random() < 0.45, ph: Math.random() * 6,
-          star: star, bomb: bomb, rot: 0, sway: 18 + s.lvl * 10 });
+        var x = r + 20 + Math.random() * (s.W - 2 * r - 40), peak = s.H * (0.25 + Math.random() * 0.4);
+        var vy = -Math.sqrt(2 * G * (s.H + r - peak)), toward = (s.W / 2 - x) / s.W;
+        s.items.push({ x: x, y: s.H + r, r: r, vx: toward * 220 + (Math.random() - 0.5) * 80, vy: vy,
+          c: bomb ? P.red : cols[Math.floor(Math.random() * cols.length)], ring: !bomb && Math.random() < 0.45, star: star, bomb: bomb, rot: 0 });
       }
-      s.spawn = Math.max(0.14, 0.42 - s.lvl * 0.05);
+      s.spawn = Math.max(0.35, 0.95 - s.lvl * 0.05);
     }
-    s.items.forEach(function (it) { it.y -= it.v * dt; it.x += Math.sin(s.t * (1.6 + s.lvl * 0.25) + it.ph) * it.sway * dt; it.rot += dt; });
-    s.items = s.items.filter(function (it) { return it.y > -it.r - 20; });
+    s.items.forEach(function (it) { it.vy += G * gdt; it.x += it.vx * gdt; it.y += it.vy * gdt; it.rot += gdt * 2; });
+    s.items = s.items.filter(function (it) { return !(it.vy > 0 && it.y > s.H + it.r + 10); });
+    (s.halves || []).forEach(function (h) { h.vy += G * gdt; h.x += h.vx * gdt; h.y += h.vy * gdt; h.a += h.side * gdt * 4; h.life -= dt; });
+    s.halves = (s.halves || []).filter(function (h) { return h.life > 0; });
+    s.trail = s.trail.filter(function (q) { return s.t - q.t < 0.22; });
   },
   draw: function (g, s, P) {
     // Süre çubuğu
     var frac = Math.max(0, Math.min(1, s.left / 30));
     rr(g, 12, 8, s.W - 24, 8, 4); g.fillStyle = P.light ? 'rgba(0,115,158,.15)' : 'rgba(0,229,255,.12)'; g.fill();
     rr(g, 12, 8, (s.W - 24) * frac, 8, 4); g.fillStyle = frac < 0.25 ? P.red : P.am; g.fill();
+    // Kesilmiş yarımlar
+    (s.halves || []).forEach(function (h) {
+      g.save(); g.globalAlpha = Math.max(0, h.life / 0.8); g.translate(h.x, h.y); g.rotate(h.a);
+      g.fillStyle = shade(g, 0, 0, h.r, P.light ? '#FFFFFF' : 'rgba(230,247,255,.9)', h.c);
+      g.beginPath(); g.arc(0, 0, h.r, h.side < 0 ? Math.PI / 2 : -Math.PI / 2, h.side < 0 ? Math.PI * 1.5 : Math.PI / 2); g.closePath(); g.fill();
+      g.restore();
+    });
+    g.globalAlpha = 1;
     s.items.forEach(function (it) {
       if (it.bomb) {
         glow(g, P.red, 16);
@@ -4313,6 +4342,17 @@ Game.list.push({
         g.restore(); g.globalAlpha = 1;
       }
     });
+    // Parmak izi (kılıç izi): genişliği azalan parlak çizgi
+    if (s.trail.length > 1) {
+      g.lineCap = 'round'; g.lineJoin = 'round';
+      for (var ti = 1; ti < s.trail.length; ti++) {
+        var q0 = s.trail[ti - 1], q1 = s.trail[ti], age = (s.t - q1.t) / 0.22, w = Math.max(1, 12 * (1 - age) * (ti / s.trail.length));
+        glow(g, P.cy, 14);
+        g.strokeStyle = P.light ? 'rgba(0,115,158,' + (1 - age) + ')' : 'rgba(230,247,255,' + (1 - age) + ')';
+        g.lineWidth = w; g.beginPath(); g.moveTo(q0.x, q0.y); g.lineTo(q1.x, q1.y); g.stroke();
+      }
+      noGlow(g);
+    }
   }
 });
 
@@ -4427,13 +4467,16 @@ Game.list.push({
 /* 7) Uzay Savaşı: gemi parmağı takip eder ve otomatik ateş eder; düşmanları vur */
 Game.list.push({
   id: 'shooter', name: 'Uzay Savaşı', hint: 'Gemiyi sürükle, otomatik ateş eder',
-  howto: ['Parmağını sağa sola kaydır, gemi takip eder.', 'Gemi kendiliğinden ateş eder.', 'Düşmanları vur, mermilerinden kaç.', 'Turuncu "G" çift atış verir · 3 can.'],
+  howto: ['Parmağını sağa sola kaydır, gemi takip eder.', 'Gemi kendiliğinden ateş eder.', 'Turuncu "G" topla: sırayla atış hızı', 've mermi sayısı artar, kalıcıdır · 3 can.'],
   init: function (s) {
     s.px = s.W / 2; s.tx = s.W / 2; s.py = s.H - 70; s.shots = []; s.foes = []; s.eshots = []; s.drops = [];
-    s.fire = 0; s.spawn = 1; s.lives = 3; s.inv = 0; s.power = 0; s.lvl = 1; s.kills = 0;
+    s.fire = 0; s.spawn = 1; s.lives = 3; s.inv = 0; s.pw = 0; s.lvl = 1; s.kills = 0;
     this.hud(s);
   },
-  hud: function (s) { Game.setExtra('Sv ' + s.lvl + ' · ' + '♥♥♥'.slice(0, Math.max(0, s.lives)) + '♡♡♡'.slice(0, 3 - Math.max(0, s.lives))); },
+  hud: function (s) { Game.setExtra('Sv ' + s.lvl + ' · ' + '♥♥♥'.slice(0, Math.max(0, s.lives)) + '♡♡♡'.slice(0, 3 - Math.max(0, s.lives)) + ' · ' + this.guns(s) + 'x'); },
+  // Güçlendirme: 1. → atış hızı, 2. → +1 mermi, 3. → hız, 4. → +1 mermi ... (kalıcı)
+  guns: function (s) { return 1 + Math.floor(s.pw / 2); },
+  rate: function (s) { return Math.max(0.05, 0.22 * Math.pow(0.84, Math.ceil(s.pw / 2))); },
   begin: function (s, p) { s.tx = p.x; },
   down: function (s, p) { s.tx = p.x; },
   move: function (s, p) { s.tx = p.x; },
@@ -4449,18 +4492,20 @@ Game.list.push({
     s.px += (s.tx - s.px) * Math.min(1, dt * 16);
     s.px = Math.max(22, Math.min(s.W - 22, s.px));
     if (s.inv > 0) s.inv -= dt;
-    if (s.power > 0) s.power -= dt;
     var lvl = 1 + Math.floor(s.kills / 10);
     if (lvl !== s.lvl) { s.lvl = lvl; this.hud(s); Game.pop(s.W / 2, s.H * 0.35, 'DALGA ' + lvl + '!', P.am); Sound.play('open'); }
     // Ateş
     s.fire -= dt;
     if (s.fire <= 0) {
-      s.fire = 0.2;
-      if (s.power > 0) { s.shots.push({ x: s.px - 10, y: s.py - 18 }, { x: s.px + 10, y: s.py - 18 }); }
-      else s.shots.push({ x: s.px, y: s.py - 22 });
+      s.fire = this.rate(s);
+      var n = this.guns(s), spread = Math.min(0.9, 0.12 * (n - 1));
+      for (var gi = 0; gi < n; gi++) {
+        var k = n === 1 ? 0 : gi / (n - 1) - 0.5; // -0.5..0.5 yelpaze
+        s.shots.push({ x: s.px + k * Math.min(40, 8 * n), y: s.py - 20, vx: Math.sin(k * spread * 2) * 640 });
+      }
     }
-    s.shots.forEach(function (b) { b.y -= 640 * dt; });
-    s.shots = s.shots.filter(function (b) { return b.y > -20; });
+    s.shots.forEach(function (b) { b.y -= 640 * dt; b.x += (b.vx || 0) * dt; });
+    s.shots = s.shots.filter(function (b) { return b.y > -20 && b.x > -20 && b.x < s.W + 20; });
     // Düşman üretimi: dalga ilerledikçe hızlı ve sık
     s.spawn -= dt;
     if (s.spawn <= 0) {
@@ -4493,7 +4538,7 @@ Game.list.push({
             Game.setScore(s.score + add);
             Game.burst(f.x, f.y, f.big ? P.am : P.ok, f.big ? 30 : 18, 220); Game.pop(f.x, f.y - 20, '+' + add, f.big ? P.am : P.ok);
             Sound.play('pop'); haptic(10);
-            if (Math.random() < (f.big ? 0.35 : 0.07)) s.drops.push({ x: f.x, y: f.y });
+            if (Math.random() < (f.big ? 0.4 : 0.09)) s.drops.push({ x: f.x, y: f.y });
           }
           return false;
         }
@@ -4515,14 +4560,18 @@ Game.list.push({
     if (Game.over) return;
     s.drops.forEach(function (d) { d.y += 120 * dt; });
     s.drops = s.drops.filter(function (d) {
-      if (Math.hypot(d.x - s.px, d.y - s.py) < 30) { s.power = 8; Game.pop(d.x, d.y - 20, 'ÇİFT ATIŞ', P.am); fb('ok'); return false; }
+      if (Math.hypot(d.x - s.px, d.y - s.py) < 34) {
+        s.pw++;
+        Game.pop(d.x, d.y - 20, s.pw % 2 ? 'ATIŞ HIZI ↑' : 'MERMİ +1 (' + self.guns(s) + ')', P.am);
+        Game.burst(d.x, d.y, P.am, 18); fb('ok'); self.hud(s); return false;
+      }
       return d.y < s.H + 20;
     });
   },
   draw: function (g, s, P) {
     // Mermiler
     glow(g, P.cy, 10); g.strokeStyle = P.cy; g.lineWidth = 3; g.lineCap = 'round';
-    s.shots.forEach(function (b) { g.beginPath(); g.moveTo(b.x, b.y); g.lineTo(b.x, b.y + 12); g.stroke(); });
+    s.shots.forEach(function (b) { g.beginPath(); g.moveTo(b.x, b.y); g.lineTo(b.x - (b.vx || 0) * 0.018, b.y + 12); g.stroke(); });
     noGlow(g);
     glow(g, P.red, 10); g.fillStyle = P.red;
     s.eshots.forEach(function (b) { g.beginPath(); g.arc(b.x, b.y, 4.5, 0, Math.PI * 2); g.fill(); });
@@ -4552,7 +4601,7 @@ Game.list.push({
     g.fillStyle = P.light ? '#FFFFFF' : '#0F1B33'; g.strokeStyle = P.cy; g.lineWidth = 2.5;
     g.beginPath(); g.moveTo(x, y - 24); g.lineTo(x + 20, y + 16); g.lineTo(x + 7, y + 10); g.lineTo(x, y + 18); g.lineTo(x - 7, y + 10); g.lineTo(x - 20, y + 16); g.closePath();
     g.fill(); g.stroke(); noGlow(g);
-    g.fillStyle = s.power > 0 ? P.am : P.cy; g.beginPath(); g.ellipse(x, y - 4, 4, 7, 0, 0, Math.PI * 2); g.fill();
+    g.fillStyle = s.pw > 0 ? P.am : P.cy; g.beginPath(); g.ellipse(x, y - 4, 4, 7, 0, 0, Math.PI * 2); g.fill();
   }
 });
 
