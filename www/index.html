@@ -544,7 +544,7 @@ textarea.inp { padding: 12px; resize: none; line-height: 1.4; }
      "localStorage doldu, kayıt sessizce başarısız oldu" sorununun çözümü budur.
    - Her yazma işleminin sonucu kontrol edilir; hata olursa kullanıcı görür.
    ===================================================================== */
-var APP_VERSION = '2.12.1';
+var APP_VERSION = '2.12.2';
 var SCHEMA_VERSION = 2; // 1 = eski localStorage sürümü (MİT 1.0), 2 = IndexedDB
 
 var IN_FRAME = (function () { try { return window.self !== window.top; } catch (e) { return true; } })();
@@ -1760,7 +1760,6 @@ var Orbit = {
         Sphere.nodeEls[idx].classList.add('grabbed');
         self.last = { x: e.clientX, y: e.clientY, t: performance.now(), vx: 0, vy: 0 };
         haptic(40); Sound.play('open');
-        UI.toast('Menüyü çek ve bırak');
       }, 2000);
     });
     var end = function (e) {
@@ -1843,8 +1842,7 @@ var Orbit = {
       this.off.forEach(function (o) { o.x = o.y = o.vx = o.vy = 0; });
       this.phase = 'idle'; Sphere.wobble = 0;
       document.body.classList.remove('orbit-chaos');
-      UI.toast('Yörünge düzeldi');
-    } else if (this.t > this.FREE && !this.backMsg) { this.backMsg = true; UI.toast('Yörüngeye dönülüyor', 'info'); }
+    }
   },
   chaos: function (x, y) {
     var self = this;
@@ -1862,7 +1860,6 @@ var Orbit = {
     var st = document.getElementById('stage');
     st.classList.remove('shake'); void st.offsetWidth; st.classList.add('shake');
     Impact.boomSound(0.5); fb('err'); haptic(40);
-    UI.toast('Çarpışma! Yörünge bozuldu', 'err');
   },
   lastBump: 0,
   bump: function () {
