@@ -544,7 +544,7 @@ textarea.inp { padding: 12px; resize: none; line-height: 1.4; }
      "localStorage doldu, kayıt sessizce başarısız oldu" sorununun çözümü budur.
    - Her yazma işleminin sonucu kontrol edilir; hata olursa kullanıcı görür.
    ===================================================================== */
-var APP_VERSION = '2.11.0';
+var APP_VERSION = '2.12.0';
 var SCHEMA_VERSION = 2; // 1 = eski localStorage sürümü (MİT 1.0), 2 = IndexedDB
 
 var IN_FRAME = (function () { try { return window.self !== window.top; } catch (e) { return true; } })();
@@ -4233,7 +4233,7 @@ Game.list.push({
    Gezegenler aşağıdan fırlatılır, yükselip geri düşer; zaman ölçeği seviyeyle artar. */
 Game.list.push({
   id: 'planets', name: 'Gezegen Patlat', hint: 'Parmağını sürükleyerek gezegenleri kes',
-  howto: ['Parmağını basılı tutup gezegenlerin', 'üzerinden geçir: kesilip patlarlar.', 'Altın yıldız +3 sn · kırmızı bomba −3 sn!', 'Tek çizgide 3+ gezegen: bonus · hız artar.'],
+  howto: ['Parmağını basılı tutup yükselen', 'gezegenlerin üzerinden geçir: kesilirler.', 'Altın yıldız +3 sn · her 4 sn hız artar.', 'Tek çizgide 3+ gezegen: bonus puan.'],
   init: function (s) { s.items = []; s.spawn = 0.4; s.left = 30; s.el = 0; s.lvl = 1; s.trail = []; s.cut = false; s.stroke = 0; Game.setExtra('30 sn'); },
   speed: function (s) { return Math.min(2.6, 0.8 + (s.lvl - 1) * 0.17); },
   down: function (s, p) { s.cut = true; s.stroke = 0; s.trail = [{ x: p.x, y: p.y, t: s.t }]; },
@@ -4280,18 +4280,16 @@ Game.list.push({
     if (s.spawn <= 0) {
       var many = s.lvl >= 7 ? 3 : s.lvl >= 3 ? 2 : 1;
       for (var m = 0; m < many; m++) {
-        var roll = Math.random(), star = roll < 0.06, bomb = !star && s.lvl >= 2 && roll < 0.06 + Math.min(0.2, s.lvl * 0.035);
-        var r = star ? 20 : bomb ? 22 : Math.max(20, 30 + Math.random() * 12 - s.lvl);
+        var star = Math.random() < 0.06, r = star ? 20 : Math.max(20, 30 + Math.random() * 12 - s.lvl);
         var cols = [P.cy, P.am, P.blue, P.ok];
-        var x = r + 20 + Math.random() * (s.W - 2 * r - 40), peak = s.H * (0.25 + Math.random() * 0.4);
-        var vy = -Math.sqrt(2 * G * (s.H + r - peak)), toward = (s.W / 2 - x) / s.W;
-        s.items.push({ x: x, y: s.H + r, r: r, vx: toward * 220 + (Math.random() - 0.5) * 80, vy: vy,
-          c: bomb ? P.red : cols[Math.floor(Math.random() * cols.length)], ring: !bomb && Math.random() < 0.45, star: star, bomb: bomb, rot: 0 });
+        // Aşağıdan sabit hızla yükselir (eski oyundaki gibi), hafifçe yalpalar
+        s.items.push({ x: r + 10 + Math.random() * (s.W - 2 * r - 20), y: s.H + r + m * 46, r: r, v: 150 + Math.random() * 70,
+          c: cols[Math.floor(Math.random() * cols.length)], ring: Math.random() < 0.45, star: star, rot: 0, ph: Math.random() * 6 });
       }
       s.spawn = Math.max(0.35, 0.95 - s.lvl * 0.05);
     }
-    s.items.forEach(function (it) { it.vy += G * gdt; it.x += it.vx * gdt; it.y += it.vy * gdt; it.rot += gdt * 2; });
-    s.items = s.items.filter(function (it) { return !(it.vy > 0 && it.y > s.H + it.r + 10); });
+    s.items.forEach(function (it) { it.y -= it.v * gdt; it.x += Math.sin(s.t * 1.8 + it.ph) * 22 * dt; it.rot += gdt * 2; });
+    s.items = s.items.filter(function (it) { return it.y > -it.r - 20; });
     (s.halves || []).forEach(function (h) { h.vy += G * gdt; h.x += h.vx * gdt; h.y += h.vy * gdt; h.a += h.side * gdt * 4; h.life -= dt; });
     s.halves = (s.halves || []).filter(function (h) { return h.life > 0; });
     s.trail = s.trail.filter(function (q) { return s.t - q.t < 0.22; });
@@ -4467,16 +4465,29 @@ Game.list.push({
 /* 7) Uzay Savaşı: gemi parmağı takip eder ve otomatik ateş eder; düşmanları vur */
 Game.list.push({
   id: 'shooter', name: 'Uzay Savaşı', hint: 'Gemiyi sürükle, otomatik ateş eder',
-  howto: ['Parmağını sağa sola kaydır, gemi takip eder.', 'Gemi kendiliğinden ateş eder.', 'Turuncu "G" topla: sırayla atış hızı', 've mermi sayısı artar, kalıcıdır · 3 can.'],
+  howto: ['Parmağını sağa sola kaydır, gemi takip eder.', 'Turuncu "G": sırayla atış hızı (en çok %100)', 've mermi (en çok 10) artar; ikisi dolunca', 'G sadece eksik canı yeniler · 3 can.'],
   init: function (s) {
     s.px = s.W / 2; s.tx = s.W / 2; s.py = s.H - 70; s.shots = []; s.foes = []; s.eshots = []; s.drops = [];
-    s.fire = 0; s.spawn = 1; s.lives = 3; s.inv = 0; s.pw = 0; s.lvl = 1; s.kills = 0;
+    s.fire = 0; s.spawn = 1; s.lives = 3; s.inv = 0; s.pw = 0; s.spd = 0; s.gn = 1; s.lvl = 1; s.kills = 0;
     this.hud(s);
   },
-  hud: function (s) { Game.setExtra('Sv ' + s.lvl + ' · ' + '♥♥♥'.slice(0, Math.max(0, s.lives)) + '♡♡♡'.slice(0, 3 - Math.max(0, s.lives)) + ' · ' + this.guns(s) + 'x'); },
-  // Güçlendirme: 1. → atış hızı, 2. → +1 mermi, 3. → hız, 4. → +1 mermi ... (kalıcı)
-  guns: function (s) { return 1 + Math.floor(s.pw / 2); },
-  rate: function (s) { return Math.max(0.05, 0.22 * Math.pow(0.84, Math.ceil(s.pw / 2))); },
+  MAXSPD: 5, MAXGUN: 10,
+  hud: function (s) { Game.setExtra('Sv ' + s.lvl + ' · ' + '♥♥♥'.slice(0, Math.max(0, s.lives)) + '♡♡♡'.slice(0, 3 - Math.max(0, s.lives)) + ' · ' + s.gn + 'x · %' + Math.round(s.spd / this.MAXSPD * 100)); },
+  guns: function (s) { return s.gn; },
+  // Atış aralığı: %0'da 0,22 sn → %100'de 0,08 sn
+  rate: function (s) { return 0.22 - 0.14 * (s.spd / this.MAXSPD); },
+  // Düşman canı her 5 seviyede %33 artar
+  hpMul: function (s) { return Math.pow(1.33, Math.floor((s.lvl - 1) / 5)); },
+  // Ödül: sırayla hız / mermi; ikisi de doluysa yalnızca eksik canı yeniler
+  reward: function (s, P, x, y) {
+    var spdFull = s.spd >= this.MAXSPD, gunFull = s.gn >= this.MAXGUN, msg;
+    s.pw++;
+    if (!spdFull && (s.pw % 2 === 1 || gunFull)) { s.spd++; msg = 'ATIŞ HIZI %' + Math.round(s.spd / this.MAXSPD * 100); }
+    else if (!gunFull) { s.gn++; msg = 'MERMİ ' + s.gn + (s.gn >= this.MAXGUN ? ' (EN ÇOK)' : ''); }
+    else if (s.lives < 3) { s.lives++; msg = 'CAN +1'; }
+    else msg = 'CAN DOLU';
+    Game.pop(x, y - 20, msg, P.am); this.hud(s);
+  },
   begin: function (s, p) { s.tx = p.x; },
   down: function (s, p) { s.tx = p.x; },
   move: function (s, p) { s.tx = p.x; },
@@ -4511,9 +4522,10 @@ Game.list.push({
     if (s.spawn <= 0) {
       var type = Math.random() < Math.min(0.45, 0.1 + s.lvl * 0.05) ? 'big' : 'small';
       s.foes.push({ x: 30 + Math.random() * (s.W - 60), y: -30, x0: 0, v: 70 + s.lvl * 22 + Math.random() * 40, ph: Math.random() * 6,
-        amp: 20 + Math.random() * 50, hp: type === 'big' ? 3 : 1, big: type === 'big', r: type === 'big' ? 22 : 16,
+        amp: 20 + Math.random() * 50, hp: (type === 'big' ? 3 : 1) * this.hpMul(s), big: type === 'big', r: type === 'big' ? 22 : 16,
         cd: 1 + Math.random() * 2, k: Math.floor(Math.random() * 8) });
       s.foes[s.foes.length - 1].x0 = s.foes[s.foes.length - 1].x;
+      s.foes[s.foes.length - 1].max = s.foes[s.foes.length - 1].hp;
       s.spawn = Math.max(0.28, 1.15 - s.lvl * 0.1);
     }
     s.foes.forEach(function (f) {
@@ -4561,9 +4573,8 @@ Game.list.push({
     s.drops.forEach(function (d) { d.y += 120 * dt; });
     s.drops = s.drops.filter(function (d) {
       if (Math.hypot(d.x - s.px, d.y - s.py) < 34) {
-        s.pw++;
-        Game.pop(d.x, d.y - 20, s.pw % 2 ? 'ATIŞ HIZI ↑' : 'MERMİ +1 (' + self.guns(s) + ')', P.am);
-        Game.burst(d.x, d.y, P.am, 18); fb('ok'); self.hud(s); return false;
+        self.reward(s, P, d.x, d.y);
+        Game.burst(d.x, d.y, P.am, 18); fb('ok'); return false;
       }
       return d.y < s.H + 20;
     });
@@ -4590,7 +4601,10 @@ Game.list.push({
       g.fillStyle = P.light ? 'rgba(0,115,158,.35)' : 'rgba(0,229,255,.35)';
       g.beginPath(); g.ellipse(f.x, f.y - f.r * 0.35, f.r * 0.6, f.r * 0.5, 0, Math.PI, 0); g.fill();
       gGlyph(g, f.k, f.x, f.y + f.r * 0.05, f.r * 0.32, P.light ? '#102238' : '#05080F', 2);
-      if (f.big && f.hp < 3) { g.fillStyle = P.red; for (var i = 0; i < 3 - f.hp; i++) g.fillRect(f.x - 10 + i * 8, f.y - f.r - 8, 6, 3); }
+      if (f.max > 1 && f.hp < f.max) { // can çubuğu
+        g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(f.x - 14, f.y - f.r - 9, 28, 4);
+        g.fillStyle = P.red; g.fillRect(f.x - 14, f.y - f.r - 9, 28 * Math.max(0, f.hp / f.max), 4);
+      }
     });
     // Oyuncu gemisi
     if (s.inv > 0 && Math.sin(s.t * 30) > 0) return;
