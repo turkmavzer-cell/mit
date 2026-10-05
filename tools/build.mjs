@@ -28,7 +28,7 @@ const fonts = [
   face('Cairo', 600, '@fontsource/cairo', 'cairo-latin-600-normal.woff2', LATIN)
 ].join('\n');
 
-const i18n = readFileSync(join(root, 'src/i18n-ar.js'), 'utf8');
+const i18n = readFileSync(join(root, 'src/i18n-ar.js'), 'utf8') + '\n' + readFileSync(join(root, 'src/i18n-en.js'), 'utf8');
 
 let html = readFileSync(join(root, 'src/index.html'), 'utf8');
 for (const mark of ['/*@@FONTS@@*/', '/*@@THREE@@*/', '/*@@I18N@@*/']) {

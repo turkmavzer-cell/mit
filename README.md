@@ -55,7 +55,8 @@ uygulamayı kaldır, yeni APK'yı kur, Yedekleme → yedekten geri yükle. Sonra
 - Derleme: `npm ci && npm run build` → `www/index.html` (Three.js r149 ve Exo 2 gömülür, dış istek yok)
 - Kontrol: `npm run check`
 
-## Dil (Türkçe / Mısır Arapçası)
-- Küre ekranının üstündeki **TR | ع** anahtarına dokun; küre ekranında dalga + dönen yazı animasyonuyla dil değişir, yön sağdan sola olur.
-- Seçim kaydedilir (`mit_lang`). Ayarlar'da dil seçeneği yoktur.
-- Çeviri sözlüğü: `src/i18n-ar.js`. Yeni metin eklenince buraya da eklenmeli.
+## Dil (Türkçe / English / Mısır Arapçası)
+- Küre ekranının altında üç dil küresi var: **TR · EN · ع**. Seçili kürenin üstünde kedi oturur; başka küreye dokununca kedi oraya zıplar ve dil o anda animasyonla değişir.
+- Asteroit küreyi dağıtınca kedi koşarak kaçar; küre toparlanınca yürüyerek gelip seçili küreye oturur.
+- Arapçada arayüz sağdan sola döner. Seçim kaydedilir (`mit_lang`). Ayarlar'da dil seçeneği yoktur.
+- Çeviri sözlükleri: `src/i18n-ar.js`, `src/i18n-en.js`. Yeni metin eklenince ikisine de eklenmeli.

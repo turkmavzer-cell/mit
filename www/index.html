@@ -124,21 +124,43 @@ svg { flex-shrink: 0; }
 
 
 /* ================= DİL ANAHTARI VE SAĞDAN SOLA (RTL) ================= */
-.lang-sw {
-  position: relative; direction: ltr; width: 84px; height: 48px; flex-shrink: 0; pointer-events: auto;
-  border: 1.5px solid var(--cy-a40); border-radius: 24px; background: rgba(var(--ink),.6);
-  display: flex; align-items: center; justify-content: space-between; padding: 0 14px; color: var(--tx2);
-  font-family: var(--hud); font-weight: 600; font-size: 14px;
+#lang-bar {
+  position: absolute; left: 50%; bottom: calc(var(--sab) + 50px); width: 216px; height: 52px; margin-left: -108px; z-index: 5;
+  direction: ltr; display: flex; justify-content: space-between; pointer-events: none;
 }
-.lang-sw i {
-  position: absolute; top: 4px; left: 4px; width: 38px; height: 38px; border-radius: 50%;
-  background: var(--cy); box-shadow: 0 0 14px var(--cy-a40); transition: transform 320ms cubic-bezier(.6,-.3,.3,1.3); z-index: 0;
+.lang-orb {
+  position: relative; width: 52px; height: 52px; border-radius: 50%; padding: 0; pointer-events: auto; cursor: pointer; overflow: visible;
+  border: 1.5px solid var(--cy-a40); color: var(--tx2); font-family: var(--hud); font-weight: 700; font-size: 15px; letter-spacing: .04em;
+  background: radial-gradient(circle at 35% 28%, rgba(var(--cy-rgb),.28), rgba(var(--ink),.78) 68%);
+  display: flex; align-items: center; justify-content: center; transition: box-shadow 300ms, border-color 300ms, color 300ms;
 }
-.lang-sw.ar i { transform: translateX(36px); background: var(--am); box-shadow: 0 0 14px rgba(var(--am-rgb),.5); }
-.lang-sw span { position: relative; z-index: 1; width: 24px; text-align: center; transition: color 200ms; }
-.lang-sw .ls-a { color: var(--bg); } .lang-sw .ls-b { color: var(--tx2); font-family: Cairo, var(--hud); font-size: 18px; }
-.lang-sw.ar .ls-a { color: var(--tx2); } .lang-sw.ar .ls-b { color: var(--bg); }
-:root[data-theme="light"] .lang-sw .ls-a, :root[data-theme="light"] .lang-sw.ar .ls-b { color: #fff; }
+.lang-orb::before, .lang-orb::after { content: ''; position: absolute; inset: 0; border-radius: 50%; border: 1px solid var(--cy-a20); pointer-events: none; }
+.lang-orb::before { transform: scaleX(.42); } .lang-orb::after { transform: scaleY(.42); }
+.lang-orb b { position: relative; z-index: 1; font-weight: 700; text-shadow: 0 0 6px rgba(var(--ink),.9); }
+.lang-orb.ar b { font-family: Cairo, var(--hud); font-size: 20px; letter-spacing: 0; }
+.lang-orb.on { border-color: var(--cy); color: var(--tx); box-shadow: 0 0 18px var(--cy-a40), inset 0 0 14px var(--cy-a20); }
+.lang-cat { position: absolute; left: 0; bottom: 0; width: 48px; height: 44px; z-index: 6; pointer-events: none; will-change: transform; }
+.lang-cat svg { width: 100%; height: 100%; overflow: visible; display: block; transform-origin: 50% 90%; }
+.lang-cat .c-fill { fill: var(--am); } .lang-cat .c-dark { fill: #10192e; } .lang-cat .c-in { fill: #ff8f8f; }
+.lang-cat .c-tail { transform-origin: 36px 38px; animation: catTail 2.4s ease-in-out infinite; }
+.lang-cat .c-eye { transform-box: fill-box; transform-origin: center; animation: catBlink 4.2s infinite; }
+.lang-cat .c-head { transform-origin: 24px 26px; transition: transform .35s; }
+.lang-cat .c-paw { transform-box: fill-box; transform-origin: center; }
+.lang-cat.look .c-head { transform: rotate(-14deg); }
+.lang-cat.look2 .c-head { transform: rotate(14deg); }
+.lang-cat.wag .c-tail { animation-duration: .5s; }
+.lang-cat.stretch svg { animation: catStretch 1.1s ease-in-out; }
+.lang-cat.run svg, .lang-cat.walk svg { animation: catRun .26s ease-in-out infinite; }
+.lang-cat.walk svg { animation-duration: .5s; }
+.lang-cat.run .c-tail { animation: none; transform: rotate(-70deg); }
+.lang-cat.run .c-paw.p1, .lang-cat.walk .c-paw.p1 { animation: catPaw .26s ease-in-out infinite; }
+.lang-cat.run .c-paw.p2, .lang-cat.walk .c-paw.p2 { animation: catPaw .26s ease-in-out infinite reverse; }
+.lang-cat.walk .c-paw.p1, .lang-cat.walk .c-paw.p2 { animation-duration: .5s; }
+@keyframes catTail { 0%,100% { transform: rotate(-8deg); } 50% { transform: rotate(16deg); } }
+@keyframes catBlink { 0%,93%,100% { transform: scaleY(1); } 96% { transform: scaleY(.1); } }
+@keyframes catStretch { 0%,100% { transform: scale(1,1); } 40%,65% { transform: scale(.92,1.14); } }
+@keyframes catRun { 0%,100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-4px) rotate(3deg); } }
+@keyframes catPaw { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
 .lang-wave {
   position: absolute; left: 50%; top: 50%; width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 50%; pointer-events: none; z-index: 4;
   border: 2px solid var(--cy); box-shadow: 0 0 24px var(--cy-a40), inset 0 0 24px var(--cy-a20); animation: langWave 1.1s ease-out forwards;
@@ -215,7 +237,7 @@ body.orbit-chaos .node { pointer-events: none; }
 body.panel-open #impact-alert { display: none; }
 #stage.shake { animation: stShake .5s linear; }
 @keyframes stShake { 0%,100% { transform: none; } 20% { transform: translate(-8px,4px); } 40% { transform: translate(7px,-5px); } 60% { transform: translate(-5px,-3px); } 80% { transform: translate(4px,3px); } }
-#stage-hint { position: absolute; left: 0; right: 0; bottom: calc(var(--sab) + 20px); z-index: 3; text-align: center; font-size: 13px; color: var(--tx2); pointer-events: none; }
+#stage-hint { position: absolute; left: 0; right: 0; bottom: calc(var(--sab) + 18px); z-index: 3; text-align: center; font-size: 13px; color: var(--tx2); pointer-events: none; }
 body.no-gl #stage-hint, body.panel-open #stage-hint { display: none; }
 .node-ring {
   position: relative; width: 52px; height: 52px; border-radius: 50%;
@@ -320,7 +342,7 @@ body.kb .panel::after, body.kb .sheet::after { display: none; }
 .btn.invoice-ask { background: var(--am); color: var(--bg); border-color: var(--am); animation: iaPulse .7s ease-in-out infinite alternate; text-transform: none; letter-spacing: .02em; }
 :root[data-theme="light"] .btn.invoice-ask { color: #fff; }
 a.btn { text-decoration: none; }
-body.panel-open #nodes, body.panel-open #center-stats, body.panel-open #stage-top { visibility: hidden; }
+body.panel-open #nodes, body.panel-open #center-stats, body.panel-open #stage-top, body.panel-open #lang-bar { visibility: hidden; }
 .btn.sm { min-height: 40px; font-size: 11px; padding: 0 10px; }
 .row { display: flex; gap: 8px; align-items: center; }
 .row > .grow { flex: 1; min-width: 0; }
@@ -563,7 +585,6 @@ textarea.inp { padding: 12px; resize: none; line-height: 1.4; }
   <canvas id="gl"></canvas>
   <div id="stage-top">
     <div class="brand hud">MİT<small>İŞ TAKİP · HOLO</small></div>
-    <button id="lang-sw" class="lang-sw" data-act="lang" aria-label="Dil · اللغة" aria-pressed="false" data-nt="1"><span class="ls-a">TR</span><span class="ls-b">ع</span><i></i></button>
     <div class="ver hud" id="ver"></div>
   </div>
   <div id="center-stats">
@@ -575,6 +596,22 @@ textarea.inp { padding: 12px; resize: none; line-height: 1.4; }
     </div>
   </div>
   <div id="nodes"></div>
+  <div id="lang-bar" data-nt="1" role="group" aria-label="Language · Dil · اللغة">
+    <button class="lang-orb tr" data-act="lang" data-lang="tr" aria-label="Türkçe" aria-pressed="true"><b>TR</b></button>
+    <button class="lang-orb en" data-act="lang" data-lang="en" aria-label="English" aria-pressed="false"><b>EN</b></button>
+    <button class="lang-orb ar" data-act="lang" data-lang="ar" aria-label="العربية" aria-pressed="false"><b>ع</b></button>
+    <div class="lang-cat" id="lang-cat" aria-hidden="true"><svg viewBox="0 0 48 44">
+      <g class="c-tail"><path d="M35 38 C45 38 47 28 43 21" fill="none" stroke="var(--am)" stroke-width="5" stroke-linecap="round"/></g>
+      <ellipse class="c-fill" cx="24" cy="33" rx="13" ry="10"/>
+      <ellipse class="c-paw p1 c-fill" cx="18" cy="42" rx="4.5" ry="2.6"/><ellipse class="c-paw p2 c-fill" cx="30" cy="42" rx="4.5" ry="2.6"/>
+      <g class="c-head"><polygon class="c-fill" points="14,12 15,0 23,8"/><polygon class="c-fill" points="34,12 33,0 25,8"/>
+      <polygon class="c-in" points="16.5,9 16.8,3.5 20.5,7.5"/><polygon class="c-in" points="31.5,9 31.2,3.5 27.5,7.5"/>
+      <circle class="c-fill" cx="24" cy="18" r="11"/>
+      <ellipse class="c-eye c-dark" cx="19.5" cy="17" rx="1.8" ry="2.6"/><ellipse class="c-eye c-dark" cx="28.5" cy="17" rx="1.8" ry="2.6"/>
+      <polygon class="c-in" points="22.4,21 25.6,21 24,23"/>
+      <path d="M24 23 v1.5 M24 24.5 q-2 2 -4 1 M24 24.5 q2 2 4 1" fill="none" stroke="#10192e" stroke-width="1" stroke-linecap="round"/></g>
+    </svg></div>
+  </div>
   <div id="stage-hint">Küreyi parmağınla çevir · menüye dokun</div>
 </div>
 <div id="fx"></div>
@@ -805,6 +842,197 @@ window.AR_RULES = [
   [/^(\d+) sn$/, '$1 ث'], [/^(\d+) mt$/, '$1 م'],
   [/^İş (.+)$/, 'أوردر $1']
 ];
+
+/* English dictionary — keys are the Turkish UI strings used in the app.
+   EN_DICT: exact match. EN_RULES: [RegExp, template] — $n raw capture, @n translated capture. */
+window.EN_DICT = {
+  'İŞ TAKİP · HOLO': 'JOB TRACKER · HOLO',
+  'MİT Holo': 'MİT Holo',
+  'MİT Holo · Müşteri & İmalat İş Takip Asistanı': 'MİT Holo · Customer & Production Job Tracker',
+  'Müşteri & İmalat İş Takip Asistanı': 'Customer & Production Job Tracker',
+  'Müşterinin İşi Var': 'Customers With Jobs',
+  'BASKI BEKLEYEN': 'AWAITING PRINT',
+  'BASKISI YAPILAN': 'PRINTED',
+  'Küreyi parmağınla çevir · menüye dokun': 'Spin the sphere with your finger · tap a menu',
+  'İşler': 'Jobs', 'Müşteriler': 'Customers', 'Kalıplar': 'Patterns', 'Rapor': 'Report', 'Yedekleme': 'Backup', 'Ayarlar': 'Settings',
+  'Küre': 'Sphere', 'Geri': 'Back',
+  'Kaydet': 'Save', 'İptal': 'Cancel', 'Vazgeç': 'Never mind', 'Kapat': 'Close', 'Sil': 'Delete', 'Düzenle': 'Edit', 'Ara': 'Search', 'Ara...': 'Search...', 'Tamam': 'OK',
+  'Paylaş': 'Share', 'Paylaş (WhatsApp vb.)': 'Share (WhatsApp etc.)', 'Daha Sonra': 'Later', 'Küreye dön': 'Back to sphere', 'Küreye Dön': 'Back to Sphere',
+  'Genişlet': 'Expand', 'Daralt': 'Collapse', 'Geri Al': 'Undo', 'Önceki': 'Previous', 'Sonraki': 'Next',
+  'Kamera': 'Camera', 'Galeri': 'Gallery', 'Fotoğraf seç': 'Choose photo', 'Konum': 'Location', 'Telefon': 'Phone', 'Adres': 'Address',
+  'Hazırlanıyor...': 'Preparing...', 'Sonuç bulunamadı': 'No results', 'Kayıt yok': 'No records',
+  'Silmek için tekrar dokun': 'Tap again to delete',
+
+  'İş, müşteri veya kumaş ara...': 'Search job, customer or fabric...',
+  'İmalatta': 'In production', 'Teslim Edildi': 'Delivered',
+  'Yeni İş': 'New Job', 'Yeni iş': 'New job', 'Yeni İş Ekle': 'Add New Job', 'Yeni iş ekle': 'Add new job',
+  'İmalatta iş yok.': 'No jobs in production.', 'Teslim edilmiş iş yok': 'No delivered jobs',
+  'Teslim edilmiş iş bulunmuyor': 'No delivered jobs', 'Aktif iş bulunmuyor': 'No active jobs',
+  'Baskı Bekliyor': 'Awaiting Print', 'Baskı Yapıldı': 'Printed',
+  'İş Hangi Müşteriye?': 'Which customer is the job for?', 'Henüz müşteri yok': 'No customers yet', 'Yeni Müşteri Ekle': 'Add New Customer',
+  'Üretilen: bu hafta': 'Produced: this week', '· bu ay': '· this month',
+
+  'İsim, telefon veya adres ara...': 'Search name, phone or address...',
+  'Alfabetik': 'Alphabetical', 'Son Güncellenen': 'Recently Updated', 'En Çok Aktif': 'Most Active Jobs', 'En Çok İş': 'Most Jobs', 'Eklenme': 'Date Added',
+  'Yeni müşteri': 'New customer', 'Yeni Müşteri': 'New Customer', 'Müşteriyi Düzenle': 'Edit Customer', 'Müşteri bulunamadı': 'Customer not found',
+  'Müşteri / Firma Adı': 'Customer / Company Name', 'Müşteri adı zorunludur': 'Customer name is required', 'Örn: Ahmet Tekstil': 'e.g. Ahmet Textile',
+  'Örn: 0532 000 00 00': 'e.g. 0532 000 00 00', 'Açık adres': 'Full address', 'İsimsiz Müşteri': 'Unnamed Customer',
+  'Mevcut konumumu al': 'Get my current location', 'Konum alındı · güncelle': 'Location saved · update', 'Konum alınıyor...': 'Getting location...',
+  'Henüz müşteri eklenmedi.': 'No customers added yet.', 'Sağ üstteki + ile ekle.': 'Add one with the + at the top.',
+  'Müşteri:': 'Customer:', 'Müşteri': 'Customer',
+
+  'İş Detayı': 'Job Details', 'İş Özeti': 'Job Summary', 'İş özeti': 'Job summary', 'İŞ DETAYI': 'JOB DETAILS',
+  'Teslim Edildi Olarak İşaretle': 'Mark as Delivered', 'Teslim Edildi · Aktife Al': 'Delivered · Make Active',
+  'Fatura kestin mi? Teslim için tekrar dokun': 'Did you issue the invoice? Tap again to deliver',
+  'Önce fatura kesmeyi unutma': "Don't forget to issue the invoice first",
+  'Kumaş Türü': 'Fabric Type', 'Kumaş Rengi': 'Fabric Color', '30/1 Süprem': '30/1 Single Jersey', 'Lacivert': 'Navy',
+  '1 Metre Kumaşın Gramajı (gr)': 'Weight of 1 Meter of Fabric (g)', 'Örn: 180': 'e.g. 180',
+  'Kilo toplarını metreye çevirmek için kullanılır': 'Used to convert kilo rolls to meters',
+  'Atanmamış Toplar': 'Unassigned Rolls', 'Atanmamış toplar': 'Unassigned rolls',
+  'Kalıp seçmeden top girebilir, sonra toplara dokunup seçerek bir kalıba gönderebilirsin.': 'You can enter rolls without choosing a pattern, then tap the rolls, select them and send them to a pattern.',
+  'Metre (mt)': 'Meters (m)', 'Kilo (kg)': 'Kilos (kg)', 'Metre gir ve ekle': 'Enter meters and add', 'Kilo gir ve ekle': 'Enter kilos and add',
+  'Topu ekle': 'Add roll', 'Topu sil': 'Delete roll', 'Topu silmek için tekrar dokun': 'Tap again to delete the roll',
+  'Toplam Metre': 'Total Meters', 'Toplam Kilo': 'Total Kilos', 'Genel Toplam': 'Grand Total', 'İşin Genel Toplamı': 'Job Grand Total',
+  'Toplam metraj (mt)': 'Total length (m)', 'Toplam metraj:': 'Total length:',
+  'Kalıp Ekle': 'Add Pattern', 'Kalıp seç': 'Choose pattern', 'Kalıp Seç': 'Choose Pattern', 'Kalıp Toplamı:': 'Pattern Total:',
+  'Kalıbı kaldır': 'Remove pattern', 'Kalıbı kaldırmak için tekrar dokun': 'Tap again to remove the pattern', 'İsimsiz Kalıp': 'Unnamed Pattern',
+  'Yeni Kalıp Oluştur': 'Create New Pattern', 'Henüz kalıp yok. Kalıplar ekranından ekleyebilirsin.': 'No patterns yet. You can add them from the Patterns screen.',
+  'Notlar': 'Notes', 'İş ile ilgili özel talimatlar...': 'Special instructions for this job...', 'Not': 'Note', 'not': 'note',
+  'Fotoğrafı sil': 'Delete photo', 'Fotoğrafı silmek için tekrar dokun': 'Tap again to delete the photo', 'Henüz fotoğraf eklenmedi': 'No photos added yet',
+  'İşi Sil': 'Delete Job', 'İşi silmek için tekrar dokun': 'Tap again to delete the job', 'İşi Aç': 'Open Job',
+
+  'Durum:': 'Status:', 'Durum': 'Status', 'İş / Model': 'Job / Model', 'İş / Model:': 'Job / Model:', 'Kumaş:': 'Fabric:', 'Kumaş': 'Fabric',
+  'Fotoğraf:': 'Photos:', 'Fotoğraf': 'Photo', 'Not:': 'Note:', 'KUMAŞ TOPLARI': 'FABRIC ROLLS', 'Toplar': 'Rolls', 'Toplar:': 'Rolls:',
+  'Metre:': 'Meters:', 'Kilo:': 'Kilos:', 'Toplam:': 'Total:', 'Toplam Metre:': 'Total Meters:', 'Toplam Kilo:': 'Total Kilos:', 'Genel Toplam:': 'Grand Total:',
+  'İmalatta · Baskı Bekliyor': 'In production · Awaiting print', 'İmalatta · Baskı Yapıldı': 'In production · Printed',
+  'Görsel oluşturulamadı': 'Could not create the image', 'Görsel indirildi': 'Image downloaded', 'Önizlemede dosya paylaşımı kapalı': 'File sharing is off in preview',
+  'Önizlemede dosya indirme kapalı': 'File download is off in preview', 'Paylaşılamadı:': 'Could not share:',
+
+  'Kalıp Kütüphanesi': 'Pattern Library', 'Yeni Kalıp': 'New Pattern', 'Kalıbı Düzenle': 'Edit Pattern', 'Kalıbı Ekle': 'Add Pattern', 'Kalıp adı': 'Pattern name',
+  'Kalıp': 'Pattern', 'Kalıp adı girmelisin': 'Enter a pattern name', 'Bu kalıp zaten kayıtlı': 'This pattern already exists',
+  'Kalıp eklendi': 'Pattern added', 'Kalıp güncellendi': 'Pattern updated', 'Kalıp silindi': 'Pattern deleted', 'Henüz kalıp eklenmedi': 'No patterns added yet',
+  'Kalıplara Göre': 'By Pattern', 'Müşterilere Göre': 'By Customer', 'Alt': 'Bottom',
+
+  'Bu Hafta': 'This Week', 'Bu Ay': 'This Month', 'Geçen Ay': 'Last Month', 'Hafta': 'Week', 'Ay': 'Month',
+  'mt · Bu Hafta': 'm · This Week', 'mt · Bu Ay': 'm · This Month', 'mt · Geçen Ay': 'm · Last Month',
+  'Yeni iş:': 'New jobs:', 'Teslim edilen iş': 'Delivered jobs', 'İş veren müşteri': 'Customers with jobs', 'Bu dönemde kayıt yok': 'No records in this period',
+  'Raporu Paylaş': 'Share Report', 'Raporu paylaş': 'Share report', 'Rapor görseli indirildi': 'Report image downloaded',
+  'Metraj, dönem içinde açılan işlere göre hesaplanır; kilo topları gramajla metreye çevrilir.': 'Length is calculated from jobs opened in the period; kilo rolls are converted to meters using the fabric weight.',
+  'MİT Rapor': 'MİT Report', 'MİT Yedek Dosyası': 'MİT Backup File', 'KALIPLARA GÖRE': 'BY PATTERN', 'MÜŞTERİLERE GÖRE': 'BY CUSTOMER', 'RAPORU': 'REPORT',
+
+  'Veri Yedekleme': 'Data Backup', 'Bu Cihazda': 'On This Device', 'Depolama hesaplanıyor...': 'Calculating storage...',
+  'Otomatik Yedek': 'Automatic Backup', 'Otomatik Yedeği Şimdi Güncelle': 'Update Automatic Backup Now', 'Yedeği Paylaş': 'Share Backup',
+  'Yedekle': 'Back Up', 'Şimdi Yedekle': 'Back Up Now', 'Yedekten Geri Yükle': 'Restore from Backup', 'Yedek Dosyası Seç': 'Choose Backup File',
+  'Eski Uygulamadan Aktarım': 'Import from Old App',
+  'Fotoğraflar dahil tüm kayıtlar tek bir dosyaya yazılır ve paylaşım penceresi açılır (Drive, WhatsApp, e-posta...).': 'All records, including photos, are written to a single file and the share sheet opens (Drive, WhatsApp, email...).',
+  'Yalnızca eksik kayıtlar eklenir; mevcut veriler hiçbir zaman silinmez veya değiştirilmez. Eski MİT uygulamasının yedek dosyası da kabul edilir.': 'Only missing records are added; existing data is never deleted or changed. Backup files from the old MİT app are accepted too.',
+  '1) Eski MİT uygulamasında Ayarlar → Veri Yedekleme → Yedekle. Dosyayı telefona kaydet.': '1) In the old MİT app: Settings → Data Backup → Back Up. Save the file to your phone.',
+  '2) Burada "Yedek Dosyası Seç" ile o dosyayı aç.': '2) Here, open that file with "Choose Backup File".',
+  'Kalıcı depolama: açık': 'Persistent storage: on',
+  'UYARI: Veritabanı açılamadı, kayıtlar geçici bellekte. Hemen yedek al.': 'WARNING: The database could not be opened; records are in temporary memory. Back up now.',
+  'UYARI: Veritabanı açılamadı, kayıtlar geçici bellekte.': 'WARNING: The database could not be opened; records are in temporary memory.',
+  'Otomatik yedek yalnızca telefondaki uygulamada (APK) çalışır.': 'Automatic backup works only in the phone app (APK).',
+  'Kapalı. Ayarlar ekranından açabilirsin.': 'Off. You can turn it on in Settings.',
+  'Sormadan telefona yedek yazar; her seferinde eski dosyanın üzerine kaydedilir.': 'Writes a backup to the phone without asking; it overwrites the old file each time.',
+  'Henüz otomatik yedek alınmadı.': 'No automatic backup yet.', 'Son yedek:': 'Last backup:', 'Son deneme başarısız:': 'Last attempt failed:',
+  'Yedek hazır': 'Backup ready', 'Yedek hazırlandı, paylaşım tamamlanmadı': 'Backup ready, sharing not completed', 'Yedek okunuyor...': 'Reading backup...',
+  'Dosya okunamadı': 'Could not read the file', 'Dosya geçerli bir yedek değil': 'The file is not a valid backup', 'Otomatik yedek güncellendi': 'Automatic backup updated',
+  'Otomatik yedek yazılamadı': 'Could not write automatic backup', 'Yedekleme hatası:': 'Backup error:',
+  'Günlük Yedek': 'Daily Backup', 'Verilerini kaybetmemek için her gün yedek almanı öneririz. Şimdi yedeklemek ister misin?': 'To avoid losing your data we recommend backing up every day. Would you like to back up now?',
+  'Bu hatırlatıcı Ayarlar ekranından kapatılabilir.': 'You can turn this reminder off in Settings.',
+
+  'Tema': 'Theme', 'Koyu': 'Dark', 'Açık': 'Light', 'Koyu: gece hologramı · Açık: gün doğumu': 'Dark: night hologram · Light: sunrise',
+  'Ses': 'Sound', 'Dokunma ve geçiş sesleri': 'Touch and transition sounds', 'Titreşim': 'Vibration', 'Dokunmada kısa titreşim': 'Short vibration on touch',
+  'Günlük Yedek Hatırlatıcısı': 'Daily Backup Reminder', 'Her gün ilk açılışta yedeği paylaşmayı hatırlatır': 'Reminds you to share a backup on the first launch each day',
+  'Sormadan telefona yedek yazar, eskisinin üstüne kaydeder': 'Writes a backup to the phone without asking, overwriting the old one',
+  'Uzay Kedisi': 'Space Cat', 'Uzay kedisi': 'Space cat', 'Küre ekranında ara sıra görünür, dokununca mini oyun açılır': 'Appears on the sphere screen now and then; tap it to open a mini game',
+  'Asteroit Olayı': 'Asteroid Event', 'Her 30 saniyede küreye asteroit gelir; roketle durdurabilirsin': 'An asteroid heads for the sphere every 30 seconds; stop it with a rocket',
+  'Hakkında': 'About', 'Çevrimdışı çalışır; tüm veriler yalnızca bu cihazda saklanır.': 'Works offline; all data is stored only on this device.',
+  'Bize ulaşın: krmzchn@gmail.com': 'Contact us: krmzchn@gmail.com', 'Sürüm': 'Version',
+
+  'Asteroit yaklaşıyor': 'Asteroid incoming', 'Roket Gönder': 'Send Rocket', 'Roket yolda': 'Rocket on its way', 'Asteroit yok edildi': 'Asteroid destroyed',
+  'Çarpma!': 'Impact!', 'Küre toparlanıyor': 'Sphere is recovering',
+
+  'Yumak Yakala': 'Catch the Yarn', 'Glif Kapıları': 'Glyph Gates', 'Glif Hafızası': 'Glyph Memory', 'Sinyal Sırası': 'Signal Sequence', 'Gezegen Patlat': 'Slice Planets', 'Yılan': 'Snake', 'Uzay Savaşı': 'Space Battle',
+  'Parmağını sağa sola kaydır': 'Slide your finger left and right', 'Dokununca kedi yükselir': 'The cat rises when you tap', 'Aynı glif çiftlerini bul': 'Find matching glyph pairs',
+  'Yanan sırayı tekrar et': 'Repeat the lit sequence', 'Parmağını sürükleyerek gezegenleri kes': 'Drag your finger to slice planets', 'Kaydırarak ya da dokunarak yön ver': 'Swipe or tap to steer', 'Gemiyi sürükle, otomatik ateş eder': 'Drag the ship; it fires automatically',
+  'Parmağını ekranda sağa sola kaydır,': 'Slide your finger left and right on the screen,', 'kedi sepeti parmağını takip eder.': 'and the cat basket follows your finger.',
+  'Her 5 puanda seviye ve hız artar.': 'Every 5 points the level and speed go up.', 'Altın yumak +3 · 3 kaçırırsan biter.': 'Golden yarn +3 · miss 3 and it is over.',
+  'Ekrana her dokunuşta kedi yükselir,': 'Each tap on the screen lifts the cat,', 'bırakınca yavaşça alçalır.': 'and it sinks slowly when you let go.',
+  'Kapılardaki boşluklardan geç.': 'Fly through the gaps in the gates.', 'Üst kenara çarpmak oyunu bitirmez.': 'Hitting the top edge does not end the game.',
+  'Kartlar önce 2 saniye açık gösterilir.': 'Cards are shown face up for 2 seconds first.', 'Sonra kapanır; iki karta dokunarak': 'Then they flip back; tap two cards',
+  'aynı renk ve glifteki eşleri bul.': 'to find pairs with the same color and glyph.', 'Ne kadar az hamle, o kadar iyi.': 'The fewer moves, the better.',
+  'Dilimler sırayla yanar, izle.': 'The slices light up in order. Watch.', 'Sonra aynı sırayla dokun.': 'Then tap them in the same order.', 'Her turda bir adım eklenir.': 'One step is added each round.', '2 hata hakkın var.': 'You have 2 mistakes.',
+  'Parmağını basılı tutup yükselen': 'Hold your finger down and drag it across', 'gezegenlerin üzerinden geçir: kesilirler.': 'the rising planets to slice them.', 'Altın yıldız +3 sn · her 4 sn hız artar.': 'Golden star +3 s · speed rises every 4 s.', 'Tek çizgide 3+ gezegen: bonus puan.': '3+ planets in one stroke: bonus points.',
+  'Parmağını kaydırarak yön ver': 'Swipe to steer', 'ya da yılanın yanına dokun, o yöne döner.': 'or tap next to the snake and it turns that way.',
+  'Kenarlardan öbür tarafa geçebilirsin.': 'You can wrap around the edges.', 'Her yemde hız artar · kendine çarpma!': 'Speed rises with every bite · do not hit yourself!',
+  'Parmağını sağa sola kaydır, gemi takip eder.': 'Slide your finger left and right; the ship follows.', 'Gemi kendiliğinden ateş eder.': 'The ship fires on its own.',
+  'Turuncu "G": sırayla atış hızı (en çok %100)': 'Orange "G": raises fire rate (max 100%)', 've mermi (en çok 10) artar; ikisi dolunca': 'and bullets (max 10) in turn; once both are full',
+  'G sadece eksik canı yeniler · 3 can.': 'G only restores missing lives · 3 lives.',
+  'BAŞLAMAK İÇİN DOKUN': 'TAP TO START', 'Başlamak için dokun': 'Tap to start',
+  'Oyun Bitti': 'Game Over', 'Yeni Rekor!': 'New Record!', 'Tekrar Oyna': 'Play Again', 'Sonraki Oyun': 'Next Game', 'Sonraki oyun': 'Next game',
+  'Skor': 'Score', 'Rekor': 'Best', 'Hamle': 'Moves', 'Seviye': 'Level', 'Yem': 'Food', 'Uzunluk': 'Length', 'Sv': 'Lv', 'Hak': 'Tries',
+  'Ezberle!': 'Memorize!', 'İZLE': 'WATCH', 'SIRA SENDE': 'YOUR TURN', 'Tekrar izle': 'Watch again', 'CAN +1': 'LIFE +1', 'CAN DOLU': 'LIVES FULL',
+  '−3 sn': '−3 s', '+3 sn': '+3 s', '+2 seri!': '+2 combo!',
+
+  'Ayar kaydedilemedi': 'Could not save the setting', 'Konum alındı': 'Location saved', 'Konum alınamadı': 'Could not get location', 'Cihaz konum özelliğini desteklemiyor': 'This device does not support location',
+  'Kaydedilmemiş değişiklik var. Çıkmak için tekrar geri.': 'You have unsaved changes. Press back again to leave.', 'Müşteri silindi': 'Customer deleted', 'İş silindi': 'Job deleted', 'Fotoğraf silindi': 'Photo deleted',
+  'İş kaydedildi': 'Job saved', 'Yeni iş eklendi': 'New job added', 'En fazla 25 fotoğraf eklenebilir': 'You can add at most 25 photos',
+  'Fotoğraf kaydedilemedi:': 'Could not save photo:', 'depolama hatası': 'storage error', 'Veritabanı hatası': 'Database error', 'Görsel yüklenemedi': 'Could not load the image',
+  'Veritabanı açılamadı: kayıtlar geçici bellekte tutulacak. Yedek almayı unutma.': 'The database could not be opened: records will be kept in temporary memory. Remember to back up.',
+  'Kayıt yazılamadı:': 'Could not write the record:', 'İşlem tamamlanamadı:': 'Could not complete the action:', 'Başlatma hatası:': 'Startup error:',
+  'aktif işiyle silmek için tekrar dokun': 'tap again to delete with its active jobs', 'diğer': 'other', 'gönderildi': 'sent', 'kaldırıldı': 'removed', 'sonrası': 'since'
+};
+
+window.EN_RULES = [
+  [/^Sürüm ([\d.]+) · Şema (\d+)$/, 'Version $1 · Schema $2'],
+  [/^Sürüm ([\d.]+)$/, 'Version $1'],
+  [/^(\d+) imalatta · (\d+) teslim$/, '$1 in production · $2 delivered'],
+  [/^(\d+) iş imalatta$/, '$1 in production'],
+  [/^1 kayıt$/, '1 record'], [/^(\d+) kayıt$/, '$1 records'],
+  [/^1 kalıp$/, '1 pattern'], [/^(\d+) kalıp$/, '$1 patterns'],
+  [/^1 iş$/, '1 job'], [/^(\d+) iş$/, '$1 jobs'],
+  [/^1 top$/, '1 roll'], [/^(\d+) top$/, '$1 rolls'],
+  [/^(\d+) aktif$/, '$1 active'], [/^(\d+) adet$/, '$1 pcs'],
+  [/^(\d+) müşteri · (\d+) iş · (\d+) kalıp\.?$/, '$1 customers · $2 jobs · $3 patterns'],
+  [/^(\d+) müşteri · (\d+) iş kayıtlı$/, '$1 customers · $2 jobs saved'],
+  [/^Çevrimdışı çalışır; tüm veriler yalnızca bu cihazda saklanır\. Bu cihazda: (.+)$/, 'Works offline; all data is stored only on this device. On this device: @1'],
+  [/^(\d+) aktif işiyle silmek için tekrar dokun$/, 'Has $1 active jobs. Tap again to delete'],
+  [/^(\d+) top ·? ?Kalıba Gönder$/, '$1 rolls · Send to Pattern'],
+  [/^(\d+) Top Hangi Kalıba\?$/, 'Which pattern for $1 rolls?'],
+  [/^Atanmamış Toplar \((\d+) top\)$/, 'Unassigned Rolls ($1 rolls)'],
+  [/^Metre Topları \((\d+)\)$/, 'Meter Rolls ($1)'], [/^Kilo Topları \((\d+)\)$/, 'Kilo Rolls ($1)'],
+  [/^(\d+) top · (.+)$/, '$1 rolls · $2'],
+  [/^Kayıtlı Kalıplar \((\d+)\)$/, 'Saved Patterns ($1)'],
+  [/^Fotoğraflar \((\d+)\/25\)$/, 'Photos ($1/25)'],
+  [/^1 fotoğraf$/, '1 photo'], [/^(\d+) fotoğraf$/, '$1 photos'],
+  [/^(.+) · (\d+) fotoğraf$/, '@1 · $2 photos'],
+  [/^(.+) \+(\d+) diğer$/, '$1 +$2 more'],
+  [/^(.+) kaldırıldı$/, '$1 removed'],
+  [/^(.+) top silindi$/, '$1 roll deleted'],
+  [/^(\d+) top (.*) gönderildi$/, '$1 rolls sent to $2'],
+  [/^Sadece (\d+) fotoğraf daha eklenebildi \(sınır 25\)$/, 'Only $1 more photos could be added (limit 25)'],
+  [/^(Kayıt yazılamadı|İşlem tamamlanamadı|Başlatma hatası|Yedekleme hatası|Fotoğraf kaydedilemedi|Paylaşılamadı): (.+)$/, '@1: $2'],
+  [/^Eski kayıtlar aktarıldı: (\d+) müşteri, (\d+) iş$/, 'Old records imported: $1 customers, $2 jobs'],
+  [/^İçe aktarıldı: (\d+) müşteri, (\d+) iş, (\d+) kalıp$/, 'Imported: $1 customers, $2 jobs, $3 patterns'],
+  [/^Kullanılan: (.+)$/, 'Used: $1'], [/^Son yedek: (.+)$/, 'Last backup: $1'], [/^Konum: (.+)$/, 'Location: $1'],
+  [/^(Hafta|Ay|Bu Hafta|Bu Ay|Geçen Ay) · (.+) sonrası$/, '@1 · since $2'],
+  [/^Müşteri: (.+)$/, 'Customer: $1'], [/^İş \/ Model: (.+)$/, 'Job / Model: $1'], [/^Durum: (.+)$/, 'Status: @1'], [/^Kumaş: (.+)$/, 'Fabric: $1'],
+  [/^Not: (.+)$/, 'Note: $1'], [/^Fotoğraf: (\d+) adet$/, 'Photos: $1'],
+  [/^Metre: (.+)$/, 'Meters: $1'], [/^Kilo: (.+)$/, 'Kilos: $1'],
+  [/^Toplam Metre: ([\d.,]+) mt \((\d+) top\)$/, 'Total Meters: $1 m ($2 rolls)'], [/^Toplam Kilo: (.+)$/, 'Total Kilos: $1'],
+  [/^Toplam: (.+)$/, 'Total: $1'], [/^Kalıp Toplamı: (.+)$/, 'Pattern Total: $1'], [/^Genel Toplam: (.+) \((\d+) top\)$/, 'Grand Total: $1 ($2 rolls)'],
+  [/^Toplam metraj: (.+)$/, 'Total length: $1'],
+  [/^Yeni iş: (\d+) · Teslim edilen: (\d+) · Müşteri: (\d+)$/, 'New jobs: $1 · Delivered: $2 · Customers: $3'],
+  [/^(.+) · Rekor: (.+)$/, '@1 · Best: $2'],
+  [/^(Skor|Hamle|Seviye|Yem|Uzunluk|Hak|Rekor): (.+)$/, '@1: $2'],
+  [/^Sv (\d+)(.*)$/, 'Lv $1$2'], [/^Uzunluk (\d+)$/, 'Length $1'],
+  [/^HIZ (\d+)!$/, 'SPEED $1!'], [/^SEVİYE (\d+)!$/, 'LEVEL $1!'], [/^DALGA (\d+)!$/, 'WAVE $1!'], [/^Seviye (\d+)$/, 'Level $1'],
+  [/^ATIŞ HIZI %(\d+)$/, 'FIRE RATE $1%'], [/^MERMİ (\d+)(.*)$/, 'BULLETS $1$2'],
+  [/^da 0,22 sn → %100$/, 'at 0.22 s → 100%'],
+  [/^(\d+) sn$/, '$1 s'], [/^(\d+) mt$/, '$1 m'],
+  [/^İş (.+)$/, 'Job $1']
+];
 </script>
 <script>
 'use strict';
@@ -817,7 +1045,7 @@ window.AR_RULES = [
      "localStorage doldu, kayıt sessizce başarısız oldu" sorununun çözümü budur.
    - Her yazma işleminin sonucu kontrol edilir; hata olursa kullanıcı görür.
    ===================================================================== */
-var APP_VERSION = '2.13.0';
+var APP_VERSION = '2.14.0';
 var SCHEMA_VERSION = 2; // 1 = eski localStorage sürümü (MİT 1.0), 2 = IndexedDB
 
 var IN_FRAME = (function () { try { return window.self !== window.top; } catch (e) { return true; } })();
@@ -1371,7 +1599,7 @@ var I18n = {
 
   /* ---- Çeviri çekirdeği ---- */
   tr: function (s) {
-    if (this.lang !== 'ar' || typeof s !== 'string' || !s) return s;
+    if (this.lang === 'tr' || typeof s !== 'string' || !s) return s;
     var m = /^(\s*)([\s\S]*?)(\s*)$/.exec(s), core = m[2];
     if (!core) return s;
     var out = this.cache[core];
@@ -1384,7 +1612,7 @@ var I18n = {
   },
   cacheN: 0,
   core: function (t) {
-    var D = window.AR_DICT || {}, R = window.AR_RULES || [], self = this, out;
+    var en = this.lang === 'en', D = (en ? window.EN_DICT : window.AR_DICT) || {}, R = (en ? window.EN_RULES : window.AR_RULES) || [], self = this, out;
     if (Object.prototype.hasOwnProperty.call(D, t)) return D[t];
     for (var i = 0; i < R.length; i++) {
       var m = R[i][0].exec(t);
@@ -1398,19 +1626,20 @@ var I18n = {
   },
   // Sayı + birim: 12,5 mt → 12,5 م
   units: function (t) {
+    if (this.lang === 'en') return t.replace(/(\d)\s*mt\b/g, '$1 m').replace(/(\d)\s*gr\b/g, '$1 g').replace(/(\d)\s*sn\b/g, '$1 s');
     return t.replace(/(\d)\s*mt\b/g, '$1 م').replace(/(\d)\s*kg\b/g, '$1 كجم').replace(/(\d)\s*gr\b/g, '$1 جم')
       .replace(/(\d)\s*sn\b/g, '$1 ث').replace(/(\d)\s*MB\b/g, '$1 ميجا');
   },
   // Büyük harfle yazılacak başlıklar: Arapçada büyük harf yok
-  up: function (s) { return this.lang === 'ar' ? this.tr(s) : String(s).toLocaleUpperCase('tr-TR'); },
+  up: function (s) { return this.lang === 'ar' ? this.tr(s) : this.lang === 'en' ? this.tr(String(s)).toUpperCase() : String(s).toLocaleUpperCase('tr-TR'); },
 
   /* ---- DOM çevirisi ---- */
   skipEl: function (el) { return !el || this.SKIP[el.nodeName] === 1 || (el.closest && el.closest('[data-nt]')); },
   fixText: function (n) {
     if (this.skipEl(n.parentNode)) return;
-    if (n.__t !== undefined && n.nodeValue === n.__t) { if (this.lang !== 'ar') { n.nodeValue = n.__o; n.__t = undefined; } return; }
+    if (n.__t !== undefined && n.nodeValue === n.__t) { if (this.lang === 'tr') { n.nodeValue = n.__o; n.__t = undefined; } return; }
     n.__t = undefined;
-    if (this.lang !== 'ar') return;
+    if (this.lang === 'tr') return;
     var o = n.nodeValue, t = this.tr(o);
     if (t !== o) { n.__o = o; n.__t = t; n.nodeValue = t; }
   },
@@ -1420,9 +1649,9 @@ var I18n = {
       var k = this.ATTRS[i], v = el.getAttribute && el.getAttribute(k);
       if (v === null || v === undefined) continue;
       var rec = a && a[k];
-      if (rec && rec.t === v) { if (this.lang !== 'ar') { el.setAttribute(k, rec.o); a[k] = undefined; } continue; }
+      if (rec && rec.t === v) { if (this.lang === 'tr') { el.setAttribute(k, rec.o); a[k] = undefined; } continue; }
       if (a && a[k]) a[k] = undefined;
-      if (this.lang !== 'ar') continue;
+      if (this.lang === 'tr') continue;
       var t = this.tr(v);
       if (t !== v) { a = el.__a = a || {}; a[k] = { o: v, t: t }; el.setAttribute(k, t); }
     }
@@ -1443,7 +1672,7 @@ var I18n = {
     if (this.obs || !window.MutationObserver) return;
     var self = this;
     this.obs = new MutationObserver(function (recs) {
-      if (self.anim || self.lang !== 'ar') return;
+      if (self.anim || self.lang === 'tr') return;
       for (var i = 0; i < recs.length; i++) {
         var r = recs[i];
         if (r.type === 'childList') { for (var j = 0; j < r.addedNodes.length; j++) self.walk(r.addedNodes[j]); }
@@ -1455,16 +1684,15 @@ var I18n = {
   },
   dirAttrs: function () {
     var ar = this.isAr(), h = document.documentElement;
-    h.setAttribute('lang', ar ? 'ar-EG' : 'tr');
+    h.setAttribute('lang', ar ? 'ar-EG' : this.lang === 'en' ? 'en' : 'tr');
     h.setAttribute('dir', ar ? 'rtl' : 'ltr');
-    var sw = document.getElementById('lang-sw');
-    if (sw) { sw.classList.toggle('ar', ar); sw.setAttribute('aria-pressed', String(ar)); }
+    if (typeof Cat !== 'undefined') Cat.mark();
   },
   // Açılışta (animasyonsuz) uygula
   early: function () {
-    try { var l = localStorage.getItem('mit_lang'); if (l === 'ar' || l === 'tr') this.lang = l; } catch (e) {}
+    try { var l = localStorage.getItem('mit_lang'); if (l === 'ar' || l === 'tr' || l === 'en') this.lang = l; } catch (e) {}
     this.dirAttrs();
-    if (this.isAr()) { this.fontsReady(); this.walk(document.body); }
+    if (this.lang !== 'tr') { if (this.isAr()) this.fontsReady(); this.walk(document.body); }
     this.observe();
   },
   fontsReady: function () {
@@ -1500,10 +1728,10 @@ var I18n = {
     });
     return out;
   },
-  POOL_AR: 'ابتثجحخدذرزسشصضطظعغفقكلمنهوي', POOL_TR: 'ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ',
+  POOL_AR: 'ابتثجحخدذرزسشصضطظعغفقكلمنهوي', POOL_TR: 'ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ', POOL_EN: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
   // Metin çözülme (decode) animasyonu + dalga + düğüm çevirme + küre darbesi
   animate: function (nodes) {
-    var self = this, t0 = performance.now(), DUR = 1100, toAr = this.isAr(), pool = toAr ? this.POOL_AR : this.POOL_TR;
+    var self = this, t0 = performance.now(), DUR = 1100, toAr = this.isAr(), pool = toAr ? this.POOL_AR : this.lang === 'en' ? this.POOL_EN : this.POOL_TR;
     var items = nodes.map(function (n, i) {
       return { n: n, fin: n.nodeValue, delay: Math.min(380, i * 28), len: n.nodeValue.length };
     });
@@ -1548,10 +1776,10 @@ var I18n = {
   if (!cp) return;
   var ft = cp.fillText, stk = cp.strokeText, mt = cp.measureText;
   function draw(fn, ctx, t, x, y, w) {
-    if (I18n.lang !== 'ar') return fn.call(ctx, t, x, y, w);
+    if (I18n.lang === 'tr') return fn.call(ctx, t, x, y, w);
     t = I18n.tr(String(t));
     var cv = ctx.canvas;
-    if (cv && cv.__rtl) {
+    if (cv && cv.__rtl && I18n.lang === 'ar') {
       var a = ctx.textAlign;
       if (a === 'left' || a === 'start') {
         ctx.direction = 'rtl'; ctx.textAlign = 'right';
@@ -1564,7 +1792,7 @@ var I18n = {
   }
   cp.fillText = function (t, x, y, w) { return draw(ft, this, t, x, y, w); };
   cp.strokeText = function (t, x, y, w) { return draw(stk, this, t, x, y, w); };
-  cp.measureText = function (t) { return mt.call(this, I18n.lang === 'ar' ? I18n.tr(String(t)) : t); };
+  cp.measureText = function (t) { return mt.call(this, I18n.lang !== 'tr' ? I18n.tr(String(t)) : t); };
 })();
 
 /* =====================================================================
@@ -2727,7 +2955,134 @@ function bindDelegates() {
 }
 
 Actions.back = function () { UI.pop(); };
-Actions.lang = function () { I18n.set(I18n.isAr() ? 'tr' : 'ar', !UI.panelOpen()); };
+/* ---- Dil küreleri ve kedi ----
+   Üç küçük dil küresi (TR · EN · ع); seçili olanın üstünde kedi oturur. Başka küreye
+   dokununca kedi oraya zıplar ve zıpladığı an dil değişir. Asteroit küreyi dağıtınca
+   kedi koşarak kaçar; küre toparlanınca yürüyerek gelip yine seçili küreye oturur. */
+var Cat = {
+  el: null, bar: null, x: 24, y: 42, flip: 1, away: false, busy: false, queue: null, tw: 0, idleT: 0, ORB: 52, SIT: 42,
+  init: function () {
+    this.bar = document.getElementById('lang-bar'); this.el = document.getElementById('lang-cat');
+    if (!this.bar || !this.el) return;
+    var self = this;
+    this.mark();
+    this.place(I18n.lang);
+    setInterval(function () { self.poll(); }, 150);
+    this.idle();
+    window.addEventListener('resize', function () { if (!self.busy && !self.away) self.place(I18n.lang); });
+  },
+  orbX: function (l) { var o = this.bar.querySelector('.lang-orb[data-lang="' + l + '"]'); return o ? o.offsetLeft + o.offsetWidth / 2 : 24; },
+  mark: function () {
+    if (!this.bar) return;
+    var cur = I18n.lang;
+    Array.prototype.forEach.call(this.bar.querySelectorAll('.lang-orb'), function (o) {
+      var on = o.getAttribute('data-lang') === cur; o.classList.toggle('on', on); o.setAttribute('aria-pressed', String(on));
+    });
+  },
+  put: function (x, y, sx, sy, rot) {
+    this.x = x; this.y = y;
+    this.el.style.transform = 'translate(' + (x - 24).toFixed(1) + 'px,' + (-y).toFixed(1) + 'px) scale(' + ((sx || 1) * this.flip).toFixed(3) + ',' + (sy || 1).toFixed(3) + ') rotate(' + ((rot || 0) * this.flip).toFixed(1) + 'deg)';
+  },
+  place: function (l) { this.flip = 1; this.put(this.orbX(l), this.SIT, 1, 1, 0); this.setState(''); },
+  setState: function (c) { this.el.classList.remove('run', 'walk'); if (c) this.el.classList.add(c); },
+  // süre ms; fn(p 0..1); bitince done
+  anim: function (dur, fn, done) {
+    var self = this, t0 = performance.now(), id = ++this.tw;
+    if (REDUCED) dur = 1;
+    (function f(now) {
+      if (id !== self.tw) return;
+      var p = Math.min(1, (now - t0) / dur);
+      fn(p);
+      if (p < 1) requestAnimationFrame(f); else if (done) done();
+    })(t0);
+  },
+  stageHalf: function () { var st = document.getElementById('stage'); return (st ? st.clientWidth : 390) / 2 + 70; },
+  // Kullanıcı bir dil küresine dokundu
+  choose: function (l) {
+    if (l === I18n.lang && !this.busy) return;
+    if (this.away || this.panelHidden() || Impact.active()) { I18n.set(l, !UI.panelOpen()); this.mark(); return; }
+    if (this.busy) { this.queue = l; return; }
+    this.jump(l);
+  },
+  panelHidden: function () { return UI.panelOpen(); },
+  jump: function (l) {
+    var self = this, x0 = this.x, y0 = this.y, x1 = this.orbX(l), h = 54 + Math.abs(x1 - x0) * 0.12, fired = false;
+    if (x1 === x0) { I18n.set(l, true); this.mark(); return; }
+    this.busy = true; this.flip = x1 > x0 ? 1 : -1; this.setState('');
+    Sound.play('tap');
+    // çömel → fırla (zıpladığı an dil animasyonu başlar)
+    this.anim(140, function (p) { self.put(x0, y0, 1 + .12 * p, 1 - .22 * p, 0); }, function () {
+      I18n.set(l, true); self.mark(); fired = true; haptic(15);
+      self.anim(560, function (p) {
+        var e = p, y = y0 + (self.SIT - y0) * e + Math.sin(Math.PI * p) * h;
+        var sy = 1 + .18 * Math.sin(Math.PI * p), sx = 1 - .1 * Math.sin(Math.PI * p);
+        self.put(x0 + (x1 - x0) * e, y, sx, sy, (p - .5) * -26);
+      }, function () {
+        self.anim(160, function (p) { self.put(x1, self.SIT, 1 + .12 * (1 - p), 1 - .2 * (1 - p), 0); }, function () {
+          self.flip = 1; self.put(x1, self.SIT, 1, 1, 0); self.busy = false;
+          var q = self.queue; self.queue = null;
+          if (q && q !== I18n.lang) self.choose(q); else if (self.away === false && I18n.lang !== l) self.place(I18n.lang);
+        });
+      });
+    });
+  },
+  // Asteroit küreyi dağıtınca: aşağı atla, koş, ekrandan çık
+  flee: function () {
+    if (this.away) return;
+    var self = this, x0 = this.x, y0 = this.y, dir = x0 < this.barW() / 2 ? -1 : 1, xe = dir < 0 ? -this.stageHalf() - this.barLeft() : this.barW() + this.stageHalf() + this.barLeft();
+    this.away = true; this.busy = true; this.queue = null; this.flip = dir;
+    this.anim(220, function (p) { self.put(x0 + dir * 14 * p, y0 * (1 - p * p) + Math.sin(Math.PI * p) * 14, 1, 1, 0); }, function () {
+      self.setState('run');
+      var xs = self.x;
+      self.anim(Math.max(500, Math.abs(xe - xs) * 3.2), function (p) { self.put(xs + (xe - xs) * p * p, 0, 1, 1, 0); }, function () { self.setState(''); self.el.style.visibility = 'hidden'; self.busy = false; self.fled = true; });
+    });
+  },
+  barW: function () { return this.bar.offsetWidth; },
+  barLeft: function () { var st = document.getElementById('stage'); return this.bar.getBoundingClientRect().left - (st ? st.getBoundingClientRect().left : 0); },
+  // Küre toparlanınca: kenardan yürüyerek gel, seçili küreye zıpla
+  comeBack: function () {
+    if (!this.away || this.returning) return;
+    var self = this, l = I18n.lang;
+    if (this.panelHidden() || REDUCED) { this.away = false; this.fled = false; this.el.style.visibility = ''; this.place(l); return; }
+    this.returning = true; this.busy = true;
+    var xt = this.orbX(l), fromLeft = xt < this.barW() / 2 ? true : Math.random() < .5;
+    var xs = fromLeft ? -this.stageHalf() - this.barLeft() : this.barW() + this.stageHalf() + this.barLeft();
+    this.flip = xs < xt ? 1 : -1; this.el.style.visibility = ''; this.setState('walk'); this.put(xs, 0, 1, 1, 0);
+    var x1 = xt + (xs < xt ? -34 : 34);
+    this.anim(Math.min(3200, Math.abs(x1 - xs) * 8), function (p) { self.put(xs + (x1 - xs) * p, 0, 1, 1, 0); }, function () {
+      self.setState(''); self.flip = x1 < xt ? 1 : -1;
+      var y0 = 0;
+      self.anim(150, function (p) { self.put(x1, 0, 1 + .1 * p, 1 - .2 * p, 0); }, function () {
+        self.anim(480, function (p) { self.put(x1 + (xt - x1) * p, self.SIT * p + Math.sin(Math.PI * p) * 34, 1 - .08 * Math.sin(Math.PI * p), 1 + .16 * Math.sin(Math.PI * p), 0); }, function () {
+          self.flip = 1; self.put(xt, self.SIT, 1, 1, 0); self.away = false; self.returning = false; self.fled = false; self.busy = false;
+          if (I18n.lang !== l) self.place(I18n.lang);
+        });
+      });
+    });
+  },
+  poll: function () {
+    if (!this.el) return;
+    var ph = Impact.phase, hit = ph === 'boom' || ph === 'scatter' || ph === 'gather';
+    if (hit && !this.away && !this.panelHidden()) this.flee();
+    else if (!hit && this.away && !this.busy && !this.returning) this.comeBack();
+    else if (!hit && this.away && !this.busy && this.panelHidden()) this.comeBack();
+  },
+  // Arada bir hareket
+  idle: function () {
+    var self = this;
+    clearTimeout(this.idleT);
+    this.idleT = setTimeout(function () {
+      if (!self.busy && !self.away && !UI.panelOpen() && !document.hidden) {
+        var c = ['look', 'look2', 'wag', 'stretch'][Math.floor(Math.random() * 4)];
+        self.el.classList.add(c);
+        setTimeout(function () { self.el.classList.remove(c); }, c === 'stretch' ? 1100 : 1300);
+      }
+      self.idle();
+    }, 2500 + Math.random() * 3500);
+  }
+};
+
+Actions.lang = function (el) { var l = el && el.getAttribute && el.getAttribute('data-lang'); if (l) Cat.choose(l); };
 Actions.undo = function () { UI.runUndo(); };
 Actions['drw-pick'] = function (el) {
   var d = UI.drawer; if (!d) return;
@@ -3213,7 +3568,7 @@ Screens.report = function (body) {
 Actions['report-tab'] = function (el) { Screens.st.reportKey = el.getAttribute('data-k'); Screens.report(UI.pBody()); };
 Actions['report-share'] = function (el) {
   var rep = buildReport(Screens.st.reportKey || 'week');
-  var lines = [{ t: I18n.isAr() ? ('MİT · تقرير ' + I18n.tr(rep.label)) : ('MİT · ' + rep.label.toLocaleUpperCase('tr-TR') + ' RAPORU'), s: 22, b: true, c: '#00E5FF', center: true, after: 6 },
+  var lines = [{ t: I18n.isAr() ? ('MİT · تقرير ' + I18n.tr(rep.label)) : I18n.lang === 'en' ? ('MİT · ' + I18n.tr(rep.label).toUpperCase() + ' REPORT') : ('MİT · ' + rep.label.toLocaleUpperCase('tr-TR') + ' RAPORU'), s: 22, b: true, c: '#00E5FF', center: true, after: 6 },
     { t: fmtDate(rep.from) + ' – ' + fmtDate(new Date()), s: 15, c: '#8FB3C7', center: true, after: 16 },
     { t: 'Toplam metraj: ' + fmtNum(rep.meters) + ' mt', s: 20, b: true },
     { t: 'Yeni iş: ' + rep.newJobs + ' · Teslim edilen: ' + rep.delivered + ' · Müşteri: ' + rep.customerList.length, s: 16 },
@@ -5124,6 +5479,7 @@ function boot() {
 
   Sphere.init();
   Impact.init();
+  Cat.init();
   Orbit.init();
   App.refreshStats();
 
