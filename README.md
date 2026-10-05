@@ -54,3 +54,8 @@ uygulamayı kaldır, yeni APK'yı kur, Yedekleme → yedekten geri yükle. Sonra
 - Kaynak: `src/index.html` (tek dosya; bölümler: VERİ · SES · KÜRE · PANELLER · EKRANLAR · OYUNLAR · BAŞLAT)
 - Derleme: `npm ci && npm run build` → `www/index.html` (Three.js r149 ve Exo 2 gömülür, dış istek yok)
 - Kontrol: `npm run check`
+
+## Dil (Türkçe / Mısır Arapçası)
+- Küre ekranının üstündeki **TR | ع** anahtarına dokun; küre ekranında dalga + dönen yazı animasyonuyla dil değişir, yön sağdan sola olur.
+- Seçim kaydedilir (`mit_lang`). Ayarlar'da dil seçeneği yoktur.
+- Çeviri sözlüğü: `src/i18n-ar.js`. Yeni metin eklenince buraya da eklenmeli.

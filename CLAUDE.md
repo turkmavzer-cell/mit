@@ -9,3 +9,4 @@
   olaylar yetki devirli `data-act` / `data-in` / `data-ch` / `data-key` / `data-blur` ile.
 - Dış istek yok (CDN, harici font/görsel). Yeni kütüphane gerekiyorsa `tools/build.mjs` ile göm.
 - `keystore/debug.keystore` değiştirilmez (değişirse güncellemeler kurulamaz, veri kaybı olur).
+- Dil: Türkçe (varsayılan) + Mısır Arapçası (RTL). Anahtar yalnızca küre ekranında (`#lang-sw`), Ayarlar'da dil seçeneği yok. Çeviri çalışma anında `I18n` ile yapılır; **yeni her arayüz metni için `src/i18n-ar.js` içine karşılık ekle** (AR_DICT birebir, AR_RULES kalıp). Kullanıcı verisi çevrilmez; çevrilmemesi gereken yere `data-nt` koy.
