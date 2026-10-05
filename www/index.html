@@ -139,33 +139,16 @@ svg { flex-shrink: 0; }
 .lang-orb b { position: relative; z-index: 1; font-weight: 700; text-shadow: 0 0 6px rgba(var(--ink),.9); }
 .lang-orb.ar b { font-family: Cairo, var(--hud); font-size: 20px; letter-spacing: 0; }
 .lang-orb.on { border-color: var(--cy); color: var(--tx); box-shadow: 0 0 18px var(--cy-a40), inset 0 0 14px var(--cy-a20); }
-.lang-cat { position: absolute; left: 0; bottom: 0; width: 48px; height: 44px; z-index: 6; pointer-events: none; will-change: transform; }
-.lang-cat svg { width: 100%; height: 100%; overflow: visible; display: block; transform-origin: 50% 90%; }
-.lang-cat .c-fill { fill: var(--am); } .lang-cat .c-dark { fill: #10192e; } .lang-cat .c-in { fill: #ff8f8f; }
-.lang-cat .c-tail { transform-origin: 36px 38px; animation: catTail 2.4s ease-in-out infinite; }
-.lang-cat .c-eye { transform-box: fill-box; transform-origin: center; animation: catBlink 4.2s infinite; }
-.lang-cat .c-head { transform-origin: 24px 26px; transition: transform .35s; }
-.lang-cat .c-paw { transform-box: fill-box; transform-origin: center; }
-.lang-cat.look .c-head { transform: rotate(-14deg); }
-.lang-cat.look2 .c-head { transform: rotate(14deg); }
-.lang-cat.wag .c-tail { animation-duration: .5s; }
-.lang-cat.stretch svg { animation: catStretch 1.1s ease-in-out; }
-.lang-cat.run svg, .lang-cat.walk svg { animation: catRun .26s ease-in-out infinite; }
-.lang-cat.walk svg { animation-duration: .5s; }
-.lang-cat.run .c-tail { animation: none; transform: rotate(-70deg); }
-.lang-cat.run .c-paw.p1, .lang-cat.walk .c-paw.p1 { animation: catPaw .26s ease-in-out infinite; }
-.lang-cat.run .c-paw.p2, .lang-cat.walk .c-paw.p2 { animation: catPaw .26s ease-in-out infinite reverse; }
-.lang-cat.walk .c-paw.p1, .lang-cat.walk .c-paw.p2 { animation-duration: .5s; }
-@keyframes catTail { 0%,100% { transform: rotate(-8deg); } 50% { transform: rotate(16deg); } }
-@keyframes catBlink { 0%,93%,100% { transform: scaleY(1); } 96% { transform: scaleY(.1); } }
-@keyframes catStretch { 0%,100% { transform: scale(1,1); } 40%,65% { transform: scale(.92,1.14); } }
-@keyframes catRun { 0%,100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-4px) rotate(3deg); } }
-@keyframes catPaw { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+#cat-cv { position: absolute; left: 0; bottom: calc(var(--sab) + 40px); width: 100%; height: 190px; z-index: 6; pointer-events: none; }
+#shock-cv { position: absolute; left: 0; top: 0; width: 100%; height: 100%; z-index: 4; pointer-events: none; }
+body.panel-open #cat-cv, body.panel-open #shock-cv { visibility: hidden; }
 .lang-wave {
   position: absolute; left: 50%; top: 50%; width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 50%; pointer-events: none; z-index: 4;
   border: 2px solid var(--cy); box-shadow: 0 0 24px var(--cy-a40), inset 0 0 24px var(--cy-a20); animation: langWave 1.1s ease-out forwards;
 }
 @keyframes langWave { from { transform: scale(.3); opacity: .9; } to { transform: scale(26); opacity: 0; } }
+.lang-hit { animation: langHit .5s ease-out; }
+@keyframes langHit { 0% { filter: brightness(1); } 25% { filter: brightness(1.9) saturate(1.4); } 100% { filter: brightness(1); } }
 .lang-flip { animation: langFlip .8s cubic-bezier(.3,.7,.3,1) both; }
 @keyframes langFlip { 0% { transform: rotateY(0) scale(1); } 45% { transform: rotateY(90deg) scale(.7); } 100% { transform: rotateY(360deg) scale(1); } }
 .lang-pop { animation: langPop .7s ease-out; }
@@ -596,21 +579,11 @@ textarea.inp { padding: 12px; resize: none; line-height: 1.4; }
     </div>
   </div>
   <div id="nodes"></div>
+  <canvas id="cat-cv" aria-hidden="true"></canvas>
   <div id="lang-bar" data-nt="1" role="group" aria-label="Language · Dil · اللغة">
     <button class="lang-orb tr" data-act="lang" data-lang="tr" aria-label="Türkçe" aria-pressed="true"><b>TR</b></button>
     <button class="lang-orb en" data-act="lang" data-lang="en" aria-label="English" aria-pressed="false"><b>EN</b></button>
     <button class="lang-orb ar" data-act="lang" data-lang="ar" aria-label="العربية" aria-pressed="false"><b>ع</b></button>
-    <div class="lang-cat" id="lang-cat" aria-hidden="true"><svg viewBox="0 0 48 44">
-      <g class="c-tail"><path d="M35 38 C45 38 47 28 43 21" fill="none" stroke="var(--am)" stroke-width="5" stroke-linecap="round"/></g>
-      <ellipse class="c-fill" cx="24" cy="33" rx="13" ry="10"/>
-      <ellipse class="c-paw p1 c-fill" cx="18" cy="42" rx="4.5" ry="2.6"/><ellipse class="c-paw p2 c-fill" cx="30" cy="42" rx="4.5" ry="2.6"/>
-      <g class="c-head"><polygon class="c-fill" points="14,12 15,0 23,8"/><polygon class="c-fill" points="34,12 33,0 25,8"/>
-      <polygon class="c-in" points="16.5,9 16.8,3.5 20.5,7.5"/><polygon class="c-in" points="31.5,9 31.2,3.5 27.5,7.5"/>
-      <circle class="c-fill" cx="24" cy="18" r="11"/>
-      <ellipse class="c-eye c-dark" cx="19.5" cy="17" rx="1.8" ry="2.6"/><ellipse class="c-eye c-dark" cx="28.5" cy="17" rx="1.8" ry="2.6"/>
-      <polygon class="c-in" points="22.4,21 25.6,21 24,23"/>
-      <path d="M24 23 v1.5 M24 24.5 q-2 2 -4 1 M24 24.5 q2 2 4 1" fill="none" stroke="#10192e" stroke-width="1" stroke-linecap="round"/></g>
-    </svg></div>
   </div>
   <div id="stage-hint">Küreyi parmağınla çevir · menüye dokun</div>
 </div>
@@ -1045,7 +1018,7 @@ window.EN_RULES = [
      "localStorage doldu, kayıt sessizce başarısız oldu" sorununun çözümü budur.
    - Her yazma işleminin sonucu kontrol edilir; hata olursa kullanıcı görür.
    ===================================================================== */
-var APP_VERSION = '2.14.0';
+var APP_VERSION = '2.15.0';
 var SCHEMA_VERSION = 2; // 1 = eski localStorage sürümü (MİT 1.0), 2 = IndexedDB
 
 var IN_FRAME = (function () { try { return window.self !== window.top; } catch (e) { return true; } })();
@@ -1700,10 +1673,14 @@ var I18n = {
   },
   mirror: function (cv) { cv.__rtl = this.isAr(); return cv; },
 
-  /* ---- Dil değiştirme (ana ekranda animasyonlu) ---- */
-  set: function (lang, animate) {
+  /* ---- Dil değiştirme (ana ekranda animasyonlu) ----
+     origin: şok dalgasının çıktığı nokta (tarayıcı koordinatı). Yazılar dalga kendilerine
+     ulaşınca eski dilden yeni dile "çözülerek" döner. */
+  set: function (lang, animate, origin) {
     if (lang === this.lang) return;
+    var self = this, olds = new Map();
     var stageEls = animate ? this.stageNodes() : [];
+    stageEls.forEach(function (n) { olds.set(n, n.nodeValue); });
     this.lang = lang;
     this.cache = {}; this.cacheN = 0;
     try { localStorage.setItem('mit_lang', lang); } catch (e) {}
@@ -1713,10 +1690,13 @@ var I18n = {
     this.dirAttrs();
     this.anim = !!stageEls.length;
     this.walk(document.body);
-    if (this.obs) this.obs.takeRecords();
     if (typeof App !== 'undefined') App.refreshStats();
-    if (this.anim) this.animate(stageEls);
-    else if (typeof Sphere !== 'undefined' && Sphere.ok) Sphere.renderOnce();
+    this.walk(document.getElementById('stage'));
+    if (this.obs) this.obs.takeRecords();
+    if (this.anim) {
+      var fresh = this.stageNodes();
+      this.animate(fresh, olds, origin);
+    } else if (typeof Sphere !== 'undefined' && Sphere.ok) Sphere.renderOnce();
     if (UI && UI.panel && Screens && Screens.render) { try { Screens.render(); } catch (e) {} }
   },
   stageNodes: function () {
@@ -1729,38 +1709,56 @@ var I18n = {
     return out;
   },
   POOL_AR: 'ابتثجحخدذرزسشصضطظعغفقكلمنهوي', POOL_TR: 'ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ', POOL_EN: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
-  // Metin çözülme (decode) animasyonu + dalga + düğüm çevirme + küre darbesi
-  animate: function (nodes) {
-    var self = this, t0 = performance.now(), DUR = 1100, toAr = this.isAr(), pool = toAr ? this.POOL_AR : this.lang === 'en' ? this.POOL_EN : this.POOL_TR;
-    var items = nodes.map(function (n, i) {
-      return { n: n, fin: n.nodeValue, delay: Math.min(380, i * 28), len: n.nodeValue.length };
+  scramble: function (f, shown, pool) {
+    var s = '';
+    for (var c = 0; c < f.length; c++) {
+      var ch = f.charAt(c);
+      if (c < shown || ch === ' ' || /[0-9·%♥♡()+\-:]/.test(ch)) s += ch;
+      else s += pool.charAt(Math.floor(Math.random() * pool.length));
+    }
+    return s;
+  },
+  // Şok dalgası ulaşınca: metin çözülmesi + düğüm çevirme + merkez sayısı darbesi + küre sarsıntısı
+  animate: function (nodes, olds, origin) {
+    var self = this, t0 = performance.now(), DEC = 520, V = (typeof Shock !== 'undefined' ? Shock.V : 1000);
+    var toAr = this.isAr(), pool = toAr ? this.POOL_AR : this.lang === 'en' ? this.POOL_EN : this.POOL_TR;
+    var st = document.getElementById('stage'), sr = st.getBoundingClientRect();
+    var o = origin || { x: sr.left + sr.width / 2, y: sr.top + sr.height / 2 };
+    function dist(el) { var r = el.getBoundingClientRect(); return Math.hypot(r.left + r.width / 2 - o.x, r.top + r.height / 2 - o.y); }
+    var maxEnd = 0;
+    var items = nodes.map(function (n) {
+      var d = n.parentNode && n.parentNode.getBoundingClientRect ? dist(n.parentNode) : 300;
+      var delay = d / V * 1000, fin = n.nodeValue, old = olds && olds.has(n) ? olds.get(n) : null;
+      maxEnd = Math.max(maxEnd, delay + DEC);
+      return { n: n, fin: fin, old: old, delay: delay, done: false };
     });
-    var st = document.getElementById('stage');
-    var w = document.createElement('div'); w.className = 'lang-wave'; st.appendChild(w);
-    setTimeout(function () { if (w.parentNode) w.parentNode.removeChild(w); }, 1300);
-    Array.prototype.forEach.call(document.querySelectorAll('#nodes .node-ring, #nodes .node-label'), function (el, i) {
-      el.style.animationDelay = (Math.min(10, i) * 45) + 'ms'; el.classList.add('lang-flip');
-      setTimeout(function () { el.classList.remove('lang-flip'); el.style.animationDelay = ''; }, 1000);
+    if (typeof Shock !== 'undefined') Shock.start(o);
+    // başlangıçta eski metin (ya da çözülmemiş karışık harfler) görünür
+    items.forEach(function (it) { it.n.nodeValue = it.old !== null ? it.old : self.scramble(it.fin, 0, pool); });
+    Array.prototype.forEach.call(document.querySelectorAll('#nodes .node-ring, #nodes .node-label'), function (el) {
+      var d = dist(el);
+      setTimeout(function () { el.classList.add('lang-flip'); setTimeout(function () { el.classList.remove('lang-flip'); }, 900); }, d / V * 1000);
     });
-    var big = document.getElementById('cs-big'); if (big) { big.classList.remove('lang-pop'); void big.offsetWidth; big.classList.add('lang-pop'); }
-    if (typeof Sphere !== 'undefined' && Sphere.ok) { Sphere.vy += toAr ? -0.14 : 0.14; Sphere.vx += 0.04; }
-    if (Sound.ctx && Settings.sound) { try { Sound.tone(toAr ? 330 : 660, 0.35, 'triangle', 0, toAr ? 880 : 440); } catch (e) {} }
+    var big = document.getElementById('cs-big');
+    if (big) { var cd = dist(big) / V * 1000; setTimeout(function () { big.classList.remove('lang-pop'); void big.offsetWidth; big.classList.add('lang-pop'); }, cd); }
+    var sph = document.getElementById('center-stats');
+    setTimeout(function () {
+      if (typeof Sphere !== 'undefined' && Sphere.ok) { Sphere.vy += toAr ? -0.2 : 0.2; Sphere.vx += 0.07; }
+      var gl = document.getElementById('gl'); if (gl) { gl.classList.remove('lang-hit'); void gl.offsetWidth; gl.classList.add('lang-hit'); }
+    }, (sph ? dist(sph) : 300) / V * 1000);
+    if (Sound.ctx && Settings.sound) { try { Sound.tone(toAr ? 330 : 660, 0.45, 'triangle', 0.05, toAr ? 880 : 440); } catch (e) {} }
     haptic(25);
     (function frame(now) {
       var k = now - t0, done = true;
       items.forEach(function (it) {
-        var p = Math.max(0, Math.min(1, (k - it.delay) / (DUR - 380)));
-        if (p >= 1) { if (it.n.nodeValue !== it.fin) it.n.nodeValue = it.fin; return; }
+        if (it.done) return;
+        if (k < it.delay) { done = false; return; }
+        var p = (k - it.delay) / DEC;
+        if (p >= 1) { it.n.nodeValue = it.fin; it.done = true; return; }
         done = false;
-        var f = it.fin, shown = Math.floor(p * f.length), s = '';
-        for (var c = 0; c < f.length; c++) {
-          var ch = f.charAt(c);
-          if (c < shown || ch === ' ' || /[0-9·%♥♡()+\-:]/.test(ch)) s += ch;
-          else s += pool.charAt(Math.floor(Math.random() * pool.length));
-        }
-        it.n.nodeValue = s;
+        it.n.nodeValue = self.scramble(it.fin, Math.floor(p * it.fin.length), pool);
       });
-      if (!done && k < DUR + 500) { requestAnimationFrame(frame); return; }
+      if (!done && k < maxEnd + 400) { requestAnimationFrame(frame); return; }
       items.forEach(function (it) { it.n.nodeValue = it.fin; });
       self.anim = false;
       if (self.obs) self.obs.takeRecords();
@@ -2956,129 +2954,507 @@ function bindDelegates() {
 
 Actions.back = function () { UI.pop(); };
 /* ---- Dil küreleri ve kedi ----
-   Üç küçük dil küresi (TR · EN · ع); seçili olanın üstünde kedi oturur. Başka küreye
-   dokununca kedi oraya zıplar ve zıpladığı an dil değişir. Asteroit küreyi dağıtınca
-   kedi koşarak kaçar; küre toparlanınca yürüyerek gelip yine seçili küreye oturur. */
-var Cat = {
-  el: null, bar: null, x: 24, y: 42, flip: 1, away: false, busy: false, queue: null, tw: 0, idleT: 0, ORB: 52, SIT: 42,
-  init: function () {
-    this.bar = document.getElementById('lang-bar'); this.el = document.getElementById('lang-cat');
-    if (!this.bar || !this.el) return;
-    var self = this;
-    this.mark();
-    this.place(I18n.lang);
-    setInterval(function () { self.poll(); }, 150);
-    this.idle();
-    window.addEventListener('resize', function () { if (!self.busy && !self.away) self.place(I18n.lang); });
-  },
-  orbX: function (l) { var o = this.bar.querySelector('.lang-orb[data-lang="' + l + '"]'); return o ? o.offsetLeft + o.offsetWidth / 2 : 24; },
-  mark: function () {
-    if (!this.bar) return;
-    var cur = I18n.lang;
-    Array.prototype.forEach.call(this.bar.querySelectorAll('.lang-orb'), function (o) {
-      var on = o.getAttribute('data-lang') === cur; o.classList.toggle('on', on); o.setAttribute('aria-pressed', String(on));
+   Üç dil küresi (TR · EN · ع). Kedi seçili kürenin üstünde oturur. Başka küreye dokununca:
+   yönünü çevirir → bakar → çömelir (kıç sallar) → fırlar → havada gerilip toplanır →
+   ön patilerle konar → yaylanıp oturur. Konduğu an küreden bir şok dalgası yayılır ve ana
+   ekrandaki yazılar dalga ulaştıkça yeni dile döner. Asteroit küreyi dağıtınca kedi
+   ürkür, küreden atlayıp koşarak kaçar; küre toparlanınca yürüyerek gelir, zıplayıp oturur.
+   Kedi bir canvas üzerinde iskelet (omurga, 2 kemikli IK bacaklar, zincir kuyruk, kulak,
+   göz) olarak çizilir; tüm pozlar yay (spring) ile yumuşatılır. */
+var Cat = (function () {
+  var D = Math.PI / 180, S = 1.18;
+  var COL = { fur: '#F2A23A', shade: '#C98220', stripe: '#B8661A', line: '#4a2a0c', white: '#FFF1DC', pink: '#F28FA0', ear: '#F6B0A8', eye: '#F2D544', pup: '#1a1208' };
+  var KEYS = ['hx', 'hy', 'sx', 'sy', 'nA', 'nL', 'hA', 'ear', 'eye', 'mouth', 'pup', 'tA', 'tC', 'tW', 'tP', 'arch', 'rb', 'rc', 'rh',
+    'fnx', 'fny', 'ffx', 'ffy', 'hnx', 'hny', 'hfx', 'hfy', 'pitch', 'lx', 'ly'];
+  var POSE = {
+    sit:    { hx: -5, hy: 8.5, sx: 5.5, sy: 24.2, nA: 66, nL: 9, hA: -6, ear: 0, eye: 1, mouth: 0, pup: .2, tA: 262, tC: 11, tW: 3, tP: 0, arch: .5, rb: 7.2, rc: 7.8, rh: 9, fnx: 10.5, fny: 0, ffx: 7.6, ffy: 0, hnx: 3.5, hny: 0, hfx: -1.5, hfy: 0, pitch: 0, lx: 0, ly: 0 },
+    stand:  { hx: -11, hy: 21, sx: 11.5, sy: 22.2, nA: 30, nL: 9.5, hA: 0, ear: 0, eye: 1, mouth: 0, pup: .2, tA: 160, tC: -3, tW: 6, tP: 0, arch: 1.5, rb: 6.5, rc: 7.5, rh: 8.5, fnx: 13, fny: 0, ffx: 9.5, ffy: 0, hnx: -8, hny: 0, hfx: -11.5, hfy: 0, pitch: 0, lx: 0, ly: 0 },
+    look:   { hx: -11, hy: 21, sx: 11.5, sy: 22.6, nA: 48, nL: 10, hA: 14, ear: 0, eye: 1, mouth: 0, pup: .1, tA: 150, tC: -4, tW: 10, tP: 0, arch: 1.5, rb: 6.5, rc: 7.5, rh: 8.5, fnx: 13, fny: 0, ffx: 9.5, ffy: 0, hnx: -8, hny: 0, hfx: -11.5, hfy: 0, pitch: 0, lx: .6, ly: .5 },
+    crouch: { hx: -13, hy: 13.5, sx: 9, sy: 12.8, nA: 10, nL: 9.5, hA: 6, ear: 0, eye: 1, mouth: 0, pup: .85, tA: 176, tC: 0, tW: 18, tP: 0, arch: 2.5, rb: 6.8, rc: 7.6, rh: 9, fnx: 17, fny: 0, ffx: 13.5, ffy: 0, hnx: -8.5, hny: 0, hfx: -12, hfy: 0, pitch: 0, lx: .5, ly: .4 },
+    launch: { hx: -12, hy: 22, sx: 14, sy: 27, nA: 36, nL: 10.5, hA: 16, ear: .1, eye: 1, mouth: 0, pup: .9, tA: 178, tC: -1, tW: 3, tP: 0, arch: 0, rb: 6, rc: 7, rh: 8, fnx: 24, fny: 9, ffx: 21, ffy: 8, hnx: -24, hny: 2, hfx: -22, hfy: 0, pitch: 14, lx: .7, ly: .6 },
+    fly:    { hx: -11, hy: 19, sx: 12.5, sy: 22, nA: 26, nL: 10, hA: 6, ear: .1, eye: 1, mouth: 0, pup: .9, tA: 178, tC: -2, tW: 2, tP: 0, arch: 0, rb: 6, rc: 7, rh: 8, fnx: 23, fny: 10, ffx: 20, ffy: 12, hnx: -22, hny: 0, hfx: -20, hfy: 4, pitch: 0, lx: .7, ly: 0 },
+    land:   { hx: -12, hy: 12.5, sx: 9.5, sy: 12, nA: 12, nL: 9.5, hA: 0, ear: 0, eye: .75, mouth: 0, pup: .5, tA: 150, tC: -3, tW: 5, tP: 0, arch: 3, rb: 6.8, rc: 7.8, rh: 9, fnx: 16, fny: 0, ffx: 12, ffy: 0, hnx: -5, hny: 0, hfx: -8.5, hfy: 0, pitch: 0, lx: .4, ly: -.2 },
+    scare:  { hx: -10, hy: 25, sx: 9.5, sy: 26, nA: 38, nL: 9, hA: 10, ear: 1, eye: 1, mouth: .4, pup: 1, tA: 100, tC: -6, tW: 8, tP: 1, arch: 8, rb: 6.5, rc: 7.4, rh: 8.6, fnx: 12, fny: 0, ffx: 8, ffy: 0, hnx: -10, hny: 0, hfx: -13, hfy: 0, pitch: 0, lx: -.5, ly: .6 }
+  };
+  var P = {}, V = {}, T = {};
+  KEYS.forEach(function (k) { P[k] = POSE.sit[k]; V[k] = 0; T[k] = POSE.sit[k]; });
+
+  var cv = null, cx = null, W = 390, H = 190, dpr = 1, raf = 0, last = 0, tm = 0;
+  var X = 0, Y = 0, face = 1, sqx = 1, sqy = 1, vx = 0, rootPitch = 0;
+  var st = 'sit', stT = 0, sd = null, queue = null, away = false, running = false;
+  var K = 140, ZETA = .78, phase = 0, gaitDuty = .62, gaitSL = 14, gaitLift = 4.5, gaitKind = '';
+  var blink = 0, nextBlink = 2, idle = { name: '', t: 0, dur: 0, next: 2.5 };
+  var tail = [], NT = 9, TL = 3.2;
+  for (var i = 0; i < NT; i++) tail.push({ a: 3.14, v: 0 });
+  var ears = { n: 0, f: 0, nn: 4, nf: 6 };
+  var orbs = {}, frozen = false;
+
+  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function ease(t) { return t * t * (3 - 2 * t); }
+  function eout(t) { return 1 - (1 - t) * (1 - t); }
+
+  /* ---------- Yerleşim ---------- */
+  function measure() {
+    var st0 = document.getElementById('stage'), bar = document.getElementById('lang-bar');
+    if (!st0 || !bar || !cv) return;
+    var sr = st0.getBoundingClientRect();
+    W = Math.max(280, Math.round(sr.width)); dpr = Math.min(2, window.devicePixelRatio || 1);
+    if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
+    var cr = cv.getBoundingClientRect();
+    ['tr', 'en', 'ar'].forEach(function (l) {
+      var o = bar.querySelector('.lang-orb[data-lang="' + l + '"]'); if (!o) return;
+      var r = o.getBoundingClientRect();
+      orbs[l] = { x: r.left + r.width / 2 - cr.left, top: r.top - cr.top + 1.5, bottom: r.bottom - cr.top - 2, cx: r.left + r.width / 2, cy: r.top + r.height / 2 };
     });
-  },
-  put: function (x, y, sx, sy, rot) {
-    this.x = x; this.y = y;
-    this.el.style.transform = 'translate(' + (x - 24).toFixed(1) + 'px,' + (-y).toFixed(1) + 'px) scale(' + ((sx || 1) * this.flip).toFixed(3) + ',' + (sy || 1).toFixed(3) + ') rotate(' + ((rot || 0) * this.flip).toFixed(1) + 'deg)';
-  },
-  place: function (l) { this.flip = 1; this.put(this.orbX(l), this.SIT, 1, 1, 0); this.setState(''); },
-  setState: function (c) { this.el.classList.remove('run', 'walk'); if (c) this.el.classList.add(c); },
-  // süre ms; fn(p 0..1); bitince done
-  anim: function (dur, fn, done) {
-    var self = this, t0 = performance.now(), id = ++this.tw;
-    if (REDUCED) dur = 1;
-    (function f(now) {
-      if (id !== self.tw) return;
-      var p = Math.min(1, (now - t0) / dur);
-      fn(p);
-      if (p < 1) requestAnimationFrame(f); else if (done) done();
-    })(t0);
-  },
-  stageHalf: function () { var st = document.getElementById('stage'); return (st ? st.clientWidth : 390) / 2 + 70; },
-  // Kullanıcı bir dil küresine dokundu
-  choose: function (l) {
-    if (l === I18n.lang && !this.busy) return;
-    if (this.away || this.panelHidden() || Impact.active()) { I18n.set(l, !UI.panelOpen()); this.mark(); return; }
-    if (this.busy) { this.queue = l; return; }
-    this.jump(l);
-  },
-  panelHidden: function () { return UI.panelOpen(); },
-  jump: function (l) {
-    var self = this, x0 = this.x, y0 = this.y, x1 = this.orbX(l), h = 54 + Math.abs(x1 - x0) * 0.12, fired = false;
-    if (x1 === x0) { I18n.set(l, true); this.mark(); return; }
-    this.busy = true; this.flip = x1 > x0 ? 1 : -1; this.setState('');
-    Sound.play('tap');
-    // çömel → fırla (zıpladığı an dil animasyonu başlar)
-    this.anim(140, function (p) { self.put(x0, y0, 1 + .12 * p, 1 - .22 * p, 0); }, function () {
-      I18n.set(l, true); self.mark(); fired = true; haptic(15);
-      self.anim(560, function (p) {
-        var e = p, y = y0 + (self.SIT - y0) * e + Math.sin(Math.PI * p) * h;
-        var sy = 1 + .18 * Math.sin(Math.PI * p), sx = 1 - .1 * Math.sin(Math.PI * p);
-        self.put(x0 + (x1 - x0) * e, y, sx, sy, (p - .5) * -26);
-      }, function () {
-        self.anim(160, function (p) { self.put(x1, self.SIT, 1 + .12 * (1 - p), 1 - .2 * (1 - p), 0); }, function () {
-          self.flip = 1; self.put(x1, self.SIT, 1, 1, 0); self.busy = false;
-          var q = self.queue; self.queue = null;
-          if (q && q !== I18n.lang) self.choose(q); else if (self.away === false && I18n.lang !== l) self.place(I18n.lang);
-        });
-      });
-    });
-  },
-  // Asteroit küreyi dağıtınca: aşağı atla, koş, ekrandan çık
-  flee: function () {
-    if (this.away) return;
-    var self = this, x0 = this.x, y0 = this.y, dir = x0 < this.barW() / 2 ? -1 : 1, xe = dir < 0 ? -this.stageHalf() - this.barLeft() : this.barW() + this.stageHalf() + this.barLeft();
-    this.away = true; this.busy = true; this.queue = null; this.flip = dir;
-    this.anim(220, function (p) { self.put(x0 + dir * 14 * p, y0 * (1 - p * p) + Math.sin(Math.PI * p) * 14, 1, 1, 0); }, function () {
-      self.setState('run');
-      var xs = self.x;
-      self.anim(Math.max(500, Math.abs(xe - xs) * 3.2), function (p) { self.put(xs + (xe - xs) * p * p, 0, 1, 1, 0); }, function () { self.setState(''); self.el.style.visibility = 'hidden'; self.busy = false; self.fled = true; });
-    });
-  },
-  barW: function () { return this.bar.offsetWidth; },
-  barLeft: function () { var st = document.getElementById('stage'); return this.bar.getBoundingClientRect().left - (st ? st.getBoundingClientRect().left : 0); },
-  // Küre toparlanınca: kenardan yürüyerek gel, seçili küreye zıpla
-  comeBack: function () {
-    if (!this.away || this.returning) return;
-    var self = this, l = I18n.lang;
-    if (this.panelHidden() || REDUCED) { this.away = false; this.fled = false; this.el.style.visibility = ''; this.place(l); return; }
-    this.returning = true; this.busy = true;
-    var xt = this.orbX(l), fromLeft = xt < this.barW() / 2 ? true : Math.random() < .5;
-    var xs = fromLeft ? -this.stageHalf() - this.barLeft() : this.barW() + this.stageHalf() + this.barLeft();
-    this.flip = xs < xt ? 1 : -1; this.el.style.visibility = ''; this.setState('walk'); this.put(xs, 0, 1, 1, 0);
-    var x1 = xt + (xs < xt ? -34 : 34);
-    this.anim(Math.min(3200, Math.abs(x1 - xs) * 8), function (p) { self.put(xs + (x1 - xs) * p, 0, 1, 1, 0); }, function () {
-      self.setState(''); self.flip = x1 < xt ? 1 : -1;
-      var y0 = 0;
-      self.anim(150, function (p) { self.put(x1, 0, 1 + .1 * p, 1 - .2 * p, 0); }, function () {
-        self.anim(480, function (p) { self.put(x1 + (xt - x1) * p, self.SIT * p + Math.sin(Math.PI * p) * 34, 1 - .08 * Math.sin(Math.PI * p), 1 + .16 * Math.sin(Math.PI * p), 0); }, function () {
-          self.flip = 1; self.put(xt, self.SIT, 1, 1, 0); self.away = false; self.returning = false; self.fled = false; self.busy = false;
-          if (I18n.lang !== l) self.place(I18n.lang);
-        });
-      });
-    });
-  },
-  poll: function () {
-    if (!this.el) return;
-    var ph = Impact.phase, hit = ph === 'boom' || ph === 'scatter' || ph === 'gather';
-    if (hit && !this.away && !this.panelHidden()) this.flee();
-    else if (!hit && this.away && !this.busy && !this.returning) this.comeBack();
-    else if (!hit && this.away && !this.busy && this.panelHidden()) this.comeBack();
-  },
-  // Arada bir hareket
-  idle: function () {
-    var self = this;
-    clearTimeout(this.idleT);
-    this.idleT = setTimeout(function () {
-      if (!self.busy && !self.away && !UI.panelOpen() && !document.hidden) {
-        var c = ['look', 'look2', 'wag', 'stretch'][Math.floor(Math.random() * 4)];
-        self.el.classList.add(c);
-        setTimeout(function () { self.el.classList.remove(c); }, c === 'stretch' ? 1100 : 1300);
+  }
+  function seatOf(l) { var o = orbs[l] || orbs.tr || { x: 60, top: 100 }; return { x: o.x, y: o.top }; }
+  function floorY() { var o = orbs.tr || { bottom: 150 }; return o.bottom; }
+
+  /* ---------- IK ---------- */
+  function ik(ox, oy, tx, ty, l1, l2, sg) {
+    var dx = tx - ox, dy = ty - oy, d = Math.sqrt(dx * dx + dy * dy) || .001;
+    var dc = clamp(d, Math.abs(l1 - l2) + .05, l1 + l2 - .05);
+    var ux = dx / d, uy = dy / d, a = (l1 * l1 - l2 * l2 + dc * dc) / (2 * dc), h = Math.sqrt(Math.max(0, l1 * l1 - a * a));
+    return { kx: ox + ux * a - uy * h * sg, ky: oy + uy * a + ux * h * sg, ex: ox + ux * dc, ey: oy + uy * dc };
+  }
+
+  /* ---------- Poz ve durum ---------- */
+  function setPose(name, over, k, z) {
+    var p = POSE[name];
+    KEYS.forEach(function (key) { T[key] = over && over[key] !== undefined ? over[key] : p[key]; });
+    if (k) K = k; if (z) ZETA = z;
+  }
+  function springs(dt) {
+    var C = 2 * Math.sqrt(K) * ZETA, n = Math.ceil(dt / .008), h = dt / n;
+    for (var s = 0; s < n; s++) for (var i = 0; i < KEYS.length; i++) {
+      var k = KEYS[i]; V[k] += (K * (T[k] - P[k]) - C * V[k]) * h; P[k] += V[k] * h;
+    }
+  }
+  function go(name, data) { st = name; stT = 0; sd = data || null; }
+  function sitAt(l) {
+    var s = seatOf(l); X = s.x; Y = s.y; face = 1; sqx = sqy = 1; vx = 0; rootPitch = 0; away = false;
+    KEYS.forEach(function (k) { P[k] = T[k] = POSE.sit[k]; V[k] = 0; }); K = 130; ZETA = .8; go('sit');
+    for (var i = 0; i < NT; i++) { tail[i].a = (POSE.sit.tA + POSE.sit.tC * i) * D; tail[i].v = 0; }
+  }
+
+  /* ---------- Yürüyüş / koşu (adım döngüsü) ---------- */
+  function gait(kind, v, dt) {
+    var run = kind === 'run';
+    gaitDuty = run ? .42 : .62; gaitSL = run ? 34 : 13; gaitLift = run ? 9 : 4.5;
+    phase = (phase + (v * gaitDuty / gaitSL) * dt) % 1;
+    var base = POSE.stand, o = {};
+    var ext = run ? Math.sin(6.2832 * (phase + .06)) : 0, bob = run ? 0 : Math.cos(12.566 * phase) * .6;
+    function foot(off, ax, hind) {
+      var p = (phase + off) % 1, x, y;
+      if (p < gaitDuty) { var u = p / gaitDuty; x = ax + gaitSL / 2 - gaitSL * u; y = 0; }
+      else { var w = (p - gaitDuty) / (1 - gaitDuty); x = ax - gaitSL / 2 + gaitSL * ease(w); y = Math.sin(Math.PI * w) * gaitLift; }
+      return [x, y];
+    }
+    var fo = run ? { hf: 0, hn: .08, fn: .46, ff: .54 } : { hn: 0, fn: .25, hf: .5, ff: .75 };
+    var fn = foot(fo.fn, 15 + (run ? 3 : 0)), ff = foot(fo.ff, 11 + (run ? 2 : 0)), hn = foot(fo.hn, -7 - (run ? 2 : 0)), hf = foot(fo.hf, -11 - (run ? 2 : 0));
+    o.fnx = fn[0]; o.fny = fn[1]; o.ffx = ff[0]; o.ffy = ff[1]; o.hnx = hn[0]; o.hny = hn[1]; o.hfx = hf[0]; o.hfy = hf[1];
+    if (run) {
+      o.hy = 20.5 + 2.8 * ext; o.sy = 21.5 + 2.2 * ext; o.hx = -11 - 3 * ext; o.sx = 11 + 4 * ext;
+      o.arch = 3 + 5 * Math.cos(6.2832 * (phase + .06)); o.nA = 30 + 8 * ext; o.hA = -2 + 6 * ext; o.pitch = 3 * ext;
+      o.tA = 172; o.tC = -1.5; o.tW = 5; o.ear = .55; o.pup = .8; o.eye = .9; o.mouth = .15;
+    } else {
+      o.hy = 21 + bob; o.sy = 22.2 + bob * .8; o.nA = 26 + Math.sin(12.566 * phase) * 2.5; o.hA = Math.sin(12.566 * phase + 1) * 2;
+      o.tA = 158; o.tC = -4; o.tW = 9; o.pitch = 0; o.arch = 1.5 + Math.sin(6.2832 * phase) * .8;
+    }
+    setPose('stand', o, run ? 700 : 450, run ? .9 : 1);
+  }
+
+  /* ---------- Zıplama (balistik yörünge) ---------- */
+  function startJump(x1, y1, onLand, opt) {
+    opt = opt || {};
+    var dx = x1 - X, dy = y1 - Y, dist = Math.abs(dx);
+    var Tm = opt.T || (.5 + dist * .0021), h = opt.h !== undefined ? opt.h : (30 + dist * .13 + Math.max(0, -dy) * .35);
+    go('fly', { x0: X, y0: Y, x1: x1, y1: y1, T: Tm, h: h, land: onLand, dir: dx >= 0 ? 1 : -1 });
+  }
+
+  function update(dt) {
+    stT += dt; tm += dt;
+    var l = I18n.lang, s;
+    if (st === 'sit') {
+      s = seatOf(l); X = lerp(X, s.x, .3); Y = lerp(Y, s.y, .3); face = face; sqx = lerp(sqx, 1, .2); sqy = lerp(sqy, 1, .2);
+      setPose('sit', null, 120, .8); idleAct(dt);
+      var br = Math.sin(tm * 2.1) * .35; T.rc += br; T.sy += br * .7; T.rb += br * .4;
+    } else if (st === 'stand') {
+      setPose('stand', null, 200, .85); sqx = lerp(sqx, 1, .25); sqy = lerp(sqy, 1, .25);
+      if (stT > sd.t) go(sd.next, sd.data);
+    } else if (st === 'turn') {
+      // yön çevirme: gövde ince bir dönüşle yarı yarıya "arkasını" gösterir
+      setPose('stand', null, 220, .85);
+      var u = clamp(stT / .26, 0, 1);
+      sqx = Math.abs(Math.cos(u * Math.PI)) * .82 + .18;
+      if (u >= .5 && face !== sd.to) face = sd.to;
+      if (u >= 1) { sqx = 1; go(sd.next, sd.data); }
+    } else if (st === 'look') {
+      setPose('look', null, 200, .8);
+      T.tW = 14; if (stT > .3) go('crouch', sd);
+    } else if (st === 'crouch') {
+      var u2 = clamp(stT / .34, 0, 1);
+      setPose('crouch', null, 330, .72);
+      if (u2 > .35) { var w = Math.sin((stT - .12) * 80) * 1.4 * Math.min(1, (u2 - .35) / .2); T.hx += w; T.hnx += w * .5; T.hfx += w * .5; }
+      sqx = 1; if (stT > .36) { go('launch', sd); }
+    } else if (st === 'launch') {
+      setPose('launch', null, 900, .9);
+      var j = sd; var u3 = clamp(stT / .1, 0, 1);
+      Y = j.y0 - u3 * 4;  // yerden kopar
+      if (stT >= .1) startJump(j.x1, j.y1, j.land, { T: j.T, h: j.h });
+    } else if (st === 'fly') {
+      var f = sd, u4 = clamp(stT / f.T, 0, 1);
+      X = lerp(f.x0, f.x1, u4);
+      Y = lerp(f.y0, f.y1, u4) - 4 * f.h * u4 * (1 - u4);
+      var slope = (f.y1 - f.y0) / f.T - 4 * f.h * (1 - 2 * u4) / f.T; // ekranda y aşağı +
+      var vyUp = -slope, vxw = Math.abs(f.x1 - f.x0) / f.T;
+      var targetPitch = clamp(Math.atan2(vyUp, Math.max(40, vxw)) / D, -60, 60) * .5;
+      var asc = u4 < .5 ? 1 - u4 * 2 : 0, desc = u4 > .5 ? (u4 - .5) * 2 : 0, apex = Math.sin(Math.PI * u4);
+      setPose('fly', {
+        pitch: targetPitch,
+        fnx: lerp(25, 17, desc), fny: lerp(15, -9, desc) - 2 * apex, ffx: lerp(22, 14, desc), ffy: lerp(18, -7, desc),
+        hnx: lerp(-24, -3, apex) + desc * 4, hny: lerp(0, -7, apex) - desc * 4, hfx: lerp(-21, -5, apex) + desc * 4, hfy: lerp(3, -8, apex) - desc * 4,
+        sy: 22 + 2 * asc, hy: 19 + 1 * asc - 2 * desc, nA: 24 + 12 * asc - 18 * desc, hA: 8 * asc - 14 * desc,
+        tA: lerp(178, 172, apex), tC: lerp(-1, -3, apex), arch: lerp(0, 3, apex) - 1 * desc, pup: .95, ear: .15
+      }, 220, .8);
+      sqx = lerp(sqx, 1 + .05 * apex, .2); sqy = lerp(sqy, 1 - .04 * apex, .2);
+      rootPitch += (P.pitch - rootPitch) * 0; // pitch P.pitch kullanılır
+      if (u4 >= 1) { X = f.x1; Y = f.y1; go('land', { land: f.land, dir: f.dir, from: 'fly' }); thud(); }
+    } else if (st === 'land') {
+      var ld = sd; setPose('land', null, 520, .45);
+      sqx = lerp(sqx, 1.06, .35); sqy = lerp(sqy, .92, .35);
+      if (!ld.done) { ld.done = true; if (ld.land) ld.land(); }
+      if (stT > .2) { sd.t2 = true; go('settle', ld); }
+    } else if (st === 'settle') {
+      // ayağa kalkıp (kısa) oturma pozuna geçiş
+      var q = clamp(stT / .5, 0, 1);
+      setPose(q < .45 ? 'stand' : 'sit', q < .45 ? { hy: 19, sy: 20.5, nA: 40, hA: 8 } : null, q < .45 ? 200 : 110, .8);
+      sqx = lerp(sqx, 1, .2); sqy = lerp(sqy, 1, .2);
+      if (stT > .7) { var l2 = I18n.lang; var s2 = seatOf(l2); if (Math.abs(X - s2.x) > 2) { sitAt(l2); } else { sitAt(l2); } if (queue) { var qq = queue; queue = null; Cat.choose(qq); } }
+    } else if (st === 'startle') {
+      var sc = sd; var u5 = clamp(stT / .2, 0, 1);
+      setPose('scare', null, 700, .5);
+      Y = sc.y0 - Math.sin(Math.PI * Math.min(1, stT / .22)) * 11;
+      sqx = 1 - .05 * Math.sin(Math.PI * u5); sqy = 1 + .08 * Math.sin(Math.PI * u5);
+      if (stT > .32) {
+        face = sc.dir; go('turnaway', sc);
       }
-      self.idle();
-    }, 2500 + Math.random() * 3500);
+    } else if (st === 'turnaway') {
+      setPose('scare', { lx: 0 }, 400, .6); var u6 = clamp(stT / .12, 0, 1);
+      sqx = .4 + .6 * u6; Y = sd.y0;
+      if (stT > .12) { sqx = 1; var fl = floorY(); startJump(sd.x0 + sd.dir * 46, fl, function () { go('run', { dir: sd.dir, v0: 80 }); }, { T: .42, h: 12 }); }
+    } else if (st === 'run') {
+      var rd = sd; vx = Math.min(300, (rd.v0 || 60) + stT * 700); face = rd.dir; sqx = lerp(sqx, 1, .3); sqy = lerp(sqy, 1, .3);
+      Y = floorY(); X += rd.dir * vx * dt; gait('run', vx, dt);
+      if (X < -60 || X > W + 60) { go('hidden'); }
+    } else if (st === 'hidden') {
+      Y = floorY();
+      if (!away) { away = true; }
+      if (!Impact.active() || UI.panelOpen()) { if (stT > .6) beginReturn(); }
+    } else if (st === 'walk') {
+      var wd = sd, tx = wd.tx; face = tx > X ? 1 : -1; Y = floorY();
+      var rem = Math.abs(tx - X), wv = clamp(rem * 1.6 + 8, 8, 78); vx = wv;
+      X += face * wv * dt; gait('walk', wv, dt);
+      if (rem < 2.5) { go('arrive', { x: tx }); }
+    } else if (st === 'arrive') {
+      setPose('look', { lx: .7, ly: .8, nA: 54, hA: 20 }, 160, .85); sqx = 1; sqy = 1; Y = floorY();
+      if (stT > .5) { go('crouch2', {}); }
+    } else if (st === 'crouch2') {
+      setPose('crouch', null, 320, .72); Y = floorY();
+      if (stT > .34) { var sx2 = seatOf(I18n.lang); go('launch', { x0: X, y0: Y, x1: sx2.x, y1: sx2.y, T: .52, h: 30, land: function () { away = false; } }); }
+    }
+  }
+
+  function beginReturn() {
+    if (UI.panelOpen()) { sitAt(I18n.lang); return; }
+    var s = seatOf(I18n.lang), left = s.x < W / 2 ? true : Math.random() < .5;
+    var tx = s.x + (left ? -34 : 34);
+    X = left ? -50 : W + 50; face = left ? 1 : -1; Y = floorY(); vx = 0;
+    // yürüyerek sahneye gel; hedef tx
+    go('walk', { tx: tx });
+  }
+
+  function thud() {
+    haptic(18);
+    if (Sound.ctx && Settings.sound) { try { Sound.tone(150, .16, 'sine', 0, 55); } catch (e) {} }
+  }
+
+  /* ---------- Rastgele küçük hareketler (otururken) ---------- */
+  function idleAct(dt) {
+    if (!idle.name) { idle.next -= dt; if (idle.next <= 0) { var a = ['glance', 'ear', 'tail', 'lick', 'yawn', 'glance2', 'ear', 'tail'][Math.floor(Math.random() * 8)]; idle.name = a; idle.t = 0; idle.dur = a === 'lick' ? 2.1 : a === 'yawn' ? 1.7 : a === 'tail' ? 1.8 : a === 'ear' ? .5 : 1.6; } return; }
+    idle.t += dt; var u = idle.t / idle.dur, w = Math.sin(Math.PI * clamp(u, 0, 1));
+    if (idle.name === 'glance') { T.nA += 12 * w; T.hA += 12 * w; T.ly = .8 * w; T.lx = .4 * w; }
+    else if (idle.name === 'glance2') { T.hA -= 24 * w; T.nA -= 10 * w; T.ly = -.7 * w; T.lx = .6 * w; }
+    else if (idle.name === 'tail') { T.tW = 3 + 26 * w; }
+    else if (idle.name === 'ear') { ears.nn = 0; }
+    else if (idle.name === 'lick') {
+      T.hA = -34 * w + 0; T.nA -= 22 * w; T.fnx = lerp(10.5, 14, w); T.fny = lerp(0, 23, w) + Math.sin(idle.t * 14) * 1.2 * w; T.mouth = .28 * w * (.5 + .5 * Math.sin(idle.t * 14)); T.eye = 1 - .55 * w;
+    } else if (idle.name === 'yawn') { T.mouth = Math.min(1, w * 1.6); T.hA += 24 * w; T.nA += 6 * w; T.eye = 1 - .9 * w; T.sy += .8 * w; }
+    if (u >= 1) { idle.name = ''; idle.next = 2.2 + Math.random() * 3.6; }
+  }
+
+  /* ---------- Çizim ---------- */
+  function limb(pts, ws, col, outline) {
+    for (var pass = 0; pass < 2; pass++) {
+      cx.strokeStyle = pass === 0 ? COL.line : col; cx.lineCap = 'round'; cx.lineJoin = 'round';
+      for (var i = 0; i < pts.length - 1; i++) {
+        cx.lineWidth = ws[i] + (pass === 0 ? 1.7 : 0);
+        cx.beginPath(); cx.moveTo(pts[i][0], pts[i][1]); cx.lineTo(pts[i + 1][0], pts[i + 1][1]); cx.stroke();
+      }
+    }
+  }
+  function ell(x, y, rx, ry, fill, rot) { cx.beginPath(); cx.ellipse(x, y, rx, ry, rot || 0, 0, 6.2832); cx.fillStyle = fill; cx.fill(); }
+
+  // iki daire arasında konik (teğet) uzuv; ana hatlı
+  function taper(x1, y1, r1, x2, y2, r2, fill) {
+    var dx = x2 - x1, dy = y2 - y1, d = Math.sqrt(dx * dx + dy * dy) || .01, ang = Math.atan2(dy, dx), sn = Math.asin(clamp((r1 - r2) / d, -.99, .99));
+    var a1 = ang + Math.PI / 2 + sn, a2 = ang - Math.PI / 2 - sn;
+    cx.beginPath();
+    cx.arc(x1, y1, r1, a1, a2, false);
+    cx.arc(x2, y2, r2, a2, a1, false);
+    cx.closePath(); cx.fillStyle = fill; cx.fill(); cx.lineWidth = 1.2; cx.strokeStyle = COL.line; cx.lineJoin = 'round'; cx.stroke();
+  }
+  function drawLeg(hind, near) {
+    var ox, oy, col = near ? COL.fur : COL.shade;
+    if (hind) {
+      ox = P.hx + 0.5; oy = P.hy - 1;
+      var px = near ? P.hnx : P.hfx, py = near ? P.hny : P.hfy;
+      var r = ik(ox, oy, px - 2.2, py + 8, 11.5, 11.5, 1);
+      // baldır → ayak (arkadan), sonra uyluk üstte
+      taper(r.ex, r.ey, 2.5, px, py + 1.2, 2.2, col);
+      taper(r.kx, r.ky, 3.7, r.ex, r.ey, 2.6, col);
+      taper(ox, oy, near ? 7.8 : 6.6, r.kx, r.ky, 3.9, col);
+      ell(px + 1.5, py + 1.1, 3.5, 1.9, COL.white); cx.strokeStyle = COL.line; cx.lineWidth = .9; cx.beginPath(); cx.ellipse(px + 1.5, py + 1.1, 3.5, 1.9, 0, 0, 6.2832); cx.stroke();
+    } else {
+      ox = P.sx - 0.5; oy = P.sy - 2;
+      var fx = near ? P.fnx : P.ffx, fy = near ? P.fny : P.ffy;
+      var r2 = ik(ox, oy, fx, fy + 1.2, 12.4, 12.4, -1);
+      taper(ox, oy, 4.3, r2.kx, r2.ky, 3.0, col);
+      taper(r2.kx, r2.ky, 3.0, fx, fy + 1.2, 2.5, col);
+      ell(fx + 1.3, fy + 1, 3.2, 2, COL.white); cx.strokeStyle = COL.line; cx.lineWidth = .9; cx.beginPath(); cx.ellipse(fx + 1.3, fy + 1, 3.2, 2, 0, 0, 6.2832); cx.stroke();
+    }
+  }
+
+  function drawBody() {
+    var hx = P.hx, hy = P.hy, sx = P.sx, sy = P.sy, N = 14, up = [], dn = [], mid = [];
+    var mx = (hx + sx) / 2, my = (hy + sy) / 2 + P.arch;
+    var dx = sx - hx, dy = sy - hy, len = Math.sqrt(dx * dx + dy * dy) || 1, nxv = -dy / len, nyv = dx / len; if (nyv < 0) { nxv = -nxv; nyv = -nyv; }
+    var cxp = mx + nxv * P.arch * 1.2, cyp = my + nyv * P.arch * .2 + P.arch * .6;
+    for (var i = 0; i <= N; i++) {
+      var t = i / N, a = (1 - t) * (1 - t), b = 2 * (1 - t) * t, c = t * t;
+      var x = a * hx + b * cxp + c * sx, y = a * hy + b * cyp + c * sy;
+      var tx = 2 * (1 - t) * (cxp - hx) + 2 * t * (sx - cxp), ty = 2 * (1 - t) * (cyp - hy) + 2 * t * (sy - cyp);
+      var tl = Math.sqrt(tx * tx + ty * ty) || 1, nx = -ty / tl, ny = tx / tl; if (ny < 0) { nx = -nx; ny = -ny; }
+      var r = lerp(P.rh, P.rc, ease(t)) - Math.sin(Math.PI * t) * (lerp(P.rh, P.rc, .5) - P.rb) * 1.0;
+      mid.push([x, y, nx, ny, r]);
+      up.push([x + nx * r, y + ny * r * 1.02]); dn.push([x - nx * r * .9, y - ny * r * .9]);
+    }
+    cx.beginPath(); cx.moveTo(up[0][0], up[0][1]);
+    for (var j = 1; j <= N; j++) cx.lineTo(up[j][0], up[j][1]);
+    var e = mid[N]; cx.quadraticCurveTo(e[0] + e[2] * 0 + 7.4, e[1] + 0, dn[N][0], dn[N][1]);
+    for (var k = N - 1; k >= 0; k--) cx.lineTo(dn[k][0], dn[k][1]);
+    var s0 = mid[0]; cx.quadraticCurveTo(s0[0] - s0[4] - 1.5, s0[1], up[0][0], up[0][1]);
+    cx.closePath(); cx.fillStyle = COL.fur; cx.fill(); cx.lineWidth = 1.5; cx.strokeStyle = COL.line; cx.lineJoin = 'round'; cx.stroke();
+    // göğüs beyazı
+    var ch = mid[N - 1]; ell(ch[0] + 2.2, ch[1] - ch[4] * .45, 3.9, ch[4] * .72, COL.white, .25);
+    // karın beyazı
+    cx.strokeStyle = 'rgba(255,241,220,.55)'; cx.lineWidth = 2; cx.lineCap = 'round'; cx.beginPath();
+    for (var m = 3; m < 12; m++) { var q = mid[m]; var px = q[0] - q[2] * q[4] * .62, py = q[1] - q[3] * q[4] * .62; if (m === 3) cx.moveTo(px, py); else cx.lineTo(px, py); }
+    cx.stroke();
+    // yele çizgileri
+    cx.strokeStyle = COL.stripe; cx.lineWidth = 1.7; cx.lineCap = 'round';
+    [3, 5, 7, 9].forEach(function (i2) { var q = mid[i2]; cx.beginPath(); cx.moveTo(q[0] + q[2] * q[4] * .95, q[1] + q[3] * q[4] * .95); cx.quadraticCurveTo(q[0] + q[2] * q[4] * .2 - q[3] * 1.5, q[1] + q[3] * q[4] * .2 + q[2] * 1.5, q[0] - q[2] * q[4] * .18, q[1] - q[3] * q[4] * .18); cx.stroke(); });
+    return mid;
+  }
+
+  function stepTail(dt) {
+    var base = P.tA * D, w = P.tW * D;
+    for (var i = 0; i < NT; i++) {
+      var par = i === 0 ? base : tail[i - 1].a;
+      var tgt = par + P.tC * D + Math.sin(tm * (idle.name === 'tail' ? 9 : 2.6) - i * .62) * w * (.25 + i / NT) / (i === 0 ? 3 : 1);
+      var k = 120 - i * 7, c = 2 * Math.sqrt(k) * .55;
+      var s = tail[i]; s.v += (k * (tgt - s.a) - c * s.v) * dt * 1; s.a += s.v * dt;
+      // gövde dönüşünden kaynaklı gecikme: yay zaten izler
+    }
+  }
+  function drawTail() {
+    var bx = P.hx - 6.5 * Math.cos(P.pitch * D * 0), by = P.hy + 1.5, pts = [[bx, by]], x = bx, y = by;
+    for (var i = 0; i < NT; i++) { x += Math.cos(tail[i].a) * TL; y += Math.sin(tail[i].a) * TL; if (y < 1.4) y = 1.4; pts.push([x, y]); }
+    var puff = 1 + P.tP * .75;
+    for (var pass = 0; pass < 2; pass++) {
+      cx.lineCap = 'round'; cx.lineJoin = 'round';
+      for (var j = 0; j < pts.length - 1; j++) {
+        var wd = (j > NT - 3 ? 3.0 : 3.9) * puff;
+        cx.lineWidth = wd + (pass === 0 ? 1.7 : 0);
+        cx.strokeStyle = pass === 0 ? COL.line : (j >= NT - 2 ? COL.stripe : (j % 3 === 2 ? COL.stripe : COL.fur));
+        cx.beginPath(); cx.moveTo(pts[j][0], pts[j][1]); cx.lineTo(pts[j + 1][0], pts[j + 1][1]); cx.stroke();
+      }
+    }
+  }
+
+  function drawHead() {
+    var a = P.nA * D, cxh = P.sx + Math.cos(a) * P.nL, cyh = P.sy + Math.sin(a) * P.nL;
+    // boyun
+    cx.lineCap = 'round'; cx.strokeStyle = COL.line; cx.lineWidth = 9.4; cx.beginPath(); cx.moveTo(P.sx - .5, P.sy - .5); cx.lineTo(cxh - 1, cyh - 1.5); cx.stroke();
+    cx.strokeStyle = COL.fur; cx.lineWidth = 7.7; cx.beginPath(); cx.moveTo(P.sx - .5, P.sy - .5); cx.lineTo(cxh - 1, cyh - 1.5); cx.stroke();
+    cx.save(); cx.translate(cxh, cyh); cx.rotate(P.hA * D);
+    // kulaklar
+    function ear(x0, tipx, tipy, rot, col, inner) {
+      cx.save(); cx.translate(x0, 4.6); cx.rotate(rot);
+      cx.beginPath(); cx.moveTo(-3.4, 0); cx.lineTo(tipx, tipy); cx.lineTo(3.4, .4); cx.closePath(); cx.fillStyle = col; cx.fill(); cx.lineWidth = 1.3; cx.strokeStyle = COL.line; cx.lineJoin = 'round'; cx.stroke();
+      if (inner) { cx.beginPath(); cx.moveTo(-1.8, .8); cx.lineTo(tipx * .8, tipy * .8); cx.lineTo(1.7, 1); cx.closePath(); cx.fillStyle = COL.ear; cx.fill(); }
+      cx.restore();
+    }
+    var flat = P.ear, ea = ears.n * D, eb = ears.f * D;
+    ear(-3, -.6 - flat * 2, 7.4 - flat * 4.2, -.1 + flat * -1.25 + ea, COL.shade, false);
+    ear(.2, 1.2 - flat * 2.5, 8 - flat * 4.4, .08 + flat * -1.2 + eb, COL.fur, true);
+    // kafatası
+    cx.beginPath(); cx.ellipse(0, 0, 7.8, 6.7, 0, 0, 6.2832); cx.fillStyle = COL.fur; cx.fill(); cx.lineWidth = 1.5; cx.strokeStyle = COL.line; cx.stroke();
+    // alın çizgileri
+    cx.strokeStyle = COL.stripe; cx.lineWidth = 1.1; cx.lineCap = 'round';
+    [[-2.5, 6], [0, 6.4], [2.3, 6]].forEach(function (s) { cx.beginPath(); cx.moveTo(s[0], s[1]); cx.lineTo(s[0] - .4, s[1] - 2.3); cx.stroke(); });
+    // yanak ve burun
+    ell(-.5, -3.6, 4.4, 2.8, COL.white);
+    var jaw = P.mouth;
+    // alt çene
+    cx.save(); cx.translate(3.6, -3.6); cx.rotate(-jaw * .62);
+    ell(2.6, -.8, 4.4, 2.1, COL.white); cx.strokeStyle = COL.line; cx.lineWidth = .9; cx.beginPath(); cx.ellipse(2.6, -.8, 4.4, 2.1, 0, .2, 3.0); cx.stroke();
+    cx.restore();
+    if (jaw > .08) { cx.beginPath(); cx.ellipse(6, -3.3, 3.2, 1 + jaw * 2.6, -.2, 0, 6.2832); cx.fillStyle = '#7a2a2f'; cx.fill(); }
+    // üst çene / burun
+    ell(5.6, -1.7, 3.8, 2.9, COL.white); cx.strokeStyle = COL.line; cx.lineWidth = .9; cx.beginPath(); cx.ellipse(5.6, -1.7, 3.8, 2.9, 0, -1.5, 1.6); cx.stroke();
+    cx.beginPath(); cx.moveTo(8.1, 0); cx.lineTo(9.9, -.5); cx.lineTo(8.6, -1.9); cx.closePath(); cx.fillStyle = COL.pink; cx.fill(); cx.strokeStyle = COL.line; cx.lineWidth = .7; cx.stroke();
+    cx.beginPath(); cx.moveTo(8.9, -1.6); cx.lineTo(8.6, -3.2); cx.moveTo(8.7, -3); cx.quadraticCurveTo(6.5, -4.4, 4.7, -3.4); cx.strokeStyle = COL.line; cx.lineWidth = .8; cx.stroke();
+    // bıyık
+    cx.strokeStyle = 'rgba(255,248,235,.85)'; cx.lineWidth = .55;
+    [[-1.5, 1.8], [-3.2, 0], [-5, -2]].forEach(function (w) { cx.beginPath(); cx.moveTo(7, -2.4); cx.quadraticCurveTo(11, -2.2 + w[0], 14.5, -3 + w[1]); cx.stroke(); });
+    // göz
+    var op = clamp(P.eye * blink, 0, 1), ey = 1.6, exx = 3.2;
+    if (op < .12) { cx.strokeStyle = COL.line; cx.lineWidth = 1.2; cx.beginPath(); cx.moveTo(exx - 2.2, ey); cx.quadraticCurveTo(exx, ey - .8, exx + 2.2, ey); cx.stroke(); }
+    else {
+      cx.beginPath(); cx.ellipse(exx, ey, 2.4, 2.7 * op, 0, 0, 6.2832); cx.fillStyle = COL.eye; cx.fill(); cx.strokeStyle = COL.line; cx.lineWidth = .9; cx.stroke();
+      cx.save(); cx.beginPath(); cx.ellipse(exx, ey, 2.4, 2.7 * op, 0, 0, 6.2832); cx.clip();
+      ell(exx + P.lx * 1.0, ey + P.ly * .9, .7 + P.pup * 1.5, 2.6 * op, COL.pup);
+      ell(exx + .9 + P.lx * .6, ey + 1.1, .55, .55, 'rgba(255,255,255,.95)');
+      cx.restore();
+      cx.strokeStyle = COL.line; cx.lineWidth = 1; cx.beginPath(); cx.moveTo(exx - 2.3, ey + 2.4 * op); cx.quadraticCurveTo(exx, ey + 3.1 * op, exx + 2.3, ey + 2.2 * op); cx.globalAlpha = .0; cx.stroke(); cx.globalAlpha = 1;
+    }
+    cx.restore();
+  }
+
+  function draw() {
+    cx.setTransform(dpr, 0, 0, dpr, 0, 0); cx.clearRect(0, 0, W, H);
+    if (st === 'hidden') return;
+    cx.save();
+    // zemin gölgesi
+    var gh = Math.max(0, 1 - Math.max(0, (floorY() - Y) / 120)); // yerdeyken koyu
+    cx.fillStyle = 'rgba(0,0,0,.28)'; cx.beginPath(); cx.ellipse(X, (st === 'fly' || st === 'launch' || st === 'startle' ? (sd && sd.y1 !== undefined ? sd.y1 : Y) : Y) + 1, 16 * (st === 'fly' ? .8 : 1), 2.6, 0, 0, 6.2832); cx.fill();
+    cx.translate(X, Y); cx.scale(face * S * sqx, -S * sqy);
+    if (P.pitch) { cx.translate(0, 18); cx.rotate(P.pitch * D); cx.translate(0, -18); }
+    drawLeg(true, false); drawLeg(false, false);
+    drawTail();
+    var mid = drawBody();
+    drawLeg(true, true); drawLeg(false, true);
+    drawHead();
+    cx.restore();
+  }
+
+  /* ---------- Döngü ---------- */
+  function frame(now) {
+    raf = 0;
+    if (!cv) return;
+    if (frozen) { schedule(); return; }
+    var dt = Math.min(.05, (now - last) / 1000 || .016); last = now;
+    if (UI.panelOpen() || document.hidden) { if (st !== 'sit' && st !== 'hidden') { sitAt(I18n.lang); } if (!raf) raf = setTimeout(function () { raf = 0; schedule(); }, 300); return; }
+    nextBlink -= dt; if (nextBlink <= 0) { blink = 0; nextBlink = 2.2 + Math.random() * 3.6; }
+    if (blink < 1) blink = Math.min(1, blink + dt * 12); else blink = 1;
+    if (Math.random() < dt * .35 && ears.nn > 3) ears.nn = 0;
+    if (ears.nn < 3) { ears.nn += dt * 10; ears.n = -Math.sin(Math.PI * clamp(ears.nn / 1, 0, 1)) * 14 * (ears.nn < 1 ? 1 : 0) * Math.sin(ears.nn * 22); }
+    else ears.n *= .8;
+    ears.f = Math.sin(tm * .7) * .6;
+    // asteroit
+    var ph = Impact.phase, hit = ph === 'boom' || ph === 'scatter' || ph === 'gather';
+    if (hit && st !== 'startle' && st !== 'turnaway' && st !== 'run' && st !== 'hidden' && !away) {
+      queue = null; var sx = X, dir = X < W / 2 ? -1 : 1;
+      var pd = sd && sd.land ? sd : sd && sd.data && sd.data.land ? sd.data : null;
+      if (pd && !pd.done && st !== 'land' && st !== 'settle') { pd.done = true; pd.land(); }
+      go('startle', { x0: X, y0: Y, dir: dir }); away = true; haptic(30);
+    }
+    update(dt); springs(dt); stepTail(dt); draw();
+    schedule();
+  }
+  function schedule() { if (!raf) raf = requestAnimationFrame(frame); }
+
+  /* ---------- Dış arayüz ---------- */
+  function originOf(l) { var o = orbs[l]; return o ? { x: o.cx, y: o.cy } : null; }
+
+  return {
+    init: function () {
+      cv = document.getElementById('cat-cv'); if (!cv) return;
+      cx = cv.getContext('2d'); cv.style.height = H + 'px';
+      measure(); sitAt(I18n.lang); this.mark();
+      var self = this;
+      window.addEventListener('resize', function () { measure(); if (st === 'sit') sitAt(I18n.lang); });
+      if ('ResizeObserver' in window) { try { new ResizeObserver(function () { measure(); }).observe(document.getElementById('stage')); } catch (e) {} }
+      last = performance.now(); schedule();
+    },
+    mark: function () {
+      var bar = document.getElementById('lang-bar'); if (!bar) return; var cur = I18n.lang;
+      Array.prototype.forEach.call(bar.querySelectorAll('.lang-orb'), function (o) {
+        var on = o.getAttribute('data-lang') === cur; o.classList.toggle('on', on); o.setAttribute('aria-pressed', String(on));
+      });
+    },
+    // Kullanıcı bir dil küresine dokundu
+    choose: function (l) {
+      if (!cv) { I18n.set(l, true); return; }
+      measure();
+      if (l === I18n.lang && st === 'sit') return;
+      if (UI.panelOpen() || away || Impact.active() || st === 'hidden') { I18n.set(l, !UI.panelOpen(), originOf(l)); this.mark(); return; }
+      if (st !== 'sit') { queue = l; return; }
+      var s = seatOf(l), dir = s.x > X ? 1 : -1, self = this;
+      var dist = Math.abs(s.x - X);
+      var data = { x0: X, y0: Y, x1: s.x, y1: s.y, T: .5 + dist * .0021, h: 30 + dist * .13, land: function () {
+        I18n.set(l, true, originOf(l)); self.mark();
+      } };
+      if (dir !== face) go('turn', { to: dir, next: 'look', data: data }); else go('stand', { t: .12, next: 'look', data: data });
+    },
+    shock: function (o) { Shock.start(o); },
+    debug: function () { return { st: st, X: X, Y: Y, away: away }; },
+    freeze: function (f) { frozen = f; },
+    act: function (n) { idle.name = n; idle.t = 0; idle.dur = n === 'lick' ? 2.1 : n === 'yawn' ? 1.7 : 1.6; },
+    force: function (n, d) { if (d && d.x !== undefined) X = d.x; Y = floorY(); go(n, d); },
+    step: function (n, dt) { for (var i = 0; i < n; i++) { nextBlink = 9; blink = 1; update(dt); springs(dt); stepTail(dt); } draw(); return { st: st, X: X, Y: Y }; }
+  };
+})();
+
+/* Şok dalgası: dil küresinden yayılır; ana ekrandaki yazılar dalga ulaştıkça değişir */
+var Shock = {
+  cv: null, raf: 0, V: 1000,
+  start: function (o) {
+    var st0 = document.getElementById('stage'); if (!st0) return;
+    var sr = st0.getBoundingClientRect(), self = this;
+    if (!o) o = { x: sr.left + sr.width / 2, y: sr.top + sr.height / 2 };
+    if (!this.cv) { this.cv = document.createElement('canvas'); this.cv.id = 'shock-cv'; st0.appendChild(this.cv); }
+    var c = this.cv, dpr = Math.min(2, window.devicePixelRatio || 1);
+    c.width = Math.round(sr.width * dpr); c.height = Math.round(sr.height * dpr); var g = c.getContext('2d');
+    var ox = o.x - sr.left, oy = o.y - sr.top, t0 = performance.now(), R = Math.hypot(Math.max(ox, sr.width - ox), Math.max(oy, sr.height - oy)) + 80;
+    if (this.raf) cancelAnimationFrame(this.raf);
+    (function f(now) {
+      var t = (now - t0) / 1000, r = t * self.V;
+      g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, sr.width, sr.height);
+      if (r > R) { g.clearRect(0, 0, sr.width, sr.height); self.raf = 0; return; }
+      var a = clamp01(1 - r / R * .85);
+      for (var i = 0; i < 3; i++) {
+        var rr = r - i * 26; if (rr < 2) continue;
+        var gr = g.createRadialGradient(ox, oy, Math.max(0, rr - 22), ox, oy, rr + 3);
+        gr.addColorStop(0, 'rgba(0,229,255,0)'); gr.addColorStop(.75, 'rgba(0,229,255,' + (.16 * a * (1 - i * .3)) + ')'); gr.addColorStop(.97, 'rgba(255,255,255,' + (.75 * a * (1 - i * .35)) + ')'); gr.addColorStop(1, 'rgba(0,229,255,0)');
+        g.fillStyle = gr; g.beginPath(); g.arc(ox, oy, rr + 3, 0, 6.2832); g.fill();
+      }
+      g.strokeStyle = 'rgba(255,179,0,' + (.5 * a) + ')'; g.lineWidth = 1.5; g.beginPath(); g.arc(ox, oy, Math.max(1, r * .72), 0, 6.2832); g.stroke();
+      self.raf = requestAnimationFrame(f);
+    })(t0);
+    function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
   }
 };
 
