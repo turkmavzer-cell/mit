@@ -42,7 +42,13 @@ GitHub Actions (`.github/workflows/build-apk.yml`) her push'ta APK üretir:
 - **Releases** sayfası → `MIT-Holo-v2.0.N.apk` (telefondan doğrudan indirilebilir)
 - veya Actions → çalışma → Artifacts → `mit-holo-apk`
 
-İmza anahtarı `keystore/debug.keystore` sabittir; yeni sürümler eskisinin üstüne kurulur, veri silinmez.
+İmza anahtarı `keystore/debug.keystore` sabittir (SHA-256: `c228769ce531c4fc9009088f168c464b2e4ab9ce1f69d8a8b1cf314e20c38719`).
+Derleme bu anahtarı Gradle'a açıkça bağlar ve APK'nın imzasını doğrular; uyuşmazsa derleme başarısız olur.
+Her Release açıklamasında APK'nın imza özeti yazar. Yeni sürümler eskisinin üstüne kurulur, veri silinmez.
+
+**"Paket, mevcut bir paketle çakıştığından uygulama yüklenemedi" hatası:** telefondaki uygulama başka bir anahtarla
+imzalanmış demektir (ör. bu düzeltmeden önceki bir derleme). Bir kereye mahsus: Yedekleme → yedeği paylaş ile yedek al,
+uygulamayı kaldır, yeni APK'yı kur, Yedekleme → yedekten geri yükle. Sonraki tüm güncellemeler üstüne kurulur.
 
 ## Geliştirme
 - Kaynak: `src/index.html` (tek dosya; bölümler: VERİ · SES · KÜRE · PANELLER · EKRANLAR · OYUNLAR · BAŞLAT)

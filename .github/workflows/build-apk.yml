@@ -57,11 +57,39 @@ jobs:
           sed -i 's/name="colorPrimary">#[0-9A-Fa-f]*/name="colorPrimary">#05080F/' android/app/src/main/res/values/styles.xml || true
           grep -n "versionCode\|versionName" android/app/build.gradle
 
+      - name: Sabit imza anahtarını Gradle'a açıkça bağla
+        run: |
+          cp keystore/debug.keystore android/app/mit-sabit.keystore
+          python3 - <<'PY'
+          import re
+          p = 'android/app/build.gradle'
+          t = open(p).read()
+          block = ("android {\n    signingConfigs {\n        debug {\n"
+                   "            storeFile file('mit-sabit.keystore')\n            storePassword 'android'\n"
+                   "            keyAlias 'androiddebugkey'\n            keyPassword 'android'\n        }\n    }\n")
+          t2, n = re.subn(r'^android \{\n', lambda m: block, t, count=1, flags=re.M)
+          if n != 1:
+              raise SystemExit('build.gradle içinde android { bloğu bulunamadı')
+          open(p, 'w').write(t2)
+          PY
+          sed -n '1,25p' android/app/build.gradle
+
       - name: APK derle
         run: |
           chmod +x android/gradlew
           cd android && ./gradlew assembleDebug --no-daemon
           cp app/build/outputs/apk/debug/app-debug.apk ../MIT-Holo-v2.0.${{ github.run_number }}.apk
+
+      - name: APK imzasını doğrula (anahtar her sürümde aynı olmalı)
+        id: sign
+        run: |
+          EXPECT=$(keytool -list -v -keystore keystore/debug.keystore -storepass android | grep 'SHA256:' | head -1 | sed 's/.*SHA256: //' | tr -d ':' | tr 'A-F' 'a-f')
+          APKSIGNER=$(ls $ANDROID_HOME/build-tools/*/apksigner | sort -V | tail -1)
+          GOT=$($APKSIGNER verify --print-certs MIT-Holo-v2.0.${{ github.run_number }}.apk | grep 'SHA-256 digest' | head -1 | sed 's/.*: //' | tr -d ' ')
+          echo "Beklenen imza : $EXPECT"
+          echo "APK imzası    : $GOT"
+          if [ "$EXPECT" != "$GOT" ]; then echo "İMZA UYUŞMUYOR: güncellemeler kurulamaz"; exit 1; fi
+          echo "fp=$GOT" >> "$GITHUB_OUTPUT"
 
       - name: APK dosyasını yükle (Actions → Artifacts)
         uses: actions/upload-artifact@v4
@@ -80,3 +108,4 @@ jobs:
           body: |
             MİT Holo (hologram küre arayüzü) — Android APK.
             Dal: ${{ github.ref_name }} · Commit: ${{ github.sha }}
+            İmza (SHA-256): ${{ steps.sign.outputs.fp }} — her sürümde aynıdır; farklıysa güncelleme kurulamaz.
