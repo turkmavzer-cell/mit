@@ -1018,7 +1018,7 @@ window.EN_RULES = [
      "localStorage doldu, kayıt sessizce başarısız oldu" sorununun çözümü budur.
    - Her yazma işleminin sonucu kontrol edilir; hata olursa kullanıcı görür.
    ===================================================================== */
-var APP_VERSION = '2.15.0';
+var APP_VERSION = '2.16.0';
 var SCHEMA_VERSION = 2; // 1 = eski localStorage sürümü (MİT 1.0), 2 = IndexedDB
 
 var IN_FRAME = (function () { try { return window.self !== window.top; } catch (e) { return true; } })();
@@ -2955,44 +2955,53 @@ function bindDelegates() {
 Actions.back = function () { UI.pop(); };
 /* ---- Dil küreleri ve kedi ----
    Üç dil küresi (TR · EN · ع). Kedi seçili kürenin üstünde oturur. Başka küreye dokununca:
-   yönünü çevirir → bakar → çömelir (kıç sallar) → fırlar → havada gerilip toplanır →
-   ön patilerle konar → yaylanıp oturur. Konduğu an küreden bir şok dalgası yayılır ve ana
-   ekrandaki yazılar dalga ulaştıkça yeni dile döner. Asteroit küreyi dağıtınca kedi
-   ürkür, küreden atlayıp koşarak kaçar; küre toparlanınca yürüyerek gelir, zıplayıp oturur.
-   Kedi bir canvas üzerinde iskelet (omurga, 2 kemikli IK bacaklar, zincir kuyruk, kulak,
-   göz) olarak çizilir; tüm pozlar yay (spring) ile yumuşatılır. */
+   kafasıyla döner, gövde arkasından gelir → hedefe bakar → çömelip kıçını sallar → fırlar →
+   havada gerilip toplanır → önce ön patiler, sonra arka patiler konar → arkasını indirip oturur.
+   Konduğu an küreden şok dalgası yayılır; ana ekrandaki yazılar dalga ulaştıkça yeni dile döner.
+   Asteroit küreyi dağıtınca kedi ürker, atlayıp koşarak kaçar; küre toparlanınca yürüyerek gelir.
+   Çizim: kedinin tüm parçaları önce ekran dışı bir tuvale tek renkli siluet olarak çizilir,
+   desen/gölge/yüz bu silüetin içine boyanır, en sonda tek parça dış çizgi verilir. Böylece
+   eklem yerlerinde çizgi kalmaz (kukla görüntüsü olmaz). Hareketler yay fiziği, gürültü tabanlı
+   küçük canlılık hareketleri ve rastgele süre/tekrar sayılarıyla mekanik görünmekten kurtarılır. */
 var Cat = (function () {
   var D = Math.PI / 180, S = 1.18;
-  var COL = { fur: '#F2A23A', shade: '#C98220', stripe: '#B8661A', line: '#4a2a0c', white: '#FFF1DC', pink: '#F28FA0', ear: '#F6B0A8', eye: '#F2D544', pup: '#1a1208' };
+  var COL = { fur: '#F0A13C', shade: '#C47F28', stripe: 'rgba(160,82,18,.55)', line: 'rgba(58,30,8,.92)', white: '#FFF3E2', pink: '#EE8B9B', ear: '#F2A9A4', eye: '#E9D04A', pup: '#16100a' };
   var KEYS = ['hx', 'hy', 'sx', 'sy', 'nA', 'nL', 'hA', 'ear', 'eye', 'mouth', 'pup', 'tA', 'tC', 'tW', 'tP', 'arch', 'rb', 'rc', 'rh',
-    'fnx', 'fny', 'ffx', 'ffy', 'hnx', 'hny', 'hfx', 'hfy', 'pitch', 'lx', 'ly'];
+    'fnx', 'fny', 'ffx', 'ffy', 'hnx', 'hny', 'hfx', 'hfy', 'pitch', 'lx', 'ly', 'yaw', 'tilt'];
+  var HEADK = { nA: 1.7, hA: 1.9, yaw: 1.5, tilt: 1.5, lx: 3, ly: 3, ear: 2, eye: 2.5, pup: 1.5, mouth: 1.6 };
+  function pose(o) { var b = { ear: 0, eye: 1, mouth: 0, pup: .25, tP: 0, pitch: 0, lx: 0, ly: 0, yaw: 0, tilt: 0 }; for (var k in o) b[k] = o[k]; return b; }
   var POSE = {
-    sit:    { hx: -5, hy: 8.5, sx: 5.5, sy: 24.2, nA: 66, nL: 9, hA: -6, ear: 0, eye: 1, mouth: 0, pup: .2, tA: 262, tC: 11, tW: 3, tP: 0, arch: .5, rb: 7.2, rc: 7.8, rh: 9, fnx: 10.5, fny: 0, ffx: 7.6, ffy: 0, hnx: 3.5, hny: 0, hfx: -1.5, hfy: 0, pitch: 0, lx: 0, ly: 0 },
-    stand:  { hx: -11, hy: 21, sx: 11.5, sy: 22.2, nA: 30, nL: 9.5, hA: 0, ear: 0, eye: 1, mouth: 0, pup: .2, tA: 160, tC: -3, tW: 6, tP: 0, arch: 1.5, rb: 6.5, rc: 7.5, rh: 8.5, fnx: 13, fny: 0, ffx: 9.5, ffy: 0, hnx: -8, hny: 0, hfx: -11.5, hfy: 0, pitch: 0, lx: 0, ly: 0 },
-    look:   { hx: -11, hy: 21, sx: 11.5, sy: 22.6, nA: 48, nL: 10, hA: 14, ear: 0, eye: 1, mouth: 0, pup: .1, tA: 150, tC: -4, tW: 10, tP: 0, arch: 1.5, rb: 6.5, rc: 7.5, rh: 8.5, fnx: 13, fny: 0, ffx: 9.5, ffy: 0, hnx: -8, hny: 0, hfx: -11.5, hfy: 0, pitch: 0, lx: .6, ly: .5 },
-    crouch: { hx: -13, hy: 13.5, sx: 9, sy: 12.8, nA: 10, nL: 9.5, hA: 6, ear: 0, eye: 1, mouth: 0, pup: .85, tA: 176, tC: 0, tW: 18, tP: 0, arch: 2.5, rb: 6.8, rc: 7.6, rh: 9, fnx: 17, fny: 0, ffx: 13.5, ffy: 0, hnx: -8.5, hny: 0, hfx: -12, hfy: 0, pitch: 0, lx: .5, ly: .4 },
-    launch: { hx: -12, hy: 22, sx: 14, sy: 27, nA: 36, nL: 10.5, hA: 16, ear: .1, eye: 1, mouth: 0, pup: .9, tA: 178, tC: -1, tW: 3, tP: 0, arch: 0, rb: 6, rc: 7, rh: 8, fnx: 24, fny: 9, ffx: 21, ffy: 8, hnx: -24, hny: 2, hfx: -22, hfy: 0, pitch: 14, lx: .7, ly: .6 },
-    fly:    { hx: -11, hy: 19, sx: 12.5, sy: 22, nA: 26, nL: 10, hA: 6, ear: .1, eye: 1, mouth: 0, pup: .9, tA: 178, tC: -2, tW: 2, tP: 0, arch: 0, rb: 6, rc: 7, rh: 8, fnx: 23, fny: 10, ffx: 20, ffy: 12, hnx: -22, hny: 0, hfx: -20, hfy: 4, pitch: 0, lx: .7, ly: 0 },
-    land:   { hx: -12, hy: 12.5, sx: 9.5, sy: 12, nA: 12, nL: 9.5, hA: 0, ear: 0, eye: .75, mouth: 0, pup: .5, tA: 150, tC: -3, tW: 5, tP: 0, arch: 3, rb: 6.8, rc: 7.8, rh: 9, fnx: 16, fny: 0, ffx: 12, ffy: 0, hnx: -5, hny: 0, hfx: -8.5, hfy: 0, pitch: 0, lx: .4, ly: -.2 },
-    scare:  { hx: -10, hy: 25, sx: 9.5, sy: 26, nA: 38, nL: 9, hA: 10, ear: 1, eye: 1, mouth: .4, pup: 1, tA: 100, tC: -6, tW: 8, tP: 1, arch: 8, rb: 6.5, rc: 7.4, rh: 8.6, fnx: 12, fny: 0, ffx: 8, ffy: 0, hnx: -10, hny: 0, hfx: -13, hfy: 0, pitch: 0, lx: -.5, ly: .6 }
+    sit:    pose({ hx: -5, hy: 8.5, sx: 5.2, sy: 24, nA: 68, nL: 8.6, hA: -8, tA: 258, tC: 11, tW: 3, arch: .8, rb: 7.4, rc: 8, rh: 9.3, fnx: 10.3, fny: 0, ffx: 7.6, ffy: 0, hnx: 3.5, hny: 0, hfx: -1.5, hfy: 0 }),
+    lie:    pose({ hx: -9, hy: 7, sx: 8.5, sy: 9.5, nA: 52, nL: 8.2, hA: -10, eye: .55, tA: 196, tC: 7, tW: 2, arch: 2, rb: 7.6, rc: 7.6, rh: 9, fnx: 19, fny: 0, ffx: 17, ffy: 0, hnx: 4, hny: 0, hfx: 1.5, hfy: 0 }),
+    stand:  pose({ hx: -11, hy: 21, sx: 11.5, sy: 22.2, nA: 30, nL: 9.5, hA: 0, tA: 160, tC: -3, tW: 6, arch: 1.5, rb: 6.6, rc: 7.6, rh: 8.6, fnx: 13, fny: 0, ffx: 9.5, ffy: 0, hnx: -8, hny: 0, hfx: -11.5, hfy: 0 }),
+    sitdown:pose({ hx: -7, hy: 11, sx: 9.5, sy: 21.5, nA: 44, nL: 9, hA: -4, tA: 200, tC: 6, tW: 3, arch: 1.4, rb: 7, rc: 7.8, rh: 9.2, fnx: 12, fny: 0, ffx: 9, ffy: 0, hnx: 1, hny: 0, hfx: -2.5, hfy: 0 }),
+    look:   pose({ hx: -11, hy: 21, sx: 11.5, sy: 22.8, nA: 46, nL: 10, hA: 12, pup: .15, tA: 152, tC: -4, tW: 9, arch: 1.5, rb: 6.6, rc: 7.6, rh: 8.6, fnx: 13, fny: 0, ffx: 9.5, ffy: 0, hnx: -8, hny: 0, hfx: -11.5, hfy: 0, lx: .7, ly: .5 }),
+    crouch: pose({ hx: -13, hy: 13.5, sx: 9, sy: 12.6, nA: 10, nL: 9.5, hA: 7, pup: .9, tA: 178, tC: 0, tW: 4, arch: 2.6, rb: 7, rc: 7.8, rh: 9.2, fnx: 17, fny: 0, ffx: 13.5, ffy: 0, hnx: -8.5, hny: 0, hfx: -12, hfy: 0, lx: .6, ly: .4 }),
+    launch: pose({ hx: -12, hy: 22, sx: 14, sy: 27, nA: 34, nL: 10.5, hA: 14, ear: .1, pup: .95, tA: 180, tC: -1, tW: 2, arch: -.5, rb: 6.1, rc: 7.1, rh: 8.1, fnx: 24, fny: 9, ffx: 21, ffy: 8, hnx: -24, hny: 2, hfx: -22, hfy: 0, pitch: 14, lx: .7, ly: .6 }),
+    fly:    pose({ hx: -11, hy: 19, sx: 12.5, sy: 22, nA: 26, nL: 10, hA: 6, ear: .12, pup: .95, tA: 178, tC: -2, tW: 2, arch: 0, rb: 6.1, rc: 7.1, rh: 8.1, fnx: 23, fny: 10, ffx: 20, ffy: 12, hnx: -22, hny: 0, hfx: -20, hfy: 4, lx: .7 }),
+    land:   pose({ hx: -12, hy: 13, sx: 10, sy: 12.5, nA: 14, nL: 9.5, hA: -2, eye: .85, pup: .5, tA: 150, tC: -3, tW: 4, arch: 3, rb: 7, rc: 7.9, rh: 9.2, fnx: 16, fny: 0, ffx: 12.5, ffy: 0, hnx: -5, hny: 0, hfx: -8.5, hfy: 0, lx: .4, ly: -.2 }),
+    scare:  pose({ hx: -10, hy: 25, sx: 9.5, sy: 26, nA: 38, nL: 9, hA: 10, ear: 1, mouth: .45, pup: 1, tA: 100, tC: -6, tW: 6, tP: 1, arch: 8, rb: 6.6, rc: 7.5, rh: 8.7, fnx: 12, fny: 0, ffx: 8, ffy: 0, hnx: -10, hny: 0, hfx: -13, hfy: 0, lx: -.5, ly: .6, yaw: .35 })
   };
   var P = {}, V = {}, T = {};
   KEYS.forEach(function (k) { P[k] = POSE.sit[k]; V[k] = 0; T[k] = POSE.sit[k]; });
 
-  var cv = null, cx = null, W = 390, H = 190, dpr = 1, raf = 0, last = 0, tm = 0;
-  var X = 0, Y = 0, face = 1, sqx = 1, sqy = 1, vx = 0, rootPitch = 0;
-  var st = 'sit', stT = 0, sd = null, queue = null, away = false, running = false;
-  var K = 140, ZETA = .78, phase = 0, gaitDuty = .62, gaitSL = 14, gaitLift = 4.5, gaitKind = '';
-  var blink = 0, nextBlink = 2, idle = { name: '', t: 0, dur: 0, next: 2.5 };
-  var tail = [], NT = 9, TL = 3.2;
-  for (var i = 0; i < NT; i++) tail.push({ a: 3.14, v: 0 });
-  var ears = { n: 0, f: 0, nn: 4, nf: 6 };
+  var cv = null, cx = null, mx = null, oc = null, ox2 = null, oc2 = null, oy2 = null, W = 390, H = 190, dpr = 1, raf = 0, last = 0, tm = 0;
+  var X = 0, Y = 0, face = 1, fs = 1, vx = 0;
+  var st = 'sit', stT = 0, sd = null, queue = null, away = false;
+  var K = 140, ZETA = .85, phase = 0, gaitDuty = .62, gaitSL = 14, gaitLift = 4.5;
+  var blink = 1, nextBlink = 2, slowBlink = 0, idle = { name: '', t: 0, dur: 0, next: 2.5 };
+  var sac = { x: 0, y: 0, next: 1 };
+  var tail = [], NT = 10, TL = 3;
+  for (var i = 0; i < NT; i++) tail.push({ a: 4.5, v: 0 });
+  var earN = { a: 0, t: 9 }, earF = { a: 0, t: 9 };
   var orbs = {}, frozen = false;
 
   function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
   function lerp(a, b, t) { return a + (b - a) * t; }
   function ease(t) { return t * t * (3 - 2 * t); }
-  function eout(t) { return 1 - (1 - t) * (1 - t); }
+  function rnd(a, b) { return a + Math.random() * (b - a); }
+  // pürüzsüz gürültü (birbirine oranı rasyonel olmayan sinüsler)
+  function nz(t, s) { return (Math.sin(t * 1.31 + s * 3.7) * .5 + Math.sin(t * .73 + s * 1.9) * .32 + Math.sin(t * 2.17 + s * 5.3) * .18); }
 
   /* ---------- Yerleşim ---------- */
   function measure() {
@@ -3000,7 +3009,8 @@ var Cat = (function () {
     if (!st0 || !bar || !cv) return;
     var sr = st0.getBoundingClientRect();
     W = Math.max(280, Math.round(sr.width)); dpr = Math.min(2, window.devicePixelRatio || 1);
-    if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
+    var pw = Math.round(W * dpr), ph = Math.round(H * dpr);
+    [cv, oc, oc2].forEach(function (c) { if (c && (c.width !== pw || c.height !== ph)) { c.width = pw; c.height = ph; } });
     var cr = cv.getBoundingClientRect();
     ['tr', 'en', 'ar'].forEach(function (l) {
       var o = bar.querySelector('.lang-orb[data-lang="' + l + '"]'); if (!o) return;
@@ -3019,150 +3029,157 @@ var Cat = (function () {
     return { kx: ox + ux * a - uy * h * sg, ky: oy + uy * a + ux * h * sg, ex: ox + ux * dc, ey: oy + uy * dc };
   }
 
-  /* ---------- Poz ve durum ---------- */
+  /* ---------- Poz ve yaylar ---------- */
   function setPose(name, over, k, z) {
     var p = POSE[name];
     KEYS.forEach(function (key) { T[key] = over && over[key] !== undefined ? over[key] : p[key]; });
     if (k) K = k; if (z) ZETA = z;
   }
   function springs(dt) {
-    var C = 2 * Math.sqrt(K) * ZETA, n = Math.ceil(dt / .008), h = dt / n;
+    var n = Math.ceil(dt / .008), h = dt / n;
     for (var s = 0; s < n; s++) for (var i = 0; i < KEYS.length; i++) {
-      var k = KEYS[i]; V[k] += (K * (T[k] - P[k]) - C * V[k]) * h; P[k] += V[k] * h;
+      var k = KEYS[i], kk = K * (HEADK[k] || 1), C = 2 * Math.sqrt(kk) * ZETA;
+      V[k] += (kk * (T[k] - P[k]) - C * V[k]) * h; P[k] += V[k] * h;
     }
   }
   function go(name, data) { st = name; stT = 0; sd = data || null; }
-  function sitAt(l) {
-    var s = seatOf(l); X = s.x; Y = s.y; face = 1; sqx = sqy = 1; vx = 0; rootPitch = 0; away = false;
-    KEYS.forEach(function (k) { P[k] = T[k] = POSE.sit[k]; V[k] = 0; }); K = 130; ZETA = .8; go('sit');
-    for (var i = 0; i < NT; i++) { tail[i].a = (POSE.sit.tA + POSE.sit.tC * i) * D; tail[i].v = 0; }
+  function sitAt(l, keepPose) {
+    var s = seatOf(l); X = s.x; Y = s.y; fs = 1; vx = 0; away = false;
+    if (!keepPose) { KEYS.forEach(function (k) { P[k] = T[k] = POSE.sit[k]; V[k] = 0; }); for (var i = 0; i < NT; i++) { tail[i].a = (POSE.sit.tA + POSE.sit.tC * i) * D; tail[i].v = 0; } face = 1; }
+    K = 110; ZETA = .9; go('sit'); idle.name = ''; idle.next = rnd(1.5, 3.5);
   }
 
-  /* ---------- Yürüyüş / koşu (adım döngüsü) ---------- */
+  /* ---------- Yürüyüş / koşu ---------- */
   function gait(kind, v, dt) {
     var run = kind === 'run';
-    gaitDuty = run ? .42 : .62; gaitSL = run ? 34 : 13; gaitLift = run ? 9 : 4.5;
+    gaitDuty = run ? .42 : .62; gaitSL = run ? 34 : 13; gaitLift = run ? 9 : 4.2;
     phase = (phase + (v * gaitDuty / gaitSL) * dt) % 1;
-    var base = POSE.stand, o = {};
-    var ext = run ? Math.sin(6.2832 * (phase + .06)) : 0, bob = run ? 0 : Math.cos(12.566 * phase) * .6;
-    function foot(off, ax, hind) {
-      var p = (phase + off) % 1, x, y;
-      if (p < gaitDuty) { var u = p / gaitDuty; x = ax + gaitSL / 2 - gaitSL * u; y = 0; }
-      else { var w = (p - gaitDuty) / (1 - gaitDuty); x = ax - gaitSL / 2 + gaitSL * ease(w); y = Math.sin(Math.PI * w) * gaitLift; }
-      return [x, y];
+    var o = {};
+    var ext = run ? Math.sin(6.2832 * (phase + .06)) : 0;
+    function foot(off, ax) {
+      var p = (phase + off) % 1;
+      if (p < gaitDuty) { var u = p / gaitDuty; return [ax + gaitSL / 2 - gaitSL * u, 0, 0]; }
+      var w = (p - gaitDuty) / (1 - gaitDuty);
+      return [ax - gaitSL / 2 + gaitSL * ease(w), Math.sin(Math.PI * w) * gaitLift * (1 - .25 * w), Math.sin(Math.PI * w)];
     }
     var fo = run ? { hf: 0, hn: .08, fn: .46, ff: .54 } : { hn: 0, fn: .25, hf: .5, ff: .75 };
     var fn = foot(fo.fn, 15 + (run ? 3 : 0)), ff = foot(fo.ff, 11 + (run ? 2 : 0)), hn = foot(fo.hn, -7 - (run ? 2 : 0)), hf = foot(fo.hf, -11 - (run ? 2 : 0));
     o.fnx = fn[0]; o.fny = fn[1]; o.ffx = ff[0]; o.ffy = ff[1]; o.hnx = hn[0]; o.hny = hn[1]; o.hfx = hf[0]; o.hfy = hf[1];
     if (run) {
       o.hy = 20.5 + 2.8 * ext; o.sy = 21.5 + 2.2 * ext; o.hx = -11 - 3 * ext; o.sx = 11 + 4 * ext;
-      o.arch = 3 + 5 * Math.cos(6.2832 * (phase + .06)); o.nA = 30 + 8 * ext; o.hA = -2 + 6 * ext; o.pitch = 3 * ext;
-      o.tA = 172; o.tC = -1.5; o.tW = 5; o.ear = .55; o.pup = .8; o.eye = .9; o.mouth = .15;
+      o.arch = 3 + 5 * Math.cos(6.2832 * (phase + .06)); o.nA = 28 + 5 * ext; o.hA = -4 - 4 * ext; o.pitch = 3 * ext;
+      o.tA = 172 + 6 * ext; o.tC = -1.5; o.tW = 4; o.ear = .6; o.pup = .85; o.eye = .9; o.mouth = .12;
     } else {
-      o.hy = 21 + bob; o.sy = 22.2 + bob * .8; o.nA = 26 + Math.sin(12.566 * phase) * 2.5; o.hA = Math.sin(12.566 * phase + 1) * 2;
-      o.tA = 158; o.tC = -4; o.tW = 9; o.pitch = 0; o.arch = 1.5 + Math.sin(6.2832 * phase) * .8;
+      // omuz ve kalça, o taraftaki bacak yere basarken yükselir; kafa sabit kalır (kedi yürüyüşü)
+      var shL = (fn[2] + ff[2]) * .5, hpL = (hn[2] + hf[2]) * .5;
+      o.hy = 21 - hpL * .9 + .4; o.sy = 22.2 - shL * .9 + .4;
+      o.nA = 24 + (shL * .9) * 3; o.hA = -2 - shL * 2.4;
+      o.tA = 150 + Math.sin(6.2832 * phase) * 5; o.tC = -5; o.tW = 7; o.arch = 1.4 + hpL * .5;
+      o.lx = .5; o.ly = 0;
     }
-    setPose('stand', o, run ? 700 : 450, run ? .9 : 1);
+    setPose('stand', o, run ? 650 : 380, .95);
   }
 
-  /* ---------- Zıplama (balistik yörünge) ---------- */
+  /* ---------- Zıplama ---------- */
   function startJump(x1, y1, onLand, opt) {
     opt = opt || {};
-    var dx = x1 - X, dy = y1 - Y, dist = Math.abs(dx);
-    var Tm = opt.T || (.5 + dist * .0021), h = opt.h !== undefined ? opt.h : (30 + dist * .13 + Math.max(0, -dy) * .35);
-    go('fly', { x0: X, y0: Y, x1: x1, y1: y1, T: Tm, h: h, land: onLand, dir: dx >= 0 ? 1 : -1 });
+    var dist = Math.abs(x1 - X), dy = y1 - Y;
+    var Tm = opt.T || (.42 + dist * .0015), h = opt.h !== undefined ? opt.h : (26 + dist * .13 + Math.max(0, -dy) * .35);
+    go('fly', { x0: X, y0: Y, x1: x1, y1: y1, T: Tm, h: h, land: onLand, dir: x1 >= X ? 1 : -1, done: false });
   }
 
   function update(dt) {
     stT += dt; tm += dt;
     var l = I18n.lang, s;
-    if (st === 'sit') {
-      s = seatOf(l); X = lerp(X, s.x, .3); Y = lerp(Y, s.y, .3); face = face; sqx = lerp(sqx, 1, .2); sqy = lerp(sqy, 1, .2);
-      setPose('sit', null, 120, .8); idleAct(dt);
-      var br = Math.sin(tm * 2.1) * .35; T.rc += br; T.sy += br * .7; T.rb += br * .4;
-    } else if (st === 'stand') {
-      setPose('stand', null, 200, .85); sqx = lerp(sqx, 1, .25); sqy = lerp(sqy, 1, .25);
-      if (stT > sd.t) go(sd.next, sd.data);
+    // göz gezdirme (sakkad)
+    sac.next -= dt; if (sac.next <= 0) { sac.x = rnd(-.5, .7); sac.y = rnd(-.4, .5); sac.next = rnd(.6, 2.4); }
+    if (st === 'sit' || st === 'lie') {
+      s = seatOf(l); X = lerp(X, s.x, .25); Y = lerp(Y, s.y, .25);
+      setPose(st === 'lie' ? 'lie' : 'sit', null, 90, .9);
+      // canlılık: nefes, kafa ve ağırlık kayması, göz gezdirme
+      var br = Math.sin(tm * 2.0), b2 = Math.sin(tm * 2.0 - .6);
+      T.rc += br * .32; T.rb += br * .45; T.sy += b2 * .35;
+      T.nA += nz(tm * .45, 1) * 4; T.hA += nz(tm * .38, 2) * 5; T.tilt += nz(tm * .3, 7) * 3;
+      T.hx += nz(tm * .25, 3) * .35; T.lx += sac.x * .6; T.ly += sac.y * .6;
+      T.tW = 2.5 + Math.max(0, nz(tm * .6, 4)) * 6;
+      idleAct(dt);
     } else if (st === 'turn') {
-      // yön çevirme: gövde ince bir dönüşle yarı yarıya "arkasını" gösterir
-      setPose('stand', null, 220, .85);
-      var u = clamp(stT / .26, 0, 1);
-      sqx = Math.abs(Math.cos(u * Math.PI)) * .82 + .18;
+      // kafa önce döner (izleyiciye bakar), gövde arkasından gelir
+      var u = clamp(stT / sd.dur, 0, 1);
+      setPose('stand', { yaw: Math.sin(Math.PI * clamp(u * 1.25, 0, 1)), hy: 20, nA: 36, hA: 4,
+        fny: Math.max(0, Math.sin(Math.PI * clamp(u * 2, 0, 1))) * 3.5, hny: Math.max(0, Math.sin(Math.PI * clamp(u * 2 - 1, 0, 1))) * 3,
+        ffy: Math.max(0, Math.sin(Math.PI * clamp(u * 2 - .5, 0, 1))) * 3 }, 260, .9);
+      fs = Math.max(.42, Math.abs(Math.cos(Math.PI * ease(u))));
       if (u >= .5 && face !== sd.to) face = sd.to;
-      if (u >= 1) { sqx = 1; go(sd.next, sd.data); }
+      if (u >= 1) { fs = 1; go(sd.next, sd.data); }
+    } else if (st === 'rise') {
+      // oturuştan kalkış: önce gövde öne, sonra kalça yukarı
+      var ur = clamp(stT / sd.dur, 0, 1);
+      setPose(ur < .45 ? 'sitdown' : 'stand', { nA: 40, hA: 6, lx: .6 }, 200, .9);
+      if (ur >= 1) go(sd.next, sd.data);
     } else if (st === 'look') {
-      setPose('look', null, 200, .8);
-      T.tW = 14; if (stT > .3) go('crouch', sd);
+      setPose('look', null, 190, .88);
+      T.tW = 6 + 8 * Math.max(0, Math.sin(stT * 5)); T.ear = -.1;
+      if (stT > sd.lookT) { sd.wig = Math.floor(rnd(2, 5)); sd.crT = rnd(.32, .55); go('crouch', sd); }
     } else if (st === 'crouch') {
-      var u2 = clamp(stT / .34, 0, 1);
-      setPose('crouch', null, 330, .72);
-      if (u2 > .35) { var w = Math.sin((stT - .12) * 80) * 1.4 * Math.min(1, (u2 - .35) / .2); T.hx += w; T.hnx += w * .5; T.hfx += w * .5; }
-      sqx = 1; if (stT > .36) { go('launch', sd); }
+      setPose('crouch', null, 260, .82);
+      var wigT = stT - .14;
+      if (wigT > 0 && wigT < sd.wig * .11) { var w = Math.sin(wigT / .11 * Math.PI * 2) * 1.1; T.hx += w; T.hy += Math.abs(w) * .3; T.hnx += w * .6; T.hfx += w * .6; T.tW = 10; }
+      if (stT > sd.crT) go('launch', sd);
     } else if (st === 'launch') {
       setPose('launch', null, 900, .9);
-      var j = sd; var u3 = clamp(stT / .1, 0, 1);
-      Y = j.y0 - u3 * 4;  // yerden kopar
-      if (stT >= .1) startJump(j.x1, j.y1, j.land, { T: j.T, h: j.h });
+      var j = sd, u3 = clamp(stT / .09, 0, 1);
+      Y = j.y0 - u3 * 3.5;
+      if (stT >= .09) startJump(j.x1, j.y1, j.land, { T: j.T, h: j.h });
     } else if (st === 'fly') {
       var f = sd, u4 = clamp(stT / f.T, 0, 1);
       X = lerp(f.x0, f.x1, u4);
       Y = lerp(f.y0, f.y1, u4) - 4 * f.h * u4 * (1 - u4);
-      var slope = (f.y1 - f.y0) / f.T - 4 * f.h * (1 - 2 * u4) / f.T; // ekranda y aşağı +
-      var vyUp = -slope, vxw = Math.abs(f.x1 - f.x0) / f.T;
-      var targetPitch = clamp(Math.atan2(vyUp, Math.max(40, vxw)) / D, -60, 60) * .5;
-      var asc = u4 < .5 ? 1 - u4 * 2 : 0, desc = u4 > .5 ? (u4 - .5) * 2 : 0, apex = Math.sin(Math.PI * u4);
+      var slope = (f.y1 - f.y0) / f.T - 4 * f.h * (1 - 2 * u4) / f.T;
+      var targetPitch = clamp(Math.atan2(-slope, Math.max(40, Math.abs(f.x1 - f.x0) / f.T)) / D, -60, 60) * .5;
+      var desc = u4 > .5 ? (u4 - .5) * 2 : 0, asc = u4 < .5 ? 1 - u4 * 2 : 0, apex = Math.sin(Math.PI * u4);
       setPose('fly', {
         pitch: targetPitch,
-        fnx: lerp(25, 17, desc), fny: lerp(15, -9, desc) - 2 * apex, ffx: lerp(22, 14, desc), ffy: lerp(18, -7, desc),
-        hnx: lerp(-24, -3, apex) + desc * 4, hny: lerp(0, -7, apex) - desc * 4, hfx: lerp(-21, -5, apex) + desc * 4, hfy: lerp(3, -8, apex) - desc * 4,
-        sy: 22 + 2 * asc, hy: 19 + 1 * asc - 2 * desc, nA: 24 + 12 * asc - 18 * desc, hA: 8 * asc - 14 * desc,
-        tA: lerp(178, 172, apex), tC: lerp(-1, -3, apex), arch: lerp(0, 3, apex) - 1 * desc, pup: .95, ear: .15
-      }, 220, .8);
-      sqx = lerp(sqx, 1 + .05 * apex, .2); sqy = lerp(sqy, 1 - .04 * apex, .2);
-      rootPitch += (P.pitch - rootPitch) * 0; // pitch P.pitch kullanılır
-      if (u4 >= 1) { X = f.x1; Y = f.y1; go('land', { land: f.land, dir: f.dir, from: 'fly' }); thud(); }
+        fnx: lerp(23, 16, desc), fny: lerp(10, -10, desc) - 2 * apex, ffx: lerp(20, 13, desc), ffy: lerp(12, -8, desc),
+        hnx: lerp(-23, -4, apex) + desc * 4, hny: lerp(0, -7, apex) - desc * 2, hfx: lerp(-20, -6, apex) + desc * 4, hfy: lerp(3, -8, apex) - desc * 2,
+        sy: 22 + 2 * asc, hy: 19 + asc - 2 * desc, nA: 24 + 10 * asc - 16 * desc, hA: 6 * asc - 16 * desc,
+        tA: lerp(180, 168, apex), tC: lerp(-1, -4, apex), arch: lerp(-.5, 3, apex) - desc, ly: -.5 * desc
+      }, 210, .85);
+      if (u4 >= 1) { X = f.x1; Y = f.y1; go('land', { land: f.land, done: false }); thud(); }
     } else if (st === 'land') {
-      var ld = sd; setPose('land', null, 520, .45);
-      sqx = lerp(sqx, 1.06, .35); sqy = lerp(sqy, .92, .35);
-      if (!ld.done) { ld.done = true; if (ld.land) ld.land(); }
-      if (stT > .2) { sd.t2 = true; go('settle', ld); }
+      // önce ön patiler, ~80 ms sonra arka patiler; gövde yaylanır, kafa dengeler
+      var back = stT < .08;
+      setPose('land', back ? { hny: 5, hfy: 6, hnx: -9, hfx: -12, hy: 15 } : null, 480, .55);
+      if (!sd.done) { sd.done = true; if (sd.land) sd.land(); }
+      if (stT > .26) go('settle', { dur: rnd(.55, .75) });
     } else if (st === 'settle') {
-      // ayağa kalkıp (kısa) oturma pozuna geçiş
-      var q = clamp(stT / .5, 0, 1);
-      setPose(q < .45 ? 'stand' : 'sit', q < .45 ? { hy: 19, sy: 20.5, nA: 40, hA: 8 } : null, q < .45 ? 200 : 110, .8);
-      sqx = lerp(sqx, 1, .2); sqy = lerp(sqy, 1, .2);
-      if (stT > .7) { var l2 = I18n.lang; var s2 = seatOf(l2); if (Math.abs(X - s2.x) > 2) { sitAt(l2); } else { sitAt(l2); } if (queue) { var qq = queue; queue = null; Cat.choose(qq); } }
+      // önce kalça iner (oturma), sonra göğüs yükselir
+      var q = clamp(stT / sd.dur, 0, 1);
+      setPose(q < .5 ? 'sitdown' : 'sit', { lx: .3 }, q < .5 ? 170 : 120, .9);
+      if (q >= 1) { var s2 = seatOf(I18n.lang); X = s2.x; Y = s2.y; sitAt(I18n.lang, true); if (queue) { var qq = queue; queue = null; Cat.choose(qq); } }
     } else if (st === 'startle') {
-      var sc = sd; var u5 = clamp(stT / .2, 0, 1);
-      setPose('scare', null, 700, .5);
-      Y = sc.y0 - Math.sin(Math.PI * Math.min(1, stT / .22)) * 11;
-      sqx = 1 - .05 * Math.sin(Math.PI * u5); sqy = 1 + .08 * Math.sin(Math.PI * u5);
-      if (stT > .32) {
-        face = sc.dir; go('turnaway', sc);
-      }
+      setPose('scare', null, 700, .55);
+      Y = sd.y0 - Math.sin(Math.PI * Math.min(1, stT / .24)) * 12;
+      if (stT > .34) { face = sd.dir; go('turnaway', sd); }
     } else if (st === 'turnaway') {
-      setPose('scare', { lx: 0 }, 400, .6); var u6 = clamp(stT / .12, 0, 1);
-      sqx = .4 + .6 * u6; Y = sd.y0;
-      if (stT > .12) { sqx = 1; var fl = floorY(); startJump(sd.x0 + sd.dir * 46, fl, function () { go('run', { dir: sd.dir, v0: 80 }); }, { T: .42, h: 12 }); }
+      setPose('scare', { yaw: 0, lx: .5 }, 400, .65); var u6 = clamp(stT / .14, 0, 1);
+      fs = .45 + .55 * u6; Y = sd.y0;
+      if (stT > .14) { fs = 1; var fd = sd.dir; startJump(sd.x0 + fd * 46, floorY(), function () { go('run', { dir: fd, v0: 90 }); }, { T: .4, h: 12 }); }
     } else if (st === 'run') {
-      var rd = sd; vx = Math.min(300, (rd.v0 || 60) + stT * 700); face = rd.dir; sqx = lerp(sqx, 1, .3); sqy = lerp(sqy, 1, .3);
-      Y = floorY(); X += rd.dir * vx * dt; gait('run', vx, dt);
-      if (X < -60 || X > W + 60) { go('hidden'); }
+      vx = Math.min(310, (sd.v0 || 60) + stT * 650); face = sd.dir;
+      Y = floorY(); X += sd.dir * vx * dt; gait('run', vx, dt);
+      if (X < -60 || X > W + 60) go('hidden');
     } else if (st === 'hidden') {
-      Y = floorY();
-      if (!away) { away = true; }
+      Y = floorY(); away = true;
       if (!Impact.active() || UI.panelOpen()) { if (stT > .6) beginReturn(); }
     } else if (st === 'walk') {
-      var wd = sd, tx = wd.tx; face = tx > X ? 1 : -1; Y = floorY();
-      var rem = Math.abs(tx - X), wv = clamp(rem * 1.6 + 8, 8, 78); vx = wv;
+      var tx = sd.tx; face = tx > X ? 1 : -1; Y = floorY();
+      var rem = Math.abs(tx - X), wv = clamp(rem * 1.5 + 10, 10, sd.v) * (1 + nz(tm * .9, 9) * .12);
       X += face * wv * dt; gait('walk', wv, dt);
-      if (rem < 2.5) { go('arrive', { x: tx }); }
+      if (rem < 2.5) go('arrive', { t: rnd(.5, .9) });
     } else if (st === 'arrive') {
-      setPose('look', { lx: .7, ly: .8, nA: 54, hA: 20 }, 160, .85); sqx = 1; sqy = 1; Y = floorY();
-      if (stT > .5) { go('crouch2', {}); }
-    } else if (st === 'crouch2') {
-      setPose('crouch', null, 320, .72); Y = floorY();
-      if (stT > .34) { var sx2 = seatOf(I18n.lang); go('launch', { x0: X, y0: Y, x1: sx2.x, y1: sx2.y, T: .52, h: 30, land: function () { away = false; } }); }
+      setPose('look', { lx: .7, ly: .8, nA: 54, hA: 22, ear: -.15 }, 150, .9); Y = floorY();
+      if (stT > sd.t) { var sx2 = seatOf(I18n.lang); sd = { x0: X, y0: Y, x1: sx2.x, y1: sx2.y, T: .48, h: 28, land: function () { away = false; }, lookT: 0, wig: 2, crT: .38 }; go('crouch', sd); }
     }
   }
 
@@ -3171,193 +3188,262 @@ var Cat = (function () {
     var s = seatOf(I18n.lang), left = s.x < W / 2 ? true : Math.random() < .5;
     var tx = s.x + (left ? -34 : 34);
     X = left ? -50 : W + 50; face = left ? 1 : -1; Y = floorY(); vx = 0;
-    // yürüyerek sahneye gel; hedef tx
-    go('walk', { tx: tx });
+    go('walk', { tx: tx, v: rnd(62, 80) });
   }
 
   function thud() {
-    haptic(18);
-    if (Sound.ctx && Settings.sound) { try { Sound.tone(150, .16, 'sine', 0, 55); } catch (e) {} }
+    haptic(16);
+    if (Sound.ctx && Settings.sound) { try { Sound.tone(140, .14, 'sine', 0, 55); } catch (e) {} }
   }
 
-  /* ---------- Rastgele küçük hareketler (otururken) ---------- */
+  /* ---------- Otururken rastgele hareketler ---------- */
+  var ACTS = { gaze: 2.6, tilt: 1.8, glance: 1.6, glance2: 1.5, lick: 2.6, yawn: 1.9, tail: 1.6, shift: .9, lie: 7, ear: .4 };
   function idleAct(dt) {
-    if (!idle.name) { idle.next -= dt; if (idle.next <= 0) { var a = ['glance', 'ear', 'tail', 'lick', 'yawn', 'glance2', 'ear', 'tail'][Math.floor(Math.random() * 8)]; idle.name = a; idle.t = 0; idle.dur = a === 'lick' ? 2.1 : a === 'yawn' ? 1.7 : a === 'tail' ? 1.8 : a === 'ear' ? .5 : 1.6; } return; }
-    idle.t += dt; var u = idle.t / idle.dur, w = Math.sin(Math.PI * clamp(u, 0, 1));
-    if (idle.name === 'glance') { T.nA += 12 * w; T.hA += 12 * w; T.ly = .8 * w; T.lx = .4 * w; }
-    else if (idle.name === 'glance2') { T.hA -= 24 * w; T.nA -= 10 * w; T.ly = -.7 * w; T.lx = .6 * w; }
-    else if (idle.name === 'tail') { T.tW = 3 + 26 * w; }
-    else if (idle.name === 'ear') { ears.nn = 0; }
-    else if (idle.name === 'lick') {
-      T.hA = -34 * w + 0; T.nA -= 22 * w; T.fnx = lerp(10.5, 14, w); T.fny = lerp(0, 23, w) + Math.sin(idle.t * 14) * 1.2 * w; T.mouth = .28 * w * (.5 + .5 * Math.sin(idle.t * 14)); T.eye = 1 - .55 * w;
-    } else if (idle.name === 'yawn') { T.mouth = Math.min(1, w * 1.6); T.hA += 24 * w; T.nA += 6 * w; T.eye = 1 - .9 * w; T.sy += .8 * w; }
-    if (u >= 1) { idle.name = ''; idle.next = 2.2 + Math.random() * 3.6; }
+    if (!idle.name) {
+      idle.next -= dt;
+      if (idle.next <= 0) {
+        var list = st === 'lie' ? ['up'] : ['gaze', 'gaze', 'tilt', 'glance', 'glance2', 'lick', 'yawn', 'tail', 'shift', 'shift', 'lie'];
+        var a = list[Math.floor(Math.random() * list.length)];
+        if (a === 'up') { go('sit'); idle.next = rnd(2, 4); return; }
+        idle.name = a; idle.t = 0; idle.dur = ACTS[a] * rnd(.85, 1.25);
+      }
+      return;
+    }
+    idle.t += dt; var u = clamp(idle.t / idle.dur, 0, 1), w = Math.sin(Math.PI * u), e = ease(clamp(u * 3, 0, 1)) * ease(clamp((1 - u) * 3, 0, 1));
+    if (idle.name === 'gaze') { // izleyiciye dönüp yavaş göz kırpar
+      T.yaw = e; T.hA += 4 * e; T.lx = 0; T.ly = 0;
+      var bk = clamp((u - .35) / .3, 0, 1); slowBlink = Math.sin(Math.PI * bk) * .85;
+    } else if (idle.name === 'tilt') { T.yaw = .65 * e; T.tilt = 16 * e; T.ear = -.2 * e; }
+    else if (idle.name === 'glance') { T.nA += 12 * e; T.hA += 14 * e; T.ly = .8 * e; T.lx = .4 * e; }
+    else if (idle.name === 'glance2') { T.hA -= 22 * e; T.nA -= 8 * e; T.ly = -.7 * e; T.lx = .6 * e; }
+    else if (idle.name === 'tail') { T.tW = 3 + 22 * w; }
+    else if (idle.name === 'shift') { // ön patiyi kaldırıp yeniden koyar
+      T.fny = Math.sin(Math.PI * u) * 4; T.fnx += Math.sin(Math.PI * u) * 1.5; T.hx += .6 * w;
+    } else if (idle.name === 'lick') {
+      var lp = clamp(u * 1.4, 0, 1), le = Math.sin(Math.PI * lp);
+      T.hA = -30 * le - 6; T.nA = 68 - 20 * le; T.fnx = lerp(10.3, 14, le); T.fny = lerp(0, 22, le) + Math.sin(idle.t * 13) * 1.3 * le;
+      T.mouth = .22 * le * (.5 + .5 * Math.sin(idle.t * 13)); T.eye = 1 - .6 * le;
+      if (u > .7) { var wp = (u - .7) / .3; T.fny = 22 + Math.sin(wp * Math.PI) * 6; T.fnx = 14 + Math.sin(wp * Math.PI) * 3; T.hA = -20; T.eye = .3; }
+    } else if (idle.name === 'yawn') { T.mouth = Math.min(1, e * 1.5); T.hA += 22 * e; T.nA += 6 * e; T.eye = 1 - .9 * e; T.sy += .9 * e; T.ear = .25 * e; }
+    else if (idle.name === 'lie') { go('lie'); idle.name = ''; idle.next = rnd(4, 8); return; }
+    if (u >= 1) { idle.name = ''; idle.next = rnd(1.8, 4.5); slowBlink = 0; }
   }
 
   /* ---------- Çizim ---------- */
-  function limb(pts, ws, col, outline) {
-    for (var pass = 0; pass < 2; pass++) {
-      cx.strokeStyle = pass === 0 ? COL.line : col; cx.lineCap = 'round'; cx.lineJoin = 'round';
-      for (var i = 0; i < pts.length - 1; i++) {
-        cx.lineWidth = ws[i] + (pass === 0 ? 1.7 : 0);
-        cx.beginPath(); cx.moveTo(pts[i][0], pts[i][1]); cx.lineTo(pts[i + 1][0], pts[i + 1][1]); cx.stroke();
-      }
-    }
-  }
-  function ell(x, y, rx, ry, fill, rot) { cx.beginPath(); cx.ellipse(x, y, rx, ry, rot || 0, 0, 6.2832); cx.fillStyle = fill; cx.fill(); }
-
-  // iki daire arasında konik (teğet) uzuv; ana hatlı
-  function taper(x1, y1, r1, x2, y2, r2, fill) {
+  function taper(c, x1, y1, r1, x2, y2, r2) {
     var dx = x2 - x1, dy = y2 - y1, d = Math.sqrt(dx * dx + dy * dy) || .01, ang = Math.atan2(dy, dx), sn = Math.asin(clamp((r1 - r2) / d, -.99, .99));
     var a1 = ang + Math.PI / 2 + sn, a2 = ang - Math.PI / 2 - sn;
-    cx.beginPath();
-    cx.arc(x1, y1, r1, a1, a2, false);
-    cx.arc(x2, y2, r2, a2, a1, false);
-    cx.closePath(); cx.fillStyle = fill; cx.fill(); cx.lineWidth = 1.2; cx.strokeStyle = COL.line; cx.lineJoin = 'round'; cx.stroke();
+    c.beginPath(); c.arc(x1, y1, r1, a1, a2, false); c.arc(x2, y2, r2, a2, a1, false); c.closePath(); c.fill();
   }
-  function drawLeg(hind, near) {
-    var ox, oy, col = near ? COL.fur : COL.shade;
+  function ell(c, x, y, rx, ry, rot) { c.beginPath(); c.ellipse(x, y, Math.max(.01, rx), Math.max(.01, ry), rot || 0, 0, 6.2832); c.fill(); }
+
+  var G = {}; // çizim sırasında hesaplanan iskelet noktaları
+  function legGeo(hind, near) {
     if (hind) {
-      ox = P.hx + 0.5; oy = P.hy - 1;
-      var px = near ? P.hnx : P.hfx, py = near ? P.hny : P.hfy;
+      var ox = P.hx + .5, oy = P.hy - 1, px = near ? P.hnx : P.hfx, py = near ? P.hny : P.hfy;
       var r = ik(ox, oy, px - 2.2, py + 8, 11.5, 11.5, 1);
-      // baldır → ayak (arkadan), sonra uyluk üstte
-      taper(r.ex, r.ey, 2.5, px, py + 1.2, 2.2, col);
-      taper(r.kx, r.ky, 3.7, r.ex, r.ey, 2.6, col);
-      taper(ox, oy, near ? 7.8 : 6.6, r.kx, r.ky, 3.9, col);
-      ell(px + 1.5, py + 1.1, 3.5, 1.9, COL.white); cx.strokeStyle = COL.line; cx.lineWidth = .9; cx.beginPath(); cx.ellipse(px + 1.5, py + 1.1, 3.5, 1.9, 0, 0, 6.2832); cx.stroke();
+      return { o: [ox, oy], k: [r.kx, r.ky], e: [r.ex, r.ey], p: [px, py + 1.2] };
+    }
+    var ox2 = P.sx - .5, oy2 = P.sy - 2, fx = near ? P.fnx : P.ffx, fy = near ? P.fny : P.ffy;
+    var r2 = ik(ox2, oy2, fx, fy + 1.2, 12.4, 12.4, -1);
+    return { o: [ox2, oy2], k: [r2.kx, r2.ky], p: [fx, fy + 1.2] };
+  }
+  function legShape(c, g, hind, near) {
+    if (hind) {
+      taper(c, g.e[0], g.e[1], 2.5, g.p[0], g.p[1], 2.25);
+      taper(c, g.k[0], g.k[1], 3.8, g.e[0], g.e[1], 2.6);
+      taper(c, g.o[0], g.o[1], near ? 8.2 : 7, g.k[0], g.k[1], 4);
+      ell(c, g.p[0] + 1.4, g.p[1] - .1, 3.4, 2);
     } else {
-      ox = P.sx - 0.5; oy = P.sy - 2;
-      var fx = near ? P.fnx : P.ffx, fy = near ? P.fny : P.ffy;
-      var r2 = ik(ox, oy, fx, fy + 1.2, 12.4, 12.4, -1);
-      taper(ox, oy, 4.3, r2.kx, r2.ky, 3.0, col);
-      taper(r2.kx, r2.ky, 3.0, fx, fy + 1.2, 2.5, col);
-      ell(fx + 1.3, fy + 1, 3.2, 2, COL.white); cx.strokeStyle = COL.line; cx.lineWidth = .9; cx.beginPath(); cx.ellipse(fx + 1.3, fy + 1, 3.2, 2, 0, 0, 6.2832); cx.stroke();
+      taper(c, g.o[0], g.o[1], 4.6, g.k[0], g.k[1], 3.1);
+      taper(c, g.k[0], g.k[1], 3.1, g.p[0], g.p[1], 2.5);
+      ell(c, g.p[0] + 1.2, g.p[1] - .2, 3.1, 2);
     }
   }
-
-  function drawBody() {
+  function bodyGeo() {
     var hx = P.hx, hy = P.hy, sx = P.sx, sy = P.sy, N = 14, up = [], dn = [], mid = [];
-    var mx = (hx + sx) / 2, my = (hy + sy) / 2 + P.arch;
     var dx = sx - hx, dy = sy - hy, len = Math.sqrt(dx * dx + dy * dy) || 1, nxv = -dy / len, nyv = dx / len; if (nyv < 0) { nxv = -nxv; nyv = -nyv; }
-    var cxp = mx + nxv * P.arch * 1.2, cyp = my + nyv * P.arch * .2 + P.arch * .6;
+    var cxp = (hx + sx) / 2 + nxv * P.arch * 1.2, cyp = (hy + sy) / 2 + P.arch * 1.4;
     for (var i = 0; i <= N; i++) {
       var t = i / N, a = (1 - t) * (1 - t), b = 2 * (1 - t) * t, c = t * t;
       var x = a * hx + b * cxp + c * sx, y = a * hy + b * cyp + c * sy;
       var tx = 2 * (1 - t) * (cxp - hx) + 2 * t * (sx - cxp), ty = 2 * (1 - t) * (cyp - hy) + 2 * t * (sy - cyp);
       var tl = Math.sqrt(tx * tx + ty * ty) || 1, nx = -ty / tl, ny = tx / tl; if (ny < 0) { nx = -nx; ny = -ny; }
-      var r = lerp(P.rh, P.rc, ease(t)) - Math.sin(Math.PI * t) * (lerp(P.rh, P.rc, .5) - P.rb) * 1.0;
+      var r = lerp(P.rh, P.rc, ease(t)) - Math.sin(Math.PI * t) * (lerp(P.rh, P.rc, .5) - P.rb);
       mid.push([x, y, nx, ny, r]);
-      up.push([x + nx * r, y + ny * r * 1.02]); dn.push([x - nx * r * .9, y - ny * r * .9]);
+      up.push([x + nx * r, y + ny * r]); dn.push([x - nx * r * .92, y - ny * r * .92]);
     }
-    cx.beginPath(); cx.moveTo(up[0][0], up[0][1]);
-    for (var j = 1; j <= N; j++) cx.lineTo(up[j][0], up[j][1]);
-    var e = mid[N]; cx.quadraticCurveTo(e[0] + e[2] * 0 + 7.4, e[1] + 0, dn[N][0], dn[N][1]);
-    for (var k = N - 1; k >= 0; k--) cx.lineTo(dn[k][0], dn[k][1]);
-    var s0 = mid[0]; cx.quadraticCurveTo(s0[0] - s0[4] - 1.5, s0[1], up[0][0], up[0][1]);
-    cx.closePath(); cx.fillStyle = COL.fur; cx.fill(); cx.lineWidth = 1.5; cx.strokeStyle = COL.line; cx.lineJoin = 'round'; cx.stroke();
-    // göğüs beyazı
-    var ch = mid[N - 1]; ell(ch[0] + 2.2, ch[1] - ch[4] * .45, 3.9, ch[4] * .72, COL.white, .25);
-    // karın beyazı
-    cx.strokeStyle = 'rgba(255,241,220,.55)'; cx.lineWidth = 2; cx.lineCap = 'round'; cx.beginPath();
-    for (var m = 3; m < 12; m++) { var q = mid[m]; var px = q[0] - q[2] * q[4] * .62, py = q[1] - q[3] * q[4] * .62; if (m === 3) cx.moveTo(px, py); else cx.lineTo(px, py); }
-    cx.stroke();
-    // yele çizgileri
-    cx.strokeStyle = COL.stripe; cx.lineWidth = 1.7; cx.lineCap = 'round';
-    [3, 5, 7, 9].forEach(function (i2) { var q = mid[i2]; cx.beginPath(); cx.moveTo(q[0] + q[2] * q[4] * .95, q[1] + q[3] * q[4] * .95); cx.quadraticCurveTo(q[0] + q[2] * q[4] * .2 - q[3] * 1.5, q[1] + q[3] * q[4] * .2 + q[2] * 1.5, q[0] - q[2] * q[4] * .18, q[1] - q[3] * q[4] * .18); cx.stroke(); });
-    return mid;
+    return { mid: mid, up: up, dn: dn, N: N };
   }
-
+  function bodyShape(c, b) {
+    var N = b.N, up = b.up, dn = b.dn, e = b.mid[N], s0 = b.mid[0];
+    c.beginPath(); c.moveTo(up[0][0], up[0][1]);
+    for (var j = 1; j <= N; j++) c.lineTo(up[j][0], up[j][1]);
+    c.quadraticCurveTo(e[0] + 7.2, e[1], dn[N][0], dn[N][1]);
+    for (var k = N - 1; k >= 0; k--) c.lineTo(dn[k][0], dn[k][1]);
+    c.quadraticCurveTo(s0[0] - s0[4] - 1.5, s0[1], up[0][0], up[0][1]);
+    c.closePath(); c.fill();
+  }
   function stepTail(dt) {
     var base = P.tA * D, w = P.tW * D;
     for (var i = 0; i < NT; i++) {
       var par = i === 0 ? base : tail[i - 1].a;
-      var tgt = par + P.tC * D + Math.sin(tm * (idle.name === 'tail' ? 9 : 2.6) - i * .62) * w * (.25 + i / NT) / (i === 0 ? 3 : 1);
-      var k = 120 - i * 7, c = 2 * Math.sqrt(k) * .55;
-      var s = tail[i]; s.v += (k * (tgt - s.a) - c * s.v) * dt * 1; s.a += s.v * dt;
-      // gövde dönüşünden kaynaklı gecikme: yay zaten izler
+      var tgt = par + P.tC * D + Math.sin(tm * (idle.name === 'tail' ? 8 : 2.3) - i * .55) * w * (.2 + i / NT) / (i === 0 ? 3 : 1)
+        + nz(tm * 1.7 + i * .4, 11) * .05 * (i / NT);
+      var k = 95 - i * 6, c = 2 * Math.sqrt(k) * .6, s = tail[i];
+      s.v += (k * (tgt - s.a) - c * s.v) * dt; s.a += s.v * dt;
     }
   }
-  function drawTail() {
-    var bx = P.hx - 6.5 * Math.cos(P.pitch * D * 0), by = P.hy + 1.5, pts = [[bx, by]], x = bx, y = by;
-    for (var i = 0; i < NT; i++) { x += Math.cos(tail[i].a) * TL; y += Math.sin(tail[i].a) * TL; if (y < 1.4) y = 1.4; pts.push([x, y]); }
-    var puff = 1 + P.tP * .75;
-    for (var pass = 0; pass < 2; pass++) {
-      cx.lineCap = 'round'; cx.lineJoin = 'round';
-      for (var j = 0; j < pts.length - 1; j++) {
-        var wd = (j > NT - 3 ? 3.0 : 3.9) * puff;
-        cx.lineWidth = wd + (pass === 0 ? 1.7 : 0);
-        cx.strokeStyle = pass === 0 ? COL.line : (j >= NT - 2 ? COL.stripe : (j % 3 === 2 ? COL.stripe : COL.fur));
-        cx.beginPath(); cx.moveTo(pts[j][0], pts[j][1]); cx.lineTo(pts[j + 1][0], pts[j + 1][1]); cx.stroke();
-      }
+  function tailPts() {
+    var x = P.hx - 6.5, y = P.hy + 1.6, pts = [[x, y]];
+    for (var i = 0; i < NT; i++) { x += Math.cos(tail[i].a) * TL; y += Math.sin(tail[i].a) * TL; if (y < 1.3) y = 1.3; pts.push([x, y]); }
+    return pts;
+  }
+  function tailShape(c, pts) {
+    var puff = 1 + P.tP * .8;
+    for (var j = 0; j < pts.length - 1; j++) {
+      var r1 = lerp(2.25, 1.55, j / NT) * puff, r2 = lerp(2.25, 1.55, (j + 1) / NT) * puff;
+      taper(c, pts[j][0], pts[j][1], r1, pts[j + 1][0], pts[j + 1][1], r2);
     }
   }
-
-  function drawHead() {
-    var a = P.nA * D, cxh = P.sx + Math.cos(a) * P.nL, cyh = P.sy + Math.sin(a) * P.nL;
-    // boyun
-    cx.lineCap = 'round'; cx.strokeStyle = COL.line; cx.lineWidth = 9.4; cx.beginPath(); cx.moveTo(P.sx - .5, P.sy - .5); cx.lineTo(cxh - 1, cyh - 1.5); cx.stroke();
-    cx.strokeStyle = COL.fur; cx.lineWidth = 7.7; cx.beginPath(); cx.moveTo(P.sx - .5, P.sy - .5); cx.lineTo(cxh - 1, cyh - 1.5); cx.stroke();
-    cx.save(); cx.translate(cxh, cyh); cx.rotate(P.hA * D);
+  function headGeo() {
+    var a = P.nA * D; return { x: P.sx + Math.cos(a) * P.nL, y: P.sy + Math.sin(a) * P.nL };
+  }
+  // kafa: yaw 0 = profil, 1 = izleyiciye dönük
+  function headShape(c) {
+    var y = clamp(P.yaw, 0, 1), fl = P.ear;
     // kulaklar
-    function ear(x0, tipx, tipy, rot, col, inner) {
-      cx.save(); cx.translate(x0, 4.6); cx.rotate(rot);
-      cx.beginPath(); cx.moveTo(-3.4, 0); cx.lineTo(tipx, tipy); cx.lineTo(3.4, .4); cx.closePath(); cx.fillStyle = col; cx.fill(); cx.lineWidth = 1.3; cx.strokeStyle = COL.line; cx.lineJoin = 'round'; cx.stroke();
-      if (inner) { cx.beginPath(); cx.moveTo(-1.8, .8); cx.lineTo(tipx * .8, tipy * .8); cx.lineTo(1.7, 1); cx.closePath(); cx.fillStyle = COL.ear; cx.fill(); }
-      cx.restore();
+    function ear(bx, rot, h) {
+      c.save(); c.translate(bx, 4.4); c.rotate(rot);
+      c.beginPath(); c.moveTo(-3.3, 0); c.quadraticCurveTo(-1.6, h * .7, 0, h); c.quadraticCurveTo(1.9, h * .62, 3.4, .3); c.closePath(); c.fill();
+      c.restore();
     }
-    var flat = P.ear, ea = ears.n * D, eb = ears.f * D;
-    ear(-3, -.6 - flat * 2, 7.4 - flat * 4.2, -.1 + flat * -1.25 + ea, COL.shade, false);
-    ear(.2, 1.2 - flat * 2.5, 8 - flat * 4.4, .08 + flat * -1.2 + eb, COL.fur, true);
-    // kafatası
-    cx.beginPath(); cx.ellipse(0, 0, 7.8, 6.7, 0, 0, 6.2832); cx.fillStyle = COL.fur; cx.fill(); cx.lineWidth = 1.5; cx.strokeStyle = COL.line; cx.stroke();
+    ear(lerp(-2.8, -4, y), lerp(-.12, -.22, y) - fl * 1.2 + earF.a, 8 - fl * 4);
+    ear(lerp(.3, 4, y), lerp(.08, .22, y) - fl * 1.15 + earN.a, 8.4 - fl * 4.2);
+    ell(c, 0, 0, lerp(7.8, 7.5, y), 6.7);
+    ell(c, lerp(-.6, 0, y), -3.4, lerp(4.6, 7.6, y), 3.3);            // yanak tüyü
+    ell(c, lerp(5.5, 0, y), lerp(-1.8, -2.8, y), lerp(3.9, 3.4, y), 2.8); // burun-ağız
+    c.save(); c.translate(lerp(3.6, 0, y), -3.8); c.rotate(-P.mouth * .6 * (1 - y));
+    ell(c, lerp(2.6, 0, y), -.6, lerp(4.2, 2.6, y), 1.9); c.restore();  // alt çene
+  }
+  function headDetail(c) {
+    var y = clamp(P.yaw, 0, 1), fl = P.ear;
+    // iç kulak
+    c.fillStyle = COL.ear;
+    function inner(bx, rot, h, al) {
+      if (al <= 0) return; c.globalAlpha = al;
+      c.save(); c.translate(bx, 4.4); c.rotate(rot);
+      c.beginPath(); c.moveTo(-1.7, .9); c.quadraticCurveTo(-.8, h * .55, 0, h * .78); c.quadraticCurveTo(1, h * .5, 1.8, 1.1); c.closePath(); c.fill();
+      c.restore(); c.globalAlpha = 1;
+    }
+    inner(lerp(-2.8, -4, y), lerp(-.12, -.22, y) - fl * 1.2 + earF.a, 8 - fl * 4, clamp((y - .3) * 2, 0, 1));
+    inner(lerp(.3, 4, y), lerp(.08, .22, y) - fl * 1.15 + earN.a, 8.4 - fl * 4.2, 1 - fl * .7);
     // alın çizgileri
-    cx.strokeStyle = COL.stripe; cx.lineWidth = 1.1; cx.lineCap = 'round';
-    [[-2.5, 6], [0, 6.4], [2.3, 6]].forEach(function (s) { cx.beginPath(); cx.moveTo(s[0], s[1]); cx.lineTo(s[0] - .4, s[1] - 2.3); cx.stroke(); });
-    // yanak ve burun
-    ell(-.5, -3.6, 4.4, 2.8, COL.white);
-    var jaw = P.mouth;
-    // alt çene
-    cx.save(); cx.translate(3.6, -3.6); cx.rotate(-jaw * .62);
-    ell(2.6, -.8, 4.4, 2.1, COL.white); cx.strokeStyle = COL.line; cx.lineWidth = .9; cx.beginPath(); cx.ellipse(2.6, -.8, 4.4, 2.1, 0, .2, 3.0); cx.stroke();
-    cx.restore();
-    if (jaw > .08) { cx.beginPath(); cx.ellipse(6, -3.3, 3.2, 1 + jaw * 2.6, -.2, 0, 6.2832); cx.fillStyle = '#7a2a2f'; cx.fill(); }
-    // üst çene / burun
-    ell(5.6, -1.7, 3.8, 2.9, COL.white); cx.strokeStyle = COL.line; cx.lineWidth = .9; cx.beginPath(); cx.ellipse(5.6, -1.7, 3.8, 2.9, 0, -1.5, 1.6); cx.stroke();
-    cx.beginPath(); cx.moveTo(8.1, 0); cx.lineTo(9.9, -.5); cx.lineTo(8.6, -1.9); cx.closePath(); cx.fillStyle = COL.pink; cx.fill(); cx.strokeStyle = COL.line; cx.lineWidth = .7; cx.stroke();
-    cx.beginPath(); cx.moveTo(8.9, -1.6); cx.lineTo(8.6, -3.2); cx.moveTo(8.7, -3); cx.quadraticCurveTo(6.5, -4.4, 4.7, -3.4); cx.strokeStyle = COL.line; cx.lineWidth = .8; cx.stroke();
-    // bıyık
-    cx.strokeStyle = 'rgba(255,248,235,.85)'; cx.lineWidth = .55;
-    [[-1.5, 1.8], [-3.2, 0], [-5, -2]].forEach(function (w) { cx.beginPath(); cx.moveTo(7, -2.4); cx.quadraticCurveTo(11, -2.2 + w[0], 14.5, -3 + w[1]); cx.stroke(); });
-    // göz
-    var op = clamp(P.eye * blink, 0, 1), ey = 1.6, exx = 3.2;
-    if (op < .12) { cx.strokeStyle = COL.line; cx.lineWidth = 1.2; cx.beginPath(); cx.moveTo(exx - 2.2, ey); cx.quadraticCurveTo(exx, ey - .8, exx + 2.2, ey); cx.stroke(); }
-    else {
-      cx.beginPath(); cx.ellipse(exx, ey, 2.4, 2.7 * op, 0, 0, 6.2832); cx.fillStyle = COL.eye; cx.fill(); cx.strokeStyle = COL.line; cx.lineWidth = .9; cx.stroke();
-      cx.save(); cx.beginPath(); cx.ellipse(exx, ey, 2.4, 2.7 * op, 0, 0, 6.2832); cx.clip();
-      ell(exx + P.lx * 1.0, ey + P.ly * .9, .7 + P.pup * 1.5, 2.6 * op, COL.pup);
-      ell(exx + .9 + P.lx * .6, ey + 1.1, .55, .55, 'rgba(255,255,255,.95)');
-      cx.restore();
-      cx.strokeStyle = COL.line; cx.lineWidth = 1; cx.beginPath(); cx.moveTo(exx - 2.3, ey + 2.4 * op); cx.quadraticCurveTo(exx, ey + 3.1 * op, exx + 2.3, ey + 2.2 * op); cx.globalAlpha = .0; cx.stroke(); cx.globalAlpha = 1;
+    c.strokeStyle = COL.stripe; c.lineWidth = 1.2; c.lineCap = 'round';
+    [-2.4, 0, 2.4].forEach(function (s) { var x = s + lerp(-1, 0, y); c.beginPath(); c.moveTo(x, 6.3); c.quadraticCurveTo(x - .3, 5, x - .2, 3.8); c.stroke(); });
+    // beyaz ağız ve yanak
+    c.fillStyle = COL.white;
+    ell(c, lerp(-.5, -2.8, y), -3.7, lerp(3.6, 2.6, y), 2.4);
+    ell(c, lerp(-.5, 2.8, y), -3.7, lerp(3.6, 2.6, y), 2.4);
+    ell(c, lerp(5.5, -1.7, y), lerp(-2.2, -2.9, y), lerp(3.6, 2.3, y), 2.5);
+    ell(c, lerp(5.5, 1.7, y), lerp(-2.2, -2.9, y), lerp(3.6, 2.3, y), 2.5);
+    // açık ağız
+    if (P.mouth > .06) { c.fillStyle = '#7a2a2f'; ell(c, lerp(6, 0, y), -3.6 - P.mouth * .6, lerp(2.6, 2, y), .8 + P.mouth * 2.4, -.15 * (1 - y)); c.fillStyle = '#e07a86'; ell(c, lerp(6.2, 0, y), -4.2 - P.mouth * 1.1, 1.5, .4 + P.mouth * .9); }
+    // burun
+    var nx = lerp(9.1, 0, y), ny = lerp(-.8, -1.3, y);
+    c.fillStyle = COL.pink; c.beginPath(); c.moveTo(nx - lerp(1, 1.4, y), ny + .9); c.lineTo(nx + lerp(.8, 1.4, y), ny + .9); c.lineTo(nx, ny - .8); c.closePath(); c.fill();
+    c.strokeStyle = COL.line; c.lineWidth = .7;
+    c.beginPath(); c.moveTo(nx, ny - .8); c.lineTo(nx, ny - 2.1);
+    c.quadraticCurveTo(nx - 1.3, ny - 3, nx - 2.4, ny - 2.4);
+    if (y > .3) { c.moveTo(nx, ny - 2.1); c.quadraticCurveTo(nx + 1.3, ny - 3, nx + 2.4, ny - 2.4); }
+    c.stroke();
+    // gözler
+    var op = clamp(P.eye * blink * (1 - slowBlink), 0, 1);
+    function eye(ex, al, rx) {
+      if (al <= .02) return; c.globalAlpha = al; var ey = 1.7;
+      if (op < .14) { c.strokeStyle = COL.line; c.lineWidth = 1; c.beginPath(); c.moveTo(ex - rx, ey + .2); c.quadraticCurveTo(ex, ey - .9, ex + rx, ey + .2); c.stroke(); c.globalAlpha = 1; return; }
+      c.save(); c.beginPath(); c.ellipse(ex, ey, rx, 2.6 * op, 0, 0, 6.2832); c.fillStyle = COL.eye; c.fill(); c.clip();
+      c.fillStyle = 'rgba(120,150,20,.35)'; ell(c, ex, ey - 1.2, rx, 1.4);
+      c.fillStyle = COL.pup; ell(c, ex + P.lx * .9 * (1 - y * .5), ey + P.ly * .8, .6 + P.pup * 1.45, 2.5 * op);
+      c.fillStyle = 'rgba(255,255,255,.95)'; ell(c, ex + .8, ey + 1, .55, .55);
+      c.restore();
+      c.strokeStyle = COL.line; c.lineWidth = .8; c.beginPath(); c.ellipse(ex, ey, rx, 2.6 * op, 0, Math.PI * 1.05, Math.PI * 1.95, true); c.stroke();
+      c.beginPath(); c.moveTo(ex - rx - .2, ey + .3); c.quadraticCurveTo(ex, ey + 2.9 * op + .4, ex + rx + .2, ey + .4); c.lineWidth = 1.1; c.stroke();
+      c.globalAlpha = 1;
     }
-    cx.restore();
+    eye(lerp(3.2, 2.9, y), 1, lerp(2.1, 2.2, y));
+    eye(lerp(6.3, -2.9, y), clamp((y - .35) * 2.5, 0, 1), 2.2);
   }
 
+  function drawCat() {
+    var c = ox2;
+    c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, oc.width, oc.height);
+    c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    c.translate(X, Y); c.scale(face * S * fs, -S);
+    if (P.pitch) { c.translate(0, 18); c.rotate(P.pitch * D); c.translate(0, -18); }
+    var hfg = legGeo(true, false), ffg = legGeo(false, false), hng = legGeo(true, true), fng = legGeo(false, true);
+    var bg = bodyGeo(), tp = tailPts(), hg = headGeo();
+    // 1) silüet (uzaktaki bacaklar koyu)
+    c.fillStyle = COL.shade; legShape(c, hfg, true, false); legShape(c, ffg, false, false);
+    c.fillStyle = COL.fur; tailShape(c, tp); bodyShape(c, bg); legShape(c, hng, true, true); legShape(c, fng, false, true);
+    taper(c, P.sx - .5, P.sy - .5, 4.6, hg.x - 1, hg.y - 1.5, 4.4); // boyun
+    c.save(); c.translate(hg.x, hg.y); c.scale(1 / fs, 1); c.rotate((P.hA + P.tilt * P.yaw) * D); headShape(c); c.restore();
+    // 2) desen ve gölge, yalnızca silüetin içine
+    c.globalCompositeOperation = 'source-atop';
+    // uzak bacakları gövdeden ayıran yumuşak gölge
+    c.fillStyle = 'rgba(70,30,0,.22)'; legShape(c, hfg, true, false);
+    c.strokeStyle = COL.stripe; c.lineCap = 'round'; c.lineWidth = 2.2;
+    [3, 5, 7, 9, 11].forEach(function (i2) { var q = bg.mid[i2]; if (!q) return; c.beginPath(); c.moveTo(q[0] + q[2] * q[4] * 1.05, q[1] + q[3] * q[4] * 1.05); c.quadraticCurveTo(q[0] + q[2] * q[4] * .35 - q[3] * 1.4, q[1] + q[3] * q[4] * .35 + q[2] * 1.4, q[0] + q[2] * q[4] * -.05, q[1] + q[3] * q[4] * -.05); c.stroke(); });
+    c.lineWidth = 1.6; [[hng.o, hng.k], [fng.o, fng.k]].forEach(function (s) { for (var t = .3; t < .9; t += .3) { var x = lerp(s[0][0], s[1][0], t), yv = lerp(s[0][1], s[1][1], t); c.beginPath(); c.moveTo(x - 2.5, yv + .8); c.lineTo(x + 2.5, yv - .8); c.stroke(); } });
+    for (var ti = 3; ti < NT; ti += 2) { var a0 = tp[ti], a1 = tp[ti + 1] || a0; var dx = a1[0] - a0[0], dy = a1[1] - a0[1], dl = Math.hypot(dx, dy) || 1; c.lineWidth = 1.8; c.beginPath(); c.moveTo(a0[0] - dy / dl * 3, a0[1] + dx / dl * 3); c.lineTo(a0[0] + dy / dl * 3, a0[1] - dx / dl * 3); c.stroke(); }
+    c.fillStyle = COL.stripe; var tip = tp[NT]; ell(c, tip[0], tip[1], 2.2, 2.2);
+    // göğüs, karın ve patiler beyaz
+    c.fillStyle = COL.white; var ch = bg.mid[bg.N - 1];
+    var hgq = headGeo(); c.globalAlpha = .9; ell(c, lerp(ch[0], hgq.x, .35) + 2.6, lerp(ch[1], hgq.y, .35) - ch[4] * .25, 3.4, 4.2, .35); c.globalAlpha = 1;
+    c.globalAlpha = .35; for (var m = 5; m < 11; m++) { var q2 = bg.mid[m]; ell(c, q2[0] - q2[2] * q2[4] * .9, q2[1] - q2[3] * q2[4] * .9, 2.2, 1.6); } c.globalAlpha = 1;
+    [hng, fng].forEach(function (g) { ell(c, g.p[0] + 1.3, g.p[1] - .1, 3.6, 2.2); });
+    c.fillStyle = '#E8D6BE'; [hfg, ffg].forEach(function (g) { ell(c, g.p[0] + 1.3, g.p[1] - .1, 3.6, 2.2); });
+    // üstten ışık, alttan gölge (ekran ekseninde)
+    c.save(); c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    var gr = c.createLinearGradient(0, Y - 60, 0, Y + 2);
+    gr.addColorStop(0, 'rgba(255,236,200,.22)'); gr.addColorStop(.55, 'rgba(255,236,200,0)'); gr.addColorStop(1, 'rgba(80,35,0,.30)');
+    c.fillStyle = gr; c.fillRect(X - 90, Y - 120, 180, 130); c.restore();
+    // yüz
+    c.save(); c.translate(hg.x, hg.y); c.scale(1 / fs, 1); c.rotate((P.hA + P.tilt * P.yaw) * D); headDetail(c); c.restore();
+    c.globalCompositeOperation = 'source-over';
+    G.head = hg;
+  }
   function draw() {
-    cx.setTransform(dpr, 0, 0, dpr, 0, 0); cx.clearRect(0, 0, W, H);
+    mx.setTransform(1, 0, 0, 1, 0, 0); mx.clearRect(0, 0, cv.width, cv.height);
     if (st === 'hidden') return;
-    cx.save();
     // zemin gölgesi
-    var gh = Math.max(0, 1 - Math.max(0, (floorY() - Y) / 120)); // yerdeyken koyu
-    cx.fillStyle = 'rgba(0,0,0,.28)'; cx.beginPath(); cx.ellipse(X, (st === 'fly' || st === 'launch' || st === 'startle' ? (sd && sd.y1 !== undefined ? sd.y1 : Y) : Y) + 1, 16 * (st === 'fly' ? .8 : 1), 2.6, 0, 0, 6.2832); cx.fill();
-    cx.translate(X, Y); cx.scale(face * S * sqx, -S * sqy);
-    if (P.pitch) { cx.translate(0, 18); cx.rotate(P.pitch * D); cx.translate(0, -18); }
-    drawLeg(true, false); drawLeg(false, false);
-    drawTail();
-    var mid = drawBody();
-    drawLeg(true, true); drawLeg(false, true);
-    drawHead();
-    cx.restore();
+    var gy = st === 'fly' && sd && sd.y1 !== undefined ? sd.y1 : Y, lift = st === 'fly' ? .55 : 1;
+    mx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    var sg = mx.createRadialGradient(X, gy + 1, 1, X, gy + 1, 20);
+    sg.addColorStop(0, 'rgba(0,0,0,' + (.32 * lift) + ')'); sg.addColorStop(1, 'rgba(0,0,0,0)');
+    mx.save(); mx.translate(X, gy + 1); mx.scale(1, .16); mx.translate(-X, -(gy + 1)); mx.fillStyle = sg; mx.beginPath(); mx.arc(X, gy + 1, 20, 0, 6.2832); mx.fill(); mx.restore();
+    drawCat();
+    // yalnızca kedinin çevresi: dış çizgi (silüet 8 yöne kaydırılır) + kedi
+    var bx = Math.max(0, Math.floor((X - 95) * dpr)), by = Math.max(0, Math.floor((Y - 125) * dpr)), bw = Math.min(oc.width - bx, Math.ceil(190 * dpr)), bh = Math.min(oc.height - by, Math.ceil(140 * dpr));
+    if (bw <= 0 || bh <= 0) return;
+    oy2.setTransform(1, 0, 0, 1, 0, 0); oy2.globalCompositeOperation = 'source-over'; oy2.clearRect(0, 0, oc2.width, oc2.height);
+    oy2.drawImage(oc, bx, by, bw, bh, bx, by, bw, bh);
+    oy2.globalCompositeOperation = 'source-in'; oy2.fillStyle = COL.line; oy2.fillRect(bx, by, bw, bh);
+    mx.setTransform(1, 0, 0, 1, 0, 0);
+    var o = 1.05 * dpr;
+    [[o, 0], [-o, 0], [0, o], [0, -o], [o * .7, o * .7], [-o * .7, o * .7], [o * .7, -o * .7], [-o * .7, -o * .7]].forEach(function (d) { mx.drawImage(oc2, bx, by, bw, bh, bx + d[0], by + d[1], bw, bh); });
+    mx.drawImage(oc, bx, by, bw, bh, bx, by, bw, bh);
+    // bıyıklar silüetin dışına taşar: en son, ana tuvale
+    var hg = G.head; if (!hg) return;
+    mx.setTransform(dpr, 0, 0, dpr, 0, 0); mx.translate(X, Y); mx.scale(face * S * fs, -S);
+    if (P.pitch) { mx.translate(0, 18); mx.rotate(P.pitch * D); mx.translate(0, -18); }
+    mx.translate(hg.x, hg.y); mx.scale(1 / fs, 1); mx.rotate((P.hA + P.tilt * P.yaw) * D);
+    var y = clamp(P.yaw, 0, 1);
+    mx.strokeStyle = 'rgba(255,250,240,.8)'; mx.lineWidth = .45; mx.lineCap = 'round';
+    [[1.5, -.5], [0, -1.6], [-1.6, -2.8]].forEach(function (w) {
+      var sx0 = lerp(7, 2.4, y); mx.beginPath(); mx.moveTo(sx0, -2.6); mx.quadraticCurveTo(sx0 + lerp(4, 4.5, y), -2.4 + w[0], sx0 + lerp(8, 8.5, y), -3 + w[1]); mx.stroke();
+      if (y > .3) { mx.globalAlpha = clamp((y - .3) * 2, 0, 1); mx.beginPath(); mx.moveTo(-2.4, -2.6); mx.quadraticCurveTo(-6.9, -2.4 + w[0], -10.9, -3 + w[1]); mx.stroke(); mx.globalAlpha = 1; }
+    });
   }
 
   /* ---------- Döngü ---------- */
@@ -3366,36 +3452,41 @@ var Cat = (function () {
     if (!cv) return;
     if (frozen) { schedule(); return; }
     var dt = Math.min(.05, (now - last) / 1000 || .016); last = now;
-    if (UI.panelOpen() || document.hidden) { if (st !== 'sit' && st !== 'hidden') { sitAt(I18n.lang); } if (!raf) raf = setTimeout(function () { raf = 0; schedule(); }, 300); return; }
-    nextBlink -= dt; if (nextBlink <= 0) { blink = 0; nextBlink = 2.2 + Math.random() * 3.6; }
-    if (blink < 1) blink = Math.min(1, blink + dt * 12); else blink = 1;
-    if (Math.random() < dt * .35 && ears.nn > 3) ears.nn = 0;
-    if (ears.nn < 3) { ears.nn += dt * 10; ears.n = -Math.sin(Math.PI * clamp(ears.nn / 1, 0, 1)) * 14 * (ears.nn < 1 ? 1 : 0) * Math.sin(ears.nn * 22); }
-    else ears.n *= .8;
-    ears.f = Math.sin(tm * .7) * .6;
-    // asteroit
+    if (UI.panelOpen() || document.hidden) { if (st !== 'sit' && st !== 'lie' && st !== 'hidden') sitAt(I18n.lang); if (!raf) raf = setTimeout(function () { raf = 0; schedule(); }, 300); return; }
+    life(dt);
     var ph = Impact.phase, hit = ph === 'boom' || ph === 'scatter' || ph === 'gather';
     if (hit && st !== 'startle' && st !== 'turnaway' && st !== 'run' && st !== 'hidden' && !away) {
-      queue = null; var sx = X, dir = X < W / 2 ? -1 : 1;
-      var pd = sd && sd.land ? sd : sd && sd.data && sd.data.land ? sd.data : null;
+      queue = null;
+      var pd = sd; while (pd && !pd.land && pd.data) pd = pd.data; if (pd && !pd.land) pd = null;
       if (pd && !pd.done && st !== 'land' && st !== 'settle') { pd.done = true; pd.land(); }
-      go('startle', { x0: X, y0: Y, dir: dir }); away = true; haptic(30);
+      fs = 1; go('startle', { x0: X, y0: Y, dir: X < W / 2 ? -1 : 1 }); away = true; haptic(30);
     }
     update(dt); springs(dt); stepTail(dt); draw();
     schedule();
   }
+  // göz kırpma ve kulak seğirmesi: her kulak kendi zamanlamasıyla
+  function life(dt) {
+    nextBlink -= dt;
+    if (nextBlink <= 0) { blink = 0; nextBlink = Math.random() < .2 ? .25 : rnd(2, 5.5); }
+    blink = Math.min(1, blink + dt * 9);
+    [earN, earF].forEach(function (e, i) {
+      e.t -= dt;
+      if (e.t <= 0) { e.k = 0; e.t = rnd(2.5, 7); e.amp = rnd(.18, .4) * (Math.random() < .5 ? 1 : -1); }
+      if (e.k !== undefined && e.k < 1) { e.k = Math.min(1, e.k + dt * 4); e.a = Math.sin(e.k * Math.PI) * e.amp * Math.cos(e.k * 9) ; }
+      else e.a *= .85;
+    });
+  }
   function schedule() { if (!raf) raf = requestAnimationFrame(frame); }
 
-  /* ---------- Dış arayüz ---------- */
   function originOf(l) { var o = orbs[l]; return o ? { x: o.cx, y: o.cy } : null; }
 
   return {
     init: function () {
       cv = document.getElementById('cat-cv'); if (!cv) return;
-      cx = cv.getContext('2d'); cv.style.height = H + 'px';
+      mx = cv.getContext('2d'); oc = document.createElement('canvas'); ox2 = oc.getContext('2d'); oc2 = document.createElement('canvas'); oy2 = oc2.getContext('2d');
+      cv.style.height = H + 'px';
       measure(); sitAt(I18n.lang); this.mark();
-      var self = this;
-      window.addEventListener('resize', function () { measure(); if (st === 'sit') sitAt(I18n.lang); });
+      window.addEventListener('resize', function () { measure(); if (st === 'sit' || st === 'lie') sitAt(I18n.lang, true); });
       if ('ResizeObserver' in window) { try { new ResizeObserver(function () { measure(); }).observe(document.getElementById('stage')); } catch (e) {} }
       last = performance.now(); schedule();
     },
@@ -3409,20 +3500,21 @@ var Cat = (function () {
     choose: function (l) {
       if (!cv) { I18n.set(l, true); return; }
       measure();
-      if (l === I18n.lang && st === 'sit') return;
+      if (l === I18n.lang && (st === 'sit' || st === 'lie')) return;
       if (UI.panelOpen() || away || Impact.active() || st === 'hidden') { I18n.set(l, !UI.panelOpen(), originOf(l)); this.mark(); return; }
-      if (st !== 'sit') { queue = l; return; }
-      var s = seatOf(l), dir = s.x > X ? 1 : -1, self = this;
-      var dist = Math.abs(s.x - X);
-      var data = { x0: X, y0: Y, x1: s.x, y1: s.y, T: .5 + dist * .0021, h: 30 + dist * .13, land: function () {
+      if (st !== 'sit' && st !== 'lie') { queue = l; return; }
+      idle.name = ''; slowBlink = 0;
+      var s = seatOf(l), dir = s.x > X ? 1 : -1, self = this, dist = Math.abs(s.x - X);
+      var data = { x0: X, y0: Y, x1: s.x, y1: s.y, T: .42 + dist * .0015, h: 26 + dist * .13, lookT: rnd(.22, .4), done: false, land: function () {
         I18n.set(l, true, originOf(l)); self.mark();
       } };
-      if (dir !== face) go('turn', { to: dir, next: 'look', data: data }); else go('stand', { t: .12, next: 'look', data: data });
+      var rise = { dur: st === 'lie' ? .55 : rnd(.3, .42), next: 'look', data: data };
+      if (dir !== face) go('rise', { dur: rise.dur, next: 'turn', data: { to: dir, dur: rnd(.38, .5), next: 'look', data: data } });
+      else go('rise', rise);
     },
-    shock: function (o) { Shock.start(o); },
     debug: function () { return { st: st, X: X, Y: Y, away: away }; },
     freeze: function (f) { frozen = f; },
-    act: function (n) { idle.name = n; idle.t = 0; idle.dur = n === 'lick' ? 2.1 : n === 'yawn' ? 1.7 : 1.6; },
+    act: function (n) { idle.name = n; idle.t = 0; idle.dur = ACTS[n] || 1.6; if (n === 'lie') { go('lie'); idle.name = ''; } },
     force: function (n, d) { if (d && d.x !== undefined) X = d.x; Y = floorY(); go(n, d); },
     step: function (n, dt) { for (var i = 0; i < n; i++) { nextBlink = 9; blink = 1; update(dt); springs(dt); stepTail(dt); } draw(); return { st: st, X: X, Y: Y }; }
   };
