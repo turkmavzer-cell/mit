@@ -145,12 +145,12 @@ svg { flex-shrink: 0; }
 .lang-orb.on::before { animation: orbMer 7s ease-in-out infinite; }
 .lang-orb .lo-ring { position: absolute; inset: -2px; border-radius: 50%; border: 2px solid var(--cy); opacity: 0; pointer-events: none; }
 .lang-orb .lo-ring.r2 { border-color: var(--am); }
-.lang-orb.pick { animation: orbPick .85s cubic-bezier(.2,.75,.25,1); }
-.lang-orb.pick .lo-ring { animation: orbRing .9s ease-out; }
-.lang-orb.pick .lo-ring.r2 { animation: orbRing 1.1s ease-out .14s; }
-.lang-orb.pick b { animation: orbTxt .85s ease-out; }
-.lang-orb.unpick { animation: orbUnpick .5s ease-out; }
-.lang-orb.nudge { animation: orbNudge .45s ease-out; }
+.lang-orb.lo-pick { animation: orbPick .85s cubic-bezier(.2,.75,.25,1); }
+.lang-orb.lo-pick .lo-ring { animation: orbRing .9s ease-out; }
+.lang-orb.lo-pick .lo-ring.r2 { animation: orbRing 1.1s ease-out .14s; }
+.lang-orb.lo-pick b { animation: orbTxt .85s ease-out; }
+.lang-orb.lo-unpick { animation: orbUnpick .5s ease-out; }
+.lang-orb.lo-nudge { animation: orbNudge .45s ease-out; }
 @keyframes orbBreath {
   0%, 100% { transform: scale(1); box-shadow: 0 0 14px var(--cy-a40), inset 0 0 10px var(--cy-a20); }
   50% { transform: scale(1.09); box-shadow: 0 0 30px rgba(var(--cy-rgb),.62), inset 0 0 20px var(--cy-a40); }
@@ -1044,7 +1044,7 @@ window.EN_RULES = [
      "localStorage doldu, kayıt sessizce başarısız oldu" sorununun çözümü budur.
    - Her yazma işleminin sonucu kontrol edilir; hata olursa kullanıcı görür.
    ===================================================================== */
-var APP_VERSION = '2.17.0';
+var APP_VERSION = '2.17.1';
 var SCHEMA_VERSION = 2; // 1 = eski localStorage sürümü (MİT 1.0), 2 = IndexedDB
 
 var IN_FRAME = (function () { try { return window.self !== window.top; } catch (e) { return true; } })();
@@ -3002,10 +3002,10 @@ var LangOrbs = {
   },
   choose: function (l) {
     var o = this.orb(l);
-    if (l === I18n.lang) { if (o) this.replay(o, 'nudge', 500); return; }
+    if (l === I18n.lang) { if (o) this.replay(o, 'lo-nudge', 500); return; }
     var prev = this.orb(I18n.lang);
-    if (prev) this.replay(prev, 'unpick', 500);
-    if (o) this.replay(o, 'pick', 900);
+    if (prev) this.replay(prev, 'lo-unpick', 500);
+    if (o) this.replay(o, 'lo-pick', 900);
     var r = o ? o.getBoundingClientRect() : null;
     I18n.set(l, !UI.panelOpen(), r ? { x: r.left + r.width / 2, y: r.top + r.height / 2 } : null);
     this.mark();
