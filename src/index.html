@@ -533,7 +533,7 @@ textarea.inp { padding: 12px; resize: none; line-height: 1.4; }
      "localStorage doldu, kayıt sessizce başarısız oldu" sorununun çözümü budur.
    - Her yazma işleminin sonucu kontrol edilir; hata olursa kullanıcı görür.
    ===================================================================== */
-var APP_VERSION = '2.12.0';
+var APP_VERSION = '2.12.1';
 var SCHEMA_VERSION = 2; // 1 = eski localStorage sürümü (MİT 1.0), 2 = IndexedDB
 
 var IN_FRAME = (function () { try { return window.self !== window.top; } catch (e) { return true; } })();
@@ -4498,10 +4498,11 @@ Game.list.push({
     s.fire -= dt;
     if (s.fire <= 0) {
       s.fire = this.rate(s);
-      var n = this.guns(s), spread = Math.min(0.9, 0.12 * (n - 1));
+      // Mermiler geminin önünde dar bir demet halinde, neredeyse paralel gider
+      var n = this.guns(s), width = Math.min(34, 5 * (n - 1));
       for (var gi = 0; gi < n; gi++) {
-        var k = n === 1 ? 0 : gi / (n - 1) - 0.5; // -0.5..0.5 yelpaze
-        s.shots.push({ x: s.px + k * Math.min(40, 8 * n), y: s.py - 20, vx: Math.sin(k * spread * 2) * 640 });
+        var k = n === 1 ? 0 : gi / (n - 1) - 0.5; // -0.5..0.5
+        s.shots.push({ x: s.px + k * width, y: s.py - 22 - Math.abs(k) * 6, vx: k * 28 });
       }
     }
     s.shots.forEach(function (b) { b.y -= 640 * dt; b.x += (b.vx || 0) * dt; });
@@ -4570,7 +4571,7 @@ Game.list.push({
   },
   draw: function (g, s, P) {
     // Mermiler
-    glow(g, P.cy, 10); g.strokeStyle = P.cy; g.lineWidth = 3; g.lineCap = 'round';
+    glow(g, P.cy, 10); g.strokeStyle = P.cy; g.lineWidth = s.gn > 4 ? 2 : 3; g.lineCap = 'round';
     s.shots.forEach(function (b) { g.beginPath(); g.moveTo(b.x, b.y); g.lineTo(b.x - (b.vx || 0) * 0.018, b.y + 12); g.stroke(); });
     noGlow(g);
     glow(g, P.red, 10); g.fillStyle = P.red;
