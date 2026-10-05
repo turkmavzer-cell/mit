@@ -56,7 +56,7 @@ uygulamayı kaldır, yeni APK'yı kur, Yedekleme → yedekten geri yükle. Sonra
 - Kontrol: `npm run check`
 
 ## Dil (Türkçe / English / Mısır Arapçası)
-- Küre ekranının altında üç dil küresi var: **TR · EN · ع**. Seçili kürenin üstünde kedi oturur. Başka küreye dokununca kedi dönüp bakar, çömelir, zıplar ve konar; konduğu an o küreden bir şok dalgası yayılır, ana ekrandaki yazılar dalga ulaştıkça yeni dile döner. Kedi canvas üzerinde iskelet/IK + yay fiziğiyle çizilir (`Cat` nesnesi).
-- Asteroit küreyi dağıtınca kedi koşarak kaçar; küre toparlanınca yürüyerek gelip seçili küreye oturur.
-- Arapçada arayüz sağdan sola döner. Seçim kaydedilir (`mit_lang`). Ayarlar'da dil seçeneği yoktur.
+- Küre ekranının altında üç dil balonu var: **TR · EN · ع**. Etkin balon nefes alır gibi büyüyüp küçülür.
+- Başka bir balona dokununca balon seçilme animasyonu yapar (içe çekilip parlayarak açılır, halka yayılır); aynı anda o balondan çıkan şok dalgası ana ekrana yayılır, yazılar dalga ulaştıkça yeni dile döner.
+- Her yönde geçiş desteklenir (TR↔EN↔AR). Arapçada arayüz sağdan sola döner. Seçim kaydedilir (`mit_lang`). Ayarlar'da dil seçeneği yoktur.
 - Çeviri sözlükleri: `src/i18n-ar.js`, `src/i18n-en.js`. Yeni metin eklenince ikisine de eklenmeli.
