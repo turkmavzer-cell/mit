@@ -1044,7 +1044,7 @@ window.EN_RULES = [
      "localStorage doldu, kayıt sessizce başarısız oldu" sorununun çözümü budur.
    - Her yazma işleminin sonucu kontrol edilir; hata olursa kullanıcı görür.
    ===================================================================== */
-var APP_VERSION = '2.17.1';
+var APP_VERSION = '2.17.2';
 var SCHEMA_VERSION = 2; // 1 = eski localStorage sürümü (MİT 1.0), 2 = IndexedDB
 
 var IN_FRAME = (function () { try { return window.self !== window.top; } catch (e) { return true; } })();
@@ -2030,7 +2030,11 @@ var Sphere = {
     if (!this.ok) return;
     if (UI.panelOpen() || Game.active) { this.pendingResize = true; return; }
     this.pendingResize = false;
-    var w = window.innerWidth, h = window.innerHeight, aspect = w / h;
+    var w = window.innerWidth, h = window.innerHeight;
+    // Klavye açılınca yükseklik kısalır; küre klavyesiz tam yüksekliğe göre boyutlanır
+    if (this.fullW === w && this.fullH && h < this.fullH * 0.82) h = this.fullH;
+    else { this.fullW = w; this.fullH = h; }
+    var aspect = w / h;
     this.renderer.setSize(w, h, false);
     this.camera.aspect = aspect;
     this.baseZ = Math.max(3.2, 1.42 / (Math.tan(25 * Math.PI / 180) * aspect));
@@ -2740,6 +2744,8 @@ var UI = {
         Fx.resume();
         Sound.play('back');
         Sphere.unfocus().then(function () { App.refreshStats(); });
+        // Klavye kapanırken gelen geç ekran boyutu değişimlerine karşı küreyi yeniden doğrula
+        [350, 900].forEach(function (ms) { setTimeout(function () { if (!UI.panelOpen()) Sphere.resize(); }, ms); });
         if (opts.onClose) opts.onClose();
       }
     });
