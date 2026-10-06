@@ -215,3 +215,22 @@ window.AR_RULES = [
   [/^(\d+) sn$/, '$1 ث'], [/^(\d+) mt$/, '$1 م'],
   [/^İş (.+)$/, 'أوردر $1']
 ];
+
+/* QR ile iş paylaşımı */
+Object.assign(window.AR_DICT, {
+  'QR ile Gönder': 'إرسال بـ QR', 'QR ile gönder': 'إرسال بـ QR', 'QR ile Al': 'استلام بـ QR', 'QR ile al': 'استلام بـ QR',
+  'Kamerayı QR koda tutun': 'وجّه الكاميرا ناحية كود QR',
+  'Kamera açılamadı. İzin verin ya da fotoğrafla okuyun.': 'الكاميرا مفتحتش. اسمح بالإذن أو اقرا بالصورة.',
+  'Fotoğrafla oku': 'اقرا بالصورة', 'Fotoğrafta QR kod bulunamadı': 'مفيش كود QR في الصورة', 'Bu bir MİT iş kodu değil': 'ده مش كود أوردر MİT',
+  'Okundu…': 'اتقرا…', 'Kod bozuk ya da eksik': 'الكود بايظ أو ناقص', 'Bu telefon sıkıştırılmış kodu desteklemiyor': 'التليفون ده مبيدعمش الكود المضغوط',
+  'Gelen İş': 'أوردر وارد', 'Yeni müşteri eklenecek': 'هيتضاف عميل جديد',
+  'Bu iş zaten kayıtlı. Güncellersen gelen bilgiyle değişir; fotoğraflarınız korunur.': 'الأوردر ده موجود بالفعل. لو حدّثته هيتغيّر بالمعلومات الواردة؛ وصورك هتفضل زي ما هي.',
+  'Ekle': 'ضيف', 'Güncelle': 'حدّث', 'İş eklendi': 'الأوردر اتضاف', 'İş güncellendi': 'الأوردر اتحدّث', 'Durdur': 'وقّف', 'Devam et': 'كمّل',
+  'Karşı telefonda İşler → QR ile al düğmesine basıp bu kodu okutun. Fotoğraflar gönderilmez.': 'على التليفون التاني: الأوردرات ← استلام بـ QR، وبعدين وجّهه للكود ده. الصور مش بتتبعت.',
+  'Tek parça · telefonu yaklaştırın': 'جزء واحد · قرّب التليفون'
+});
+window.AR_RULES.unshift(
+  [/^Parça (\d+)\/(\d+) · tüm parçalar okunana kadar tutun$/, 'جزء $1/$2 · سيب الكود لحد ما كل الأجزاء تتقرا'],
+  [/^Parçalar okunuyor: (\d+)\/(\d+)$/, 'بيقرا الأجزاء: $1/$2'],
+  [/^Kayıtlı müşteriye eklenecek: (.+)$/, 'هيتضاف للعميل المسجل: $1']
+);

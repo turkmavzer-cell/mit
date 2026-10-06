@@ -60,3 +60,10 @@ uygulamayı kaldır, yeni APK'yı kur, Yedekleme → yedekten geri yükle. Sonra
 - Başka bir balona dokununca balon seçilme animasyonu yapar (içe çekilip parlayarak açılır, halka yayılır); aynı anda o balondan çıkan şok dalgası ana ekrana yayılır, yazılar dalga ulaştıkça yeni dile döner.
 - Her yönde geçiş desteklenir (TR↔EN↔AR). Arapçada arayüz sağdan sola döner. Seçim kaydedilir (`mit_lang`). Ayarlar'da dil seçeneği yoktur.
 - Çeviri sözlükleri: `src/i18n-ar.js`, `src/i18n-en.js`. Yeni metin eklenince ikisine de eklenmeli.
+
+## QR ile iş paylaşımı
+- **Gönderme:** İş özetinde (kartın ⓘ düğmesi) **QR** düğmesi. İş, müşteri bilgisiyle birlikte (fotoğraf yok) sıkıştırılıp CRC32 ile doğrulanarak bir ya da birkaç QR koda dönüşür. Büyük işlerde parçalar sırayla döner.
+- **Alma:** İşler ekranının üstündeki tarama düğmesi → kamera QR'ı okur (kamera açılmazsa "Fotoğrafla oku"). Parçalar tamamlanınca "Gelen İş" ekranı çıkar; **Ekle** ile iş kaydedilir.
+- Müşteri önce kimlikle, bulunmazsa ad + telefonla eşleşir; yoksa yeni müşteri açılır. Kalıplar adına göre eklenir.
+- Aynı iş zaten varsa **Güncelle** sorulur; güncellenirse gelen bilgi geçer, kendi fotoğraflarınız korunur.
+- Tamamen cihazda çalışır (internet yok). Kütüphaneler: `qrcode-generator` (üretim), `jsqr` (okuma); derlemede dosyaya gömülür.

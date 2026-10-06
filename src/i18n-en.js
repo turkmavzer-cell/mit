@@ -188,3 +188,22 @@ window.EN_RULES = [
   [/^(\d+) sn$/, '$1 s'], [/^(\d+) mt$/, '$1 m'],
   [/^İş (.+)$/, 'Job $1']
 ];
+
+/* QR ile iş paylaşımı */
+Object.assign(window.EN_DICT, {
+  'QR ile Gönder': 'Send by QR', 'QR ile gönder': 'Send by QR', 'QR ile Al': 'Receive by QR', 'QR ile al': 'Receive by QR',
+  'Kamerayı QR koda tutun': 'Point the camera at a QR code',
+  'Kamera açılamadı. İzin verin ya da fotoğrafla okuyun.': 'Could not open the camera. Allow access or read from a photo.',
+  'Fotoğrafla oku': 'Read from photo', 'Fotoğrafta QR kod bulunamadı': 'No QR code found in the photo', 'Bu bir MİT iş kodu değil': 'This is not a MİT job code',
+  'Okundu…': 'Scanned…', 'Kod bozuk ya da eksik': 'The code is damaged or incomplete', 'Bu telefon sıkıştırılmış kodu desteklemiyor': 'This phone does not support the compressed code',
+  'Gelen İş': 'Incoming Job', 'Yeni müşteri eklenecek': 'A new customer will be added',
+  'Bu iş zaten kayıtlı. Güncellersen gelen bilgiyle değişir; fotoğraflarınız korunur.': 'This job is already saved. If you update it, it changes to the incoming data; your photos are kept.',
+  'Ekle': 'Add', 'Güncelle': 'Update', 'İş eklendi': 'Job added', 'İş güncellendi': 'Job updated', 'Durdur': 'Pause', 'Devam et': 'Resume',
+  'Karşı telefonda İşler → QR ile al düğmesine basıp bu kodu okutun. Fotoğraflar gönderilmez.': 'On the other phone tap Jobs → Receive by QR and scan this code. Photos are not sent.',
+  'Tek parça · telefonu yaklaştırın': 'Single part · hold the phone close'
+});
+window.EN_RULES.unshift(
+  [/^Parça (\d+)\/(\d+) · tüm parçalar okunana kadar tutun$/, 'Part $1/$2 · hold until all parts are scanned'],
+  [/^Parçalar okunuyor: (\d+)\/(\d+)$/, 'Scanning parts: $1/$2'],
+  [/^Kayıtlı müşteriye eklenecek: (.+)$/, 'Will be added to saved customer: $1']
+);

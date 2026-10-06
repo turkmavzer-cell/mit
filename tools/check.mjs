@@ -9,7 +9,7 @@ if (scripts.length !== 3) throw new Error("3 <script> bekleniyordu, bulunan: " +
 scripts.forEach((code, i) => new vm.Script(code, { filename: 'script-' + i + '.js' }));
 const ext = html.match(/<(script|link|img)[^>]+(src|href)=["']https?:[^"']+/gi);
 if (ext) throw new Error('Dış kaynak bulundu: ' + ext.join(', '));
-for (const s of ['APP_VERSION', 'SCHEMA_VERSION', 'indexedDB', 'THREE.WebGLRenderer', 'AR_DICT', 'I18n']) {
+for (const s of ['APP_VERSION', 'SCHEMA_VERSION', 'indexedDB', 'THREE.WebGLRenderer', 'AR_DICT', 'I18n', 'QrShare', 'jsQR', 'qrcode']) {
   if (!html.includes(s)) throw new Error('Eksik: ' + s);
 }
 console.log('Kontrol tamam: ' + Math.round(html.length / 1024) + ' KB, betikler geçerli, dış kaynak yok.');

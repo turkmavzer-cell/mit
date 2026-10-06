@@ -12,6 +12,8 @@ const threeVer = JSON.parse(readFileSync(join(threeDir, 'package.json'), 'utf8')
 if (threeVer !== '0.149.0') throw new Error('three 0.149.0 bekleniyordu, bulunan: ' + threeVer);
 const three = readFileSync(join(threeDir, 'build/three.min.js'), 'utf8').replace(/<\/script/gi, '<\\/script');
 
+const libs = ['jsqr/dist/jsQR.js', 'qrcode-generator/dist/qrcode.js'].map((f) => readFileSync(join(root, 'node_modules', f), 'utf8').replace(/<\/script/gi, '<\\/script')).join('\n;\n');
+
 const b64 = (dir, f) => readFileSync(join(pkgDir(dir), 'files', f)).toString('base64');
 const face = (family, weight, dir, file, range) =>
   `@font-face { font-family: '${family}'; font-style: normal; font-weight: ${weight}; font-display: swap;\n` +
@@ -34,7 +36,7 @@ let html = readFileSync(join(root, 'src/index.html'), 'utf8');
 for (const mark of ['/*@@FONTS@@*/', '/*@@THREE@@*/', '/*@@I18N@@*/']) {
   if (html.split(mark).length !== 2) throw new Error('İşaret bulunamadı veya birden fazla: ' + mark);
 }
-html = html.replace('/*@@FONTS@@*/', () => fonts).replace('/*@@THREE@@*/', () => three).replace('/*@@I18N@@*/', () => i18n);
+html = html.replace('/*@@FONTS@@*/', () => fonts).replace('/*@@THREE@@*/', () => three + '\n;\n' + libs).replace('/*@@I18N@@*/', () => i18n);
 if (/(src|href)=["']https?:/i.test(html.replace(/href="https:\/\/www\.google\.com\/maps[^"]*"/g, ''))) {
   console.warn('Uyarı: dış bağlantı bulundu');
 }

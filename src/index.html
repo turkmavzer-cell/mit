@@ -16,6 +16,7 @@
 /* ================= TEMA ================= */
 :root {
   --bg: #05080F;
+  --paper: #FFFFFF;
   --panel: #0A1224;
   --raised: #0F1B33;
   --cy: #00E5FF;
@@ -429,6 +430,15 @@ textarea.inp { padding: 12px; resize: none; line-height: 1.4; }
 .sh-foot .btn { flex: 1; }
 .sh-foot .btn.wide { flex: 2; }
 
+.qr-box { align-self: center; background: var(--paper); padding: 0; border-radius: 10px; line-height: 0; overflow: hidden; border: 2px solid var(--cy-a40); }
+.qr-box canvas { display: block; image-rendering: pixelated; }
+.qr-st { margin: 0; }
+.qr-cam { position: relative; align-self: center; width: min(100%, 320px); aspect-ratio: 1; background: #000; border-radius: 12px; overflow: hidden; border: 2px solid var(--cy); box-shadow: 0 0 24px var(--cy-a20); }
+.qr-cam video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.qr-line { position: absolute; left: 8%; right: 8%; top: 10%; height: 2px; background: var(--cy); box-shadow: 0 0 12px var(--cy); animation: qrScan 2.2s ease-in-out infinite alternate; }
+@keyframes qrScan { from { top: 10%; } to { top: 88%; } }
+.qr-msg { min-height: 20px; margin: 0; }
+
 /* Çekmece (drawer) */
 .drw-sel { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 16px 0; }
 .drw-sel:empty { display: none; }
@@ -613,7 +623,7 @@ textarea.inp { padding: 12px; resize: none; line-height: 1.4; }
      "localStorage doldu, kayıt sessizce başarısız oldu" sorununun çözümü budur.
    - Her yazma işleminin sonucu kontrol edilir; hata olursa kullanıcı görür.
    ===================================================================== */
-var APP_VERSION = '2.17.2';
+var APP_VERSION = '2.18.0';
 var SCHEMA_VERSION = 2; // 1 = eski localStorage sürümü (MİT 1.0), 2 = IndexedDB
 
 var IN_FRAME = (function () { try { return window.self !== window.top; } catch (e) { return true; } })();
@@ -2217,6 +2227,8 @@ var ICONS = {
   left: '<path d="m15 18-6-6 6-6"/>',
   right: '<path d="m9 18 6-6-6-6"/>',
   send: '<path d="M22 2 11 13M22 2l-7 20-4-9-9-4Z"/>',
+  qr: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h3M20 17v4"/>',
+  scan: '<path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M4 12h16"/>',
   tag: '<path d="M12.6 2.6A2 2 0 0 0 11.2 2H4a2 2 0 0 0-2 2v7.2a2 2 0 0 0 .6 1.4l8.7 8.7a2.4 2.4 0 0 0 3.4 0l6.6-6.6a2.4 2.4 0 0 0 0-3.4Z"/><circle cx="7.5" cy="7.5" r="1.5"/>',
   download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>',
   upload: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>',
@@ -2747,7 +2759,7 @@ var Screens = {
     var body = UI.pBody(); if (!body || !body.querySelector('[data-job-tabs]')) return;
     var tab = this.st.jobTab, act = Data.activeJobs(), done = Data.deliveredJobs();
     UI.setHead('İşler<small>' + act.length + ' imalatta · ' + done.length + ' teslim</small>',
-      '<button class="ibtn" data-act="new-job" aria-label="Yeni iş">' + icon('plus', 26) + '</button>');
+      '<button class="ibtn" data-act="qr-scan" aria-label="QR ile al">' + icon('scan', 24) + '</button><button class="ibtn" data-act="new-job" aria-label="Yeni iş">' + icon('plus', 26) + '</button>');
     body.querySelector('[data-period]').innerHTML = 'Üretilen: bu hafta <b style="color:var(--cy)">' + fmtNum(Data.periodMeters('week')) +
       ' mt</b> · bu ay <b style="color:var(--cy)">' + fmtNum(Data.periodMeters('month')) + ' mt</b>';
     body.querySelector('[data-job-tabs]').innerHTML =
@@ -3270,6 +3282,260 @@ Changes['import-file'] = function (el) {
 var CF = null; // açık müşteri formu
 var JF = null; // açık iş formu
 var Forms = {};
+
+/* ---------- QR ile iş paylaşımı ----------
+   Tek bir iş (müşteri bilgisiyle, fotoğraf olmadan) küçük bir JSON'a çevrilir, sıkıştırılır,
+   CRC32 ile doğrulanır ve bir ya da birkaç QR koda bölünür. Karşı telefon kamerayla okur,
+   parçalar tamamlanınca iş eklenir. Tamamen cihazda çalışır (internet yok). */
+var QrShare = {
+  CH: 520, crcTab: null,
+  crc32: function (s) {
+    var t = this.crcTab;
+    if (!t) { t = this.crcTab = []; for (var n = 0; n < 256; n++) { var c = n; for (var k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } }
+    var crc = 0xFFFFFFFF;
+    for (var i = 0; i < s.length; i++) crc = t[(crc ^ s.charCodeAt(i)) & 255] ^ (crc >>> 8);
+    return ((crc ^ 0xFFFFFFFF) >>> 0).toString(16).padStart(8, '0');
+  },
+  toB64u: function (bytes) {
+    var s = '', i = 0;
+    for (; i < bytes.length; i += 8192) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192));
+    return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  },
+  fromB64u: function (str) {
+    var s = atob(str.replace(/-/g, '+').replace(/_/g, '/')), b = new Uint8Array(s.length);
+    for (var i = 0; i < s.length; i++) b[i] = s.charCodeAt(i);
+    return b;
+  },
+  pipe: function (bytes, stream) {
+    var w = stream.writable.getWriter(); w.write(bytes); w.close();
+    return new Response(stream.readable).arrayBuffer().then(function (b) { return new Uint8Array(b); });
+  },
+  compact: function (c, j) {
+    var roll = function (r) { return [r.value, r.unit === 'kg' ? 1 : 0]; };
+    return {
+      v: 1, c: [c.id, c.name, c.phone || '', c.address || ''],
+      j: [j.id, j.createdAt, j.status === 'delivered' ? 1 : 0, j.deliveredAt || '', j.printed ? 1 : 0, j.fabricType || '', j.fabricColor || '', j.fabricGramsPerMeter || 0, j.notes || ''],
+      g: j.patternGroups.map(function (g) { return [g.patternName || '', g.fabricRolls.map(roll)]; }),
+      u: j.unassignedRolls.map(roll)
+    };
+  },
+  // → Promise<string>: bayrak ('z' sıkıştırılmış, 'r' ham) + base64url + CRC32
+  pack: function (c, j) {
+    var raw = new TextEncoder().encode(JSON.stringify(this.compact(c, j))), self = this;
+    var done = function (flag, bytes) { var body = flag + self.toB64u(bytes); return body + self.crc32(body); };
+    if (typeof CompressionStream === 'undefined') return Promise.resolve(done('r', raw));
+    return this.pipe(raw, new CompressionStream('deflate-raw')).then(function (z) { return z.length < raw.length ? done('z', z) : done('r', raw); }, function () { return done('r', raw); });
+  },
+  // → Promise<{c, j}> ; hatalıysa reddeder
+  unpack: function (S) {
+    var self = this, bad = function () { return new Error('Kod bozuk ya da eksik'); };
+    if (typeof S !== 'string' || S.length < 12) return Promise.reject(bad());
+    var body = S.slice(0, -8), crc = S.slice(-8);
+    if (this.crc32(body) !== crc) return Promise.reject(bad());
+    var flag = body.charAt(0), bytes;
+    try { bytes = this.fromB64u(body.slice(1)); } catch (e) { return Promise.reject(bad()); }
+    var parse = function (u8) {
+      var o; try { o = JSON.parse(new TextDecoder().decode(u8)); } catch (e) { throw bad(); }
+      return self.build(o);
+    };
+    if (flag === 'r') { try { return Promise.resolve(parse(bytes)); } catch (e) { return Promise.reject(e); } }
+    if (flag !== 'z') return Promise.reject(bad());
+    if (typeof DecompressionStream === 'undefined') return Promise.reject(new Error('Bu telefon sıkıştırılmış kodu desteklemiyor'));
+    return this.pipe(bytes, new DecompressionStream('deflate-raw')).then(parse, function () { throw bad(); });
+  },
+  build: function (o) {
+    var bad = function () { return new Error('Kod bozuk ya da eksik'); };
+    if (!o || o.v !== 1 || !Array.isArray(o.c) || !Array.isArray(o.j) || !Array.isArray(o.g)) throw bad();
+    var roll = function (r) { return { id: uid(), value: Number(r[0]), unit: r[1] === 1 ? 'kg' : 'mt' }; };
+    var rolls = function (a) { return (Array.isArray(a) ? a : []).filter(function (r) { return Array.isArray(r) && isFinite(Number(r[0])); }).slice(0, 500).map(roll); };
+    var j = o.j, c = o.c;
+    var job = normalizeJob({
+      id: String(j[0] || uid()), createdAt: String(j[1] || ''), status: j[2] === 1 ? 'delivered' : 'active', deliveredAt: j[3] ? String(j[3]) : null,
+      printed: j[4] === 1, fabricType: String(j[5] || ''), fabricColor: String(j[6] || ''), fabricGramsPerMeter: Number(j[7]) || null, notes: String(j[8] || ''),
+      patternGroups: o.g.slice(0, 100).map(function (g) { return { id: uid(), patternName: String((g && g[0]) || ''), fabricRolls: rolls(g && g[1]) }; }),
+      unassignedRolls: rolls(o.u), photos: []
+    });
+    if (isNaN(new Date(job.createdAt).getTime())) job.createdAt = new Date().toISOString();
+    return { c: { id: String(c[0] || uid()), name: String(c[1] || 'İsimsiz Müşteri'), phone: String(c[2] || ''), address: String(c[3] || '') }, j: job };
+  },
+  frames: function (S) {
+    var n = Math.max(1, Math.ceil(S.length / this.CH)), sid = Math.random().toString(36).slice(2, 6).padEnd(4, '0'), out = [];
+    for (var i = 0; i < n; i++) out.push('MIT1.' + sid + '.' + (i + 1) + '.' + n + '.' + S.slice(i * this.CH, (i + 1) * this.CH));
+    return out;
+  },
+  parseFrame: function (t) {
+    var m = /^MIT1\.([0-9a-z]{4})\.(\d{1,2})\.(\d{1,2})\.([A-Za-z0-9_-]+)$/.exec(String(t));
+    if (!m) return null;
+    var i = +m[2], n = +m[3];
+    return i >= 1 && i <= n && n <= 40 ? { sid: m[1], i: i, n: n, d: m[4] } : null;
+  },
+  digits: function (s) { return String(s || '').replace(/\D/g, ''); },
+  // Gelen işin karşılığı: müşteri (kimlikle ya da ad+telefonla) ve aynı iş var mı
+  match: function (p) {
+    var cust = Data.find(p.c.id), nm = low(p.c.name), ph = this.digits(p.c.phone), self = this;
+    if (!cust) Data.customers.forEach(function (x) { if (!cust && low(x.name) === nm && self.digits(x.phone) === ph) cust = x; });
+    var job = null, owner = null;
+    Data.customers.forEach(function (x) { x.jobs.forEach(function (y) { if (y.id === p.j.id) { job = y; owner = x; } }); });
+    return { customer: cust, job: job, owner: owner };
+  },
+  // Ekler ya da (update=true ise) var olan işi gelen bilgiyle günceller; fotoğraflar korunur
+  apply: function (p, update) {
+    var m = this.match(p), chain = Promise.resolve(), cust;
+    if (m.job) {
+      if (!update) return Promise.resolve('exists');
+      ['createdAt', 'status', 'deliveredAt', 'printed', 'fabricType', 'fabricColor', 'fabricGramsPerMeter', 'notes', 'patternGroups', 'unassignedRolls'].forEach(function (k) { m.job[k] = p.j[k]; });
+      cust = m.owner;
+    } else {
+      cust = m.customer || normalizeCustomer({ id: p.c.id, name: p.c.name, phone: p.c.phone, address: p.c.address, jobs: [] });
+      cust.jobs.push(p.j);
+    }
+    var have = {}; Data.patterns.forEach(function (x) { have[low(x.name)] = true; });
+    p.j.patternGroups.forEach(function (g) {
+      var k = low(g.patternName); if (!k || have[k]) return; have[k] = true;
+      chain = chain.then(function () { return Data.savePattern({ id: uid(), name: g.patternName, photo: null }); });
+    });
+    return chain.then(function () { return Data.saveCustomer(cust); }).then(function () { return m.job ? 'updated' : 'added'; });
+  },
+
+  /* ---- QR çizimi ---- */
+  draw: function (canvas, text, cssSize) {
+    var qr = qrcode(0, 'M'); qr.addData(text, 'Byte'); qr.make();
+    var m = qr.getModuleCount(), dpr = Math.min(3, window.devicePixelRatio || 1), sc = Math.max(2, Math.floor(cssSize * dpr / (m + 8))), size = (m + 8) * sc;
+    canvas.width = canvas.height = size; canvas.style.width = canvas.style.height = (size / dpr) + 'px';
+    var g = canvas.getContext('2d'); g.fillStyle = '#ffffff'; g.fillRect(0, 0, size, size); g.fillStyle = '#000000';
+    for (var r = 0; r < m; r++) for (var c = 0; c < m; c++) if (qr.isDark(r, c)) g.fillRect((c + 4) * sc, (r + 4) * sc, sc, sc);
+  },
+  decodeData: function (img) { var r = jsQR(img.data, img.width, img.height, { inversionAttempts: 'attemptBoth' }); return r ? r.data : null; }
+};
+
+/* Gönderen: iş kodunu gösterir (birden çok parça varsa sırayla döner) */
+Forms.qrSend = function (customer, job) {
+  QrShare.pack(customer, job).then(function (S) {
+    var frames = QrShare.frames(S), n = frames.length, idx = 0, timer = 0, paused = false;
+    var html = '<div class="sh-head"><div class="sh-title hud">QR ile Gönder<small>' + esc(customer.name) + ' · ' + esc(jobDisplayName(job)) + '</small></div>' +
+      '<button class="ibtn" data-act="back" aria-label="Kapat">' + icon('x') + '</button></div>' +
+      '<div class="sh-body"><div class="qr-box"><canvas data-qr></canvas></div>' +
+      '<p class="hint qr-st" data-qr-st style="text-align:center"></p>' +
+      '<p class="hint" style="text-align:center">Karşı telefonda İşler → QR ile al düğmesine basıp bu kodu okutun. Fotoğraflar gönderilmez.</p></div>' +
+      '<div class="sh-foot">' + (n > 1 ? '<button class="btn" data-act="qr-pause" data-qr-pause>Durdur</button>' : '') + '<button class="btn pri wide" data-act="back">Kapat</button></div>';
+    var ov = UI.openSheet({ html: html, onClose: function () { clearInterval(timer); } });
+    var cv = ov.querySelector('[data-qr]'), st = ov.querySelector('[data-qr-st]'), pb = ov.querySelector('[data-qr-pause]');
+    var show = function () {
+      try { QrShare.draw(cv, frames[idx], Math.min(300, ov.querySelector('.sheet').clientWidth - 48)); } catch (e) { st.textContent = 'Görsel oluşturulamadı'; return; }
+      st.textContent = n > 1 ? 'Parça ' + (idx + 1) + '/' + n + ' · tüm parçalar okunana kadar tutun' : 'Tek parça · telefonu yaklaştırın';
+    };
+    show();
+    if (n > 1) {
+      timer = setInterval(function () { if (!paused) { idx = (idx + 1) % n; show(); } }, 1300);
+      ov.__qr = { toggle: function () { paused = !paused; pb.textContent = paused ? 'Devam et' : 'Durdur'; } };
+    }
+  }, function (e) { UI.toast('Görsel oluşturulamadı', 'err'); console.error(e); });
+};
+Actions['qr-pause'] = function () { var t = UI.top(); if (t && t.el.__qr) t.el.__qr.toggle(); };
+Actions['info-qr'] = function () {
+  var x = infoCtx(); if (!x) return;
+  var c = Data.find(x.cid), j = Data.findJob(x.cid, x.jid);
+  if (c && j) Forms.qrSend(c, j);
+};
+
+/* Alıcı: kamerayla okur */
+var QS = null;
+function qrStop() {
+  if (!QS) return;
+  QS.closed = true; clearTimeout(QS.timer);
+  try { if (QS.stream) QS.stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {}
+  QS = null;
+}
+function qrLoop(q) {
+  if (q.closed) return;
+  var video = q.ov.querySelector('[data-qr-v]');
+  if (!q.busy && video && video.readyState >= 2 && video.videoWidth) {
+    var w = Math.min(720, video.videoWidth), h = Math.round(video.videoHeight * w / video.videoWidth), c = q.cv;
+    c.width = w; c.height = h;
+    var g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(video, 0, 0, w, h);
+    try { var r = jsQR(g.getImageData(0, 0, w, h).data, w, h, { inversionAttempts: 'dontInvert' }); if (r && r.data) qrOnText(r.data); } catch (e) {}
+  }
+  q.timer = setTimeout(function () { qrLoop(q); }, 110);
+}
+Forms.qrScan = function () {
+  var html = '<div class="sh-head"><div class="sh-title hud">QR ile Al<small>Kamerayı QR koda tutun</small></div>' +
+    '<button class="ibtn" data-act="back" aria-label="Kapat">' + icon('x') + '</button></div>' +
+    '<div class="sh-body"><div class="qr-cam"><video playsinline muted autoplay data-qr-v></video><i class="qr-line"></i></div>' +
+    '<p class="hint qr-msg" data-qr-msg style="text-align:center"></p>' +
+    '<input type="file" accept="image/*" capture="environment" class="hidden" data-ch="qr-file" /></div>' +
+    '<div class="sh-foot"><button class="btn" data-act="qr-photo">' + icon('camera', 18) + ' Fotoğrafla oku</button><button class="btn pri wide" data-act="back">Kapat</button></div>';
+  var ov = UI.openSheet({ html: html, onClose: qrStop });
+  var q = QS = { ov: ov, got: null, last: '', closed: false, busy: false, timer: 0, stream: null, cv: document.createElement('canvas') };
+  var msg = ov.querySelector('[data-qr-msg]'), video = ov.querySelector('[data-qr-v]');
+  q.msg = function (t) { msg.textContent = t; };
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { q.msg('Kamera açılamadı. İzin verin ya da fotoğrafla okuyun.'); return; }
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 } }, audio: false }).then(function (stream) {
+    if (q.closed) { stream.getTracks().forEach(function (t) { t.stop(); }); return; }
+    q.stream = stream; video.srcObject = stream;
+    var pl = video.play(); if (pl && pl.catch) pl.catch(function () {});
+    qrLoop(q);
+  }, function () { q.msg('Kamera açılamadı. İzin verin ya da fotoğrafla okuyun.'); });
+};
+function qrOnText(text) {
+  var q = QS; if (!q || q.closed || q.busy) return;
+  var f = QrShare.parseFrame(text);
+  if (!f) { if (q.last !== text) { q.last = text; q.msg('Bu bir MİT iş kodu değil'); } return; }
+  if (!q.got || q.got.sid !== f.sid || q.got.n !== f.n) q.got = { sid: f.sid, n: f.n, parts: {}, cnt: 0 };
+  var g = q.got;
+  if (!g.parts[f.i]) { g.parts[f.i] = f.d; g.cnt++; fb('ok'); }
+  q.msg(g.n > 1 ? 'Parçalar okunuyor: ' + g.cnt + '/' + g.n : 'Okundu…');
+  if (g.cnt < g.n) return;
+  var S = ''; for (var i = 1; i <= g.n; i++) S += g.parts[i];
+  q.busy = true;
+  QrShare.unpack(S).then(function (p) { if (!q.closed) Forms.qrConfirm(p); }, function (e) {
+    q.busy = false; q.got = null; q.msg(e && e.message ? e.message : 'Kod bozuk ya da eksik'); fb('err');
+  });
+}
+Actions['qr-scan'] = function () { Forms.qrScan(); };
+Actions['qr-photo'] = function () { var t = UI.top(); var inp = t && t.el.querySelector('[data-ch="qr-file"]'); if (inp) inp.click(); };
+Changes['qr-file'] = function (el) {
+  var f = el.files && el.files[0]; el.value = '';
+  if (!f || !QS) return;
+  var q = QS, url = URL.createObjectURL(f), img = new Image();
+  img.onload = function () {
+    URL.revokeObjectURL(url);
+    var sc = Math.min(1, 1400 / Math.max(img.width, img.height)), w = Math.round(img.width * sc), h = Math.round(img.height * sc), c = document.createElement('canvas');
+    c.width = w; c.height = h; var g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(img, 0, 0, w, h);
+    var t = null; try { t = QrShare.decodeData(g.getImageData(0, 0, w, h)); } catch (e) {}
+    if (!t) { q.msg('Fotoğrafta QR kod bulunamadı'); fb('err'); return; }
+    qrOnText(t);
+  };
+  img.onerror = function () { URL.revokeObjectURL(url); q.msg('Görsel yüklenemedi'); };
+  img.src = url;
+};
+
+/* Okunan işi göster, onayla */
+Forms.qrConfirm = function (p) {
+  var m = QrShare.match(p), job = p.j, t = calcJobTotals(job), exists = !!m.job;
+  var custLine = m.customer ? 'Kayıtlı müşteriye eklenecek: ' + m.customer.name : 'Yeni müşteri eklenecek';
+  var row = function (l, v) { return '<div class="r"><span>' + esc(l) + ':</span><span>' + esc(v) + '</span></div>'; };
+  var html = '<div class="sh-head"><div class="sh-title hud">Gelen İş<small>' + esc(p.c.name) + '</small></div>' +
+    '<button class="ibtn" data-act="back" aria-label="Kapat">' + icon('x') + '</button></div>' +
+    '<div class="sh-body"><div class="info"><p class="h hud">İş Detayı</p>' + row('Müşteri', p.c.name) + row('İş / Model', jobDisplayName(job)) +
+    row('Durum', job.status === 'delivered' ? 'Teslim Edildi' : 'İmalatta · ' + (job.printed ? 'Baskı Yapıldı' : 'Baskı Bekliyor')) +
+    row('Kumaş', [job.fabricType, job.fabricColor].filter(Boolean).join(' - ')) + (job.notes ? row('Not', job.notes) : '') +
+    row('Toplar', (t.meterRolls.length + t.kgRolls.length) + ' top · ' + fmtNum(t.grandTotalMeters) + ' mt') + '</div>' +
+    '<p class="hint">' + esc(exists ? 'Bu iş zaten kayıtlı. Güncellersen gelen bilgiyle değişir; fotoğraflarınız korunur.' : custLine) + '</p></div>' +
+    '<div class="sh-foot"><button class="btn" data-act="back">Vazgeç</button>' +
+    '<button class="btn pri wide" data-act="qr-add">' + (exists ? 'Güncelle' : 'Ekle') + '</button></div>';
+  var ov = UI.openSheet({ html: html, replace: true });
+  ov.__qrp = p;
+};
+Actions['qr-add'] = function (el) {
+  var t = UI.top(), p = t && t.el.__qrp; if (!p) return;
+  el.disabled = true;
+  return QrShare.apply(p, true).then(function (r) {
+    UI.pop(); fb('ok');
+    UI.toast(r === 'updated' ? 'İş güncellendi' : 'İş eklendi');
+    if (Screens && Screens.paintJobs && UI.pBody() && UI.pBody().querySelector('[data-job-tabs]')) Screens.paintJobs();
+  }, function (e) { el.disabled = false; throw e; });
+};
+
 
 /* ===== Müşteri formu ===== */
 Forms.customer = function (customer, onSaved) {
@@ -3837,6 +4103,7 @@ Forms.info = function (customer, job, replace) {
   html += '<div class="grand"><div class="between"><span class="hud" style="font-size:12px">Genel Toplam</span><b>' + fmtNum(t.grandTotalMeters) + ' mt</b></div><p>' + (t.meterRolls.length + t.kgRolls.length) + ' top</p></div>';
   if (job.photos.length) html += '<div class="ph-grid">' + job.photos.map(function (p, i) { return '<div class="ph"><img data-pid="' + esc(p) + '" alt="" data-act="info-view" data-i="' + i + '" /></div>'; }).join('') + '</div>';
   html += '</div><div class="sh-foot"><button class="btn" data-act="info-open">' + icon('edit', 18) + ' İşi Aç</button>' +
+    '<button class="btn" data-act="info-qr" aria-label="QR ile gönder">' + icon('qr', 18) + ' QR</button>' +
     '<button class="btn pri wide" data-act="info-share">' + icon('share', 18) + ' Paylaş</button></div>';
   var ov = UI.openSheet({ html: html, replace: !!replace });
   ov.__info = { cid: customer.id, jid: job.id };
