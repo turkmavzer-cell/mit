@@ -207,3 +207,11 @@ window.EN_RULES.unshift(
   [/^Parçalar okunuyor: (\d+)\/(\d+)$/, 'Scanning parts: $1/$2'],
   [/^Kayıtlı müşteriye eklenecek: (.+)$/, 'Will be added to saved customer: $1']
 );
+
+/* Müşterisiz işler */
+Object.assign(window.EN_DICT, {
+  'Müşteri atanmadı': 'No customer assigned', 'Müşterisiz iş ekle': 'Add job without customer', 'Müşteriye ata': 'Assign to customer',
+  'Hangi Müşteriye Ait?': 'Which customer does it belong to?', 'İş müşteriye atandı': 'Job assigned to customer',
+  'Önce kaydedin, sonra müşteriye atayın': 'Save first, then assign to a customer', 'Müşterisiz iş olarak eklenecek': 'Will be added as a job without customer'
+});
+window.EN_RULES.unshift([/^(\d+) iş müşteri bekliyor$/, '$1 jobs waiting for a customer']);

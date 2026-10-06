@@ -67,3 +67,9 @@ uygulamayı kaldır, yeni APK'yı kur, Yedekleme → yedekten geri yükle. Sonra
 - Müşteri önce kimlikle, bulunmazsa ad + telefonla eşleşir; yoksa yeni müşteri açılır. Kalıplar adına göre eklenir.
 - Aynı iş zaten varsa **Güncelle** sorulur; güncellenirse gelen bilgi geçer, kendi fotoğraflarınız korunur.
 - Tamamen cihazda çalışır (internet yok). Kütüphaneler: `qrcode-generator` (üretim), `jsqr` (okuma); derlemede dosyaya gömülür.
+
+## Müşterisiz iş
+- **Yeni iş** düğmesinde "Müşterisiz iş ekle" seçeneği: müşteri girmeden iş açılır (ör. Arapça kullanan personel için).
+- Bu işler İşler listesinin en üstünde amber "Müşteri atanmadı" başlığıyla görünür; üstte "N iş müşteri bekliyor" yazar. Karttaki veya iş formundaki **Müşteriye ata** ile bir müşteriye bağlanır (iş kimliği ve verisi aynen taşınır).
+- Arka planda "Müşteri atanmadı" adlı görünmeyen bir sistem müşterisi altında tutulur; müşteri listesine, müşteri sayılarına ve "müşterinin işi var" sayısına girmez.
+- QR ile gelen/giden müşterisiz iş, alıcıda da müşterisiz olarak eklenir.

@@ -234,3 +234,11 @@ window.AR_RULES.unshift(
   [/^Parçalar okunuyor: (\d+)\/(\d+)$/, 'بيقرا الأجزاء: $1/$2'],
   [/^Kayıtlı müşteriye eklenecek: (.+)$/, 'هيتضاف للعميل المسجل: $1']
 );
+
+/* Müşterisiz işler */
+Object.assign(window.AR_DICT, {
+  'Müşteri atanmadı': 'لسه ما اتحددش عميل', 'Müşterisiz iş ekle': 'ضيف أوردر من غير عميل', 'Müşteriye ata': 'اربطه بعميل',
+  'Hangi Müşteriye Ait?': 'الأوردر ده بتاع أنهي عميل؟', 'İş müşteriye atandı': 'الأوردر اتربط بالعميل',
+  'Önce kaydedin, sonra müşteriye atayın': 'احفظ الأول وبعدين اربطه بعميل', 'Müşterisiz iş olarak eklenecek': 'هيتضاف أوردر من غير عميل'
+});
+window.AR_RULES.unshift([/^(\d+) iş müşteri bekliyor$/, '$1 أوردر مستني عميل']);

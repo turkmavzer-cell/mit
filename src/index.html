@@ -430,6 +430,7 @@ textarea.inp { padding: 12px; resize: none; line-height: 1.4; }
 .sh-foot .btn { flex: 1; }
 .sh-foot .btn.wide { flex: 2; }
 
+.c-title.una { color: var(--am); }
 .qr-box { align-self: center; background: var(--paper); padding: 0; border-radius: 10px; line-height: 0; overflow: hidden; border: 2px solid var(--cy-a40); }
 .qr-box canvas { display: block; image-rendering: pixelated; }
 .qr-st { margin: 0; }
@@ -623,7 +624,7 @@ textarea.inp { padding: 12px; resize: none; line-height: 1.4; }
      "localStorage doldu, kayıt sessizce başarısız oldu" sorununun çözümü budur.
    - Her yazma işleminin sonucu kontrol edilir; hata olursa kullanıcı görür.
    ===================================================================== */
-var APP_VERSION = '2.18.0';
+var APP_VERSION = '2.19.0';
 var SCHEMA_VERSION = 2; // 1 = eski localStorage sürümü (MİT 1.0), 2 = IndexedDB
 
 var IN_FRAME = (function () { try { return window.self !== window.top; } catch (e) { return true; } })();
@@ -865,6 +866,27 @@ var Data = {
   find: function (id) {
     for (var i = 0; i < this.customers.length; i++) if (this.customers[i].id === id) return this.customers[i];
     return null;
+  },
+  /* Müşterisiz işler: görünmeyen sistem müşterisi altında tutulur; sonradan bir müşteriye atanır */
+  UNA: '__unassigned__',
+  isUna: function (c) { return !!c && (c.id === this.UNA || c.system === 'unassigned'); },
+  real: function () { var self = this; return this.customers.filter(function (c) { return !self.isUna(c); }); },
+  una: function () { return this.find(this.UNA); },
+  ensureUna: function () {
+    var c = this.una(), self = this;
+    if (c) return Promise.resolve(c);
+    c = normalizeCustomer({ id: this.UNA, name: 'Müşteri atanmadı', system: 'unassigned', jobs: [] });
+    return this.saveCustomer(c).then(function () { return self.una(); });
+  },
+  unaCount: function () { var c = this.una(); return c ? c.jobs.filter(function (j) { return j.status === 'active'; }).length : 0; },
+  moveJob: function (jid, fromId, toId) {
+    var from = this.find(fromId), to = this.find(toId), job = null, self = this;
+    if (!from || !to || from === to) return Promise.resolve(false);
+    from.jobs = from.jobs.filter(function (j) { if (j.id === jid) { job = j; return false; } return true; });
+    if (!job) return Promise.resolve(false);
+    to.jobs.push(job);
+    // önce hedef yazılır; hata olursa iş kaybolmaz (en kötü iki yerde görünür)
+    return this.saveCustomer(to).then(function () { return self.saveCustomer(from); }).then(function () { return true; });
   },
   findJob: function (cid, jid) {
     var c = this.find(cid);
@@ -2403,6 +2425,7 @@ var UI = {
     var list = o.items.slice().sort(function (a, b) { return byName(a.name, b.name); });
     if (q) list = list.filter(function (it) { return low(it.name).indexOf(q) >= 0; });
     var html = '', letter = '';
+    if (o.extraLabel) html += '<button class="drw-row drw-new" data-act="drw-extra"><span class="thumb">' + icon('tag', 20) + '</span><span class="nm">' + esc(o.extraLabel) + '</span></button>';
     if (o.newLabel) html += '<button class="drw-row drw-new" data-act="drw-new"><span class="thumb">' + icon('plus', 20) + '</span><span class="nm">' + esc(o.newLabel) + '</span></button>';
     if (!o.items.length) html += '<p class="empty">' + esc(o.emptyText || 'Kayıt yok') + '</p>';
     else if (!list.length) html += '<p class="empty">Sonuç bulunamadı</p>';
@@ -2645,6 +2668,7 @@ Actions['drw-unpick'] = function (el) {
   UI.paintDrawer();
 };
 Actions['drw-done'] = function () { var d = UI.drawer; if (!d) return; var ids = d.sel.slice(); UI.pop(); d.opts.onDone(ids); };
+Actions['drw-extra'] = function () { var d = UI.drawer; if (!d) return; var cb = d.opts.onExtra; UI.pop(); cb && cb(); };
 Actions['drw-new'] = function () { var d = UI.drawer; if (!d) return; var cb = d.opts.onNew; UI.pop(); cb && cb(); };
 Inputs['drw-q'] = function (el) { if (UI.drawer) { UI.drawer.q = el.value; UI.paintDrawer(); } };
 
@@ -2661,12 +2685,12 @@ var App = {
     var set = function (id, html) { var el = document.getElementById(id); if (el) el.innerHTML = html; };
     // Merkez: içeride işi olan müşteri sayısı + baskı bekleyen / baskısı yapılan iş
     var actList = Data.activeJobs(), withJob = {}, waiting = 0, printed = 0;
-    actList.forEach(function (x) { withJob[x.customer.id] = true; if (x.job.printed) printed++; else waiting++; });
+    actList.forEach(function (x) { if (!Data.isUna(x.customer)) withJob[x.customer.id] = true; if (x.job.printed) printed++; else waiting++; });
     set('cs-big', String(Object.keys(withJob).length));
     set('cs-a', waiting + '<span>BASKI BEKLEYEN</span>');
     set('cs-b', printed + '<span>BASKISI YAPILAN</span>');
     var badges = {
-      jobs: active, customers: Data.customers.length,
+      jobs: active, customers: Data.real().length,
       patterns: Data.patterns.length, report: '', backup: '', settings: ''
     };
     Object.keys(badges).forEach(function (k) {
@@ -2731,14 +2755,15 @@ var Screens = {
     var fabric = [job.fabricType, job.fabricColor].filter(Boolean).join(' · ');
     return '<div class="card s-' + sk + '" style="--i:' + Math.min(i, 13) + '" role="button" tabindex="0" data-act="job-open" data-c="' + customer.id + '" data-j="' + job.id + '">' +
       '<div class="c-top"><div class="c-main">' +
-      (showCustomer ? '<p class="c-title">' + esc(customer.name) + '</p><p class="c-sub">' + esc(jobDisplayName(job)) + '</p>'
+      (showCustomer ? '<p class="c-title' + (Data.isUna(customer) ? ' una' : '') + '">' + esc(customer.name) + '</p><p class="c-sub">' + esc(jobDisplayName(job)) + '</p>'
         : '<p class="c-title">' + esc(jobDisplayName(job)) + '</p>') +
       (fabric ? '<p class="c-sub">' + esc(fabric) + '</p>' : '') +
       '</div><div class="c-side"><span class="chip-st st-' + sk + '">' + jobStatusLabel(job) + '</span>' +
       '<div class="row" style="gap:0"><button class="ibtn" data-act="job-share" data-c="' + customer.id + '" data-j="' + job.id + '" aria-label="Paylaş (WhatsApp vb.)">' + icon('share', 20) + '</button>' +
       '<button class="ibtn" data-act="job-info" data-c="' + customer.id + '" data-j="' + job.id + '" aria-label="İş özeti">' + icon('info', 20) + '</button></div></div></div>' +
       '<p class="c-meta">' + fmtDate(job.createdAt) + (t.grandTotalMeters > 0 ? ' · ' + fmtNum(t.grandTotalMeters) + ' mt' : '') +
-      (job.photos.length ? ' · ' + job.photos.length + ' fotoğraf' : '') + '</p></div>';
+      (job.photos.length ? ' · ' + job.photos.length + ' fotoğraf' : '') + '</p>' +
+      (Data.isUna(customer) ? '<button class="btn sm amb block" style="margin-top:8px" data-act="job-assign" data-c="' + customer.id + '" data-j="' + job.id + '">' + icon('tag', 16) + ' Müşteriye ata</button>' : '') + '</div>';
   },
   jobMatches: function (x, q) {
     if (!q) return true;
@@ -2751,7 +2776,7 @@ var Screens = {
   /* ---------- İşler (imalatta + teslim edilen tek ekranda) ---------- */
   jobs: function (body) {
     body.innerHTML = this.searchHtml('jobs-q', this.st.jobsQ, 'İş, müşteri veya kumaş ara...') +
-      '<p class="hint" data-period style="margin:0 0 10px"></p>' +
+      '<p class="hint" data-una style="margin:0 0 4px"></p><p class="hint" data-period style="margin:0 0 10px"></p>' +
       '<div class="tabs" data-job-tabs></div><div class="cards" data-list></div>';
     this.paintJobs();
   },
@@ -2760,6 +2785,8 @@ var Screens = {
     var tab = this.st.jobTab, act = Data.activeJobs(), done = Data.deliveredJobs();
     UI.setHead('İşler<small>' + act.length + ' imalatta · ' + done.length + ' teslim</small>',
       '<button class="ibtn" data-act="qr-scan" aria-label="QR ile al">' + icon('scan', 24) + '</button><button class="ibtn" data-act="new-job" aria-label="Yeni iş">' + icon('plus', 26) + '</button>');
+    var una = Data.unaCount();
+    body.querySelector('[data-una]').innerHTML = una ? '<b style="color:var(--am)">' + una + ' iş müşteri bekliyor</b>' : '';
     body.querySelector('[data-period]').innerHTML = 'Üretilen: bu hafta <b style="color:var(--cy)">' + fmtNum(Data.periodMeters('week')) +
       ' mt</b> · bu ay <b style="color:var(--cy)">' + fmtNum(Data.periodMeters('month')) + ' mt</b>';
     body.querySelector('[data-job-tabs]').innerHTML =
@@ -2768,6 +2795,8 @@ var Screens = {
     var all = tab === 'active' ? act : done;
     if (tab === 'active') {
       all.sort(function (a, b) {
+        var ua = Data.isUna(a.customer) ? 0 : 1, ub = Data.isUna(b.customer) ? 0 : 1;
+        if (ua !== ub) return ua - ub; // müşterisiz işler en üstte
         var pa = a.job.printed ? 1 : 0, pb = b.job.printed ? 1 : 0;
         if (pa !== pb) return pa - pb; // baskı bekleyenler üstte
         return new Date(b.job.createdAt) - new Date(a.job.createdAt);
@@ -2787,7 +2816,7 @@ var Screens = {
   /* ---------- Müşteriler ---------- */
   SORTS: { alphabetical: 'Alfabetik', recentlyUpdated: 'Son Güncellenen', mostActiveJobs: 'En Çok Aktif', mostJobs: 'En Çok İş', dateAdded: 'Eklenme' },
   customers: function (body) {
-    UI.setHead('Müşteriler<small>' + Data.customers.length + ' kayıt</small>',
+    UI.setHead('Müşteriler<small>' + Data.real().length + ' kayıt</small>',
       '<button class="ibtn" data-act="new-customer" aria-label="Yeni müşteri">' + icon('plus', 26) + '</button>');
     body.innerHTML = this.searchHtml('cust-q', this.st.custQ, 'İsim, telefon veya adres ara...') +
       '<div class="sortbar" data-sortbar></div><div class="cards" data-list></div>';
@@ -2800,7 +2829,7 @@ var Screens = {
       return '<button class="btn sm' + (k === s ? ' on' : '') + '" data-act="sort" data-s="' + k + '">' + self.SORTS[k] + '</button>';
     }).join('');
     var q = low(this.st.custQ).trim();
-    var list = Data.customers.filter(function (c) {
+    var list = Data.real().filter(function (c) {
       return !q || low(c.name).indexOf(q) >= 0 || low(c.phone).indexOf(q) >= 0 || low(c.address).indexOf(q) >= 0;
     });
     var act = function (c) { return c.jobs.filter(function (j) { return j.status === 'active'; }).length; };
@@ -2818,8 +2847,8 @@ var Screens = {
         (c.address ? '<p class="c-sub">' + esc(c.address) + '</p>' : (c.phone ? '<p class="c-sub">' + esc(c.phone) + '</p>' : '')) + '</div>' +
         '<div class="c-side"><span class="chip-st ' + (a ? 'st-wait' : 'st-arch') + '">' + a + ' aktif</span>' +
         '<span class="muted" style="font-size:13px">' + c.jobs.length + ' iş</span></div></div></div>';
-    }).join('') : '<p class="empty">' + (Data.customers.length ? 'Sonuç bulunamadı' : 'Henüz müşteri eklenmedi.<br>Sağ üstteki + ile ekle.') + '</p>';
-    UI.setHead('Müşteriler<small>' + Data.customers.length + ' kayıt</small>',
+    }).join('') : '<p class="empty">' + (Data.real().length ? 'Sonuç bulunamadı' : 'Henüz müşteri eklenmedi.<br>Sağ üstteki + ile ekle.') + '</p>';
+    UI.setHead('Müşteriler<small>' + Data.real().length + ' kayıt</small>',
       '<button class="ibtn" data-act="new-customer" aria-label="Yeni müşteri">' + icon('plus', 26) + '</button>');
   },
 
@@ -2895,7 +2924,7 @@ var Screens = {
     var self = this;
     AutoBackup.loadInfo().then(function () { var a = body.querySelector('[data-auto]'); if (a) a.innerHTML = AutoBackup.statusHtml(); });
     var html = '<div class="stack">' +
-      '<div class="blk"><h3 class="hud">Bu Cihazda</h3><p>' + Data.customers.length + ' müşteri · ' + Data.totalJobs() + ' iş · ' + Data.patterns.length + ' kalıp</p>' +
+      '<div class="blk"><h3 class="hud">Bu Cihazda</h3><p>' + Data.real().length + ' müşteri · ' + Data.totalJobs() + ' iş · ' + Data.patterns.length + ' kalıp</p>' +
       '<div data-storage><p class="muted">Depolama hesaplanıyor...</p></div></div>' +
       '<div class="blk"><h3 class="hud">Otomatik Yedek</h3><div data-auto>' + AutoBackup.statusHtml() + '</div>' +
       (AutoBackup.available() ? '<button class="btn block" data-act="auto-now">' + icon('download', 18) + ' Otomatik Yedeği Şimdi Güncelle</button>' : '') + '</div>' +
@@ -2939,7 +2968,7 @@ var Screens = {
       sw('asteroid', 'Asteroit Olayı', 'Her 30 saniyede küreye asteroit gelir; roketle durdurabilirsin') +
       '<div class="blk"><h3 class="hud">Hakkında</h3>' +
       '<p>MİT Holo · Müşteri &amp; İmalat İş Takip Asistanı<br>Sürüm ' + APP_VERSION + ' · Şema ' + SCHEMA_VERSION + '</p>' +
-      '<p>Çevrimdışı çalışır; tüm veriler yalnızca bu cihazda saklanır. Bu cihazda: ' + Data.customers.length + ' müşteri · ' + Data.totalJobs() + ' iş · ' + Data.patterns.length + ' kalıp.</p>' +
+      '<p>Çevrimdışı çalışır; tüm veriler yalnızca bu cihazda saklanır. Bu cihazda: ' + Data.real().length + ' müşteri · ' + Data.totalJobs() + ' iş · ' + Data.patterns.length + ' kalıp.</p>' +
       '<a class="btn block" href="mailto:krmzchn@gmail.com"' + (IN_FRAME ? ' target="_blank" rel="noopener"' : '') + '>Bize ulaşın: krmzchn@gmail.com</a></div>' +
       '</div>';
   }
@@ -2970,8 +2999,9 @@ Actions['add-job'] = function () { var c = Data.find(Screens.st.cid); if (c) For
 Actions['new-job'] = function () {
   UI.openDrawer({
     title: 'İş Hangi Müşteriye?', multi: false, emptyText: 'Henüz müşteri yok',
-    items: Data.customers.map(function (c) { return { id: c.id, name: c.name }; }),
-    newLabel: 'Yeni Müşteri Ekle',
+    items: Data.real().map(function (c) { return { id: c.id, name: c.name }; }),
+    newLabel: 'Yeni Müşteri Ekle', extraLabel: 'Müşterisiz iş ekle',
+    onExtra: function () { Data.ensureUna().then(function (c) { Forms.job(c, null); }); },
     onNew: function () { Forms.customer(null, function (c) { Forms.job(c, null); }); },
     onDone: function (ids) { var c = Data.find(ids[0]); if (c) Forms.job(c, null); }
   });
@@ -3283,6 +3313,33 @@ var CF = null; // açık müşteri formu
 var JF = null; // açık iş formu
 var Forms = {};
 
+/* Müşterisiz işi bir müşteriye ata */
+Forms.assign = function (fromCid, jid, after) {
+  var move = function (toId) {
+    Data.moveJob(jid, fromCid, toId).then(function (ok) {
+      if (!ok) return;
+      fb('ok'); UI.toast('İş müşteriye atandı');
+      if (after) after();
+      Screens.refresh();
+    });
+  };
+  UI.openDrawer({
+    title: 'Hangi Müşteriye Ait?', multi: false, emptyText: 'Henüz müşteri yok',
+    items: Data.real().map(function (c) { return { id: c.id, name: c.name }; }),
+    newLabel: 'Yeni Müşteri Ekle',
+    onNew: function () { Forms.customer(null, function (c) { move(c.id); }); },
+    onDone: function (ids) { move(ids[0]); }
+  });
+};
+Actions['job-assign'] = function (el, e) { e.stopPropagation(); Forms.assign(el.getAttribute('data-c'), el.getAttribute('data-j')); };
+Actions['jf-assign'] = function () {
+  if (!JF) return;
+  if (JF.dirty) { UI.toast('Önce kaydedin, sonra müşteriye atayın', 'info'); return; }
+  var jf = JF;
+  Forms.assign(jf.cid, jf.draft.id, function () { jf.dirty = false; UI.pop(); });
+};
+
+
 /* ---------- QR ile iş paylaşımı ----------
    Tek bir iş (müşteri bilgisiyle, fotoğraf olmadan) küçük bir JSON'a çevrilir, sıkıştırılır,
    CRC32 ile doğrulanır ve bir ya da birkaç QR koda bölünür. Karşı telefon kamerayla okur,
@@ -3373,6 +3430,7 @@ var QrShare = {
   // Gelen işin karşılığı: müşteri (kimlikle ya da ad+telefonla) ve aynı iş var mı
   match: function (p) {
     var cust = Data.find(p.c.id), nm = low(p.c.name), ph = this.digits(p.c.phone), self = this;
+    if (p.c.id === Data.UNA) cust = Data.una();
     if (!cust) Data.customers.forEach(function (x) { if (!cust && low(x.name) === nm && self.digits(x.phone) === ph) cust = x; });
     var job = null, owner = null;
     Data.customers.forEach(function (x) { x.jobs.forEach(function (y) { if (y.id === p.j.id) { job = y; owner = x; } }); });
@@ -3386,7 +3444,7 @@ var QrShare = {
       ['createdAt', 'status', 'deliveredAt', 'printed', 'fabricType', 'fabricColor', 'fabricGramsPerMeter', 'notes', 'patternGroups', 'unassignedRolls'].forEach(function (k) { m.job[k] = p.j[k]; });
       cust = m.owner;
     } else {
-      cust = m.customer || normalizeCustomer({ id: p.c.id, name: p.c.name, phone: p.c.phone, address: p.c.address, jobs: [] });
+      cust = m.customer || (p.c.id === Data.UNA ? normalizeCustomer({ id: Data.UNA, name: 'Müşteri atanmadı', system: 'unassigned', jobs: [] }) : normalizeCustomer({ id: p.c.id, name: p.c.name, phone: p.c.phone, address: p.c.address, jobs: [] }));
       cust.jobs.push(p.j);
     }
     var have = {}; Data.patterns.forEach(function (x) { have[low(x.name)] = true; });
@@ -3512,7 +3570,7 @@ Changes['qr-file'] = function (el) {
 /* Okunan işi göster, onayla */
 Forms.qrConfirm = function (p) {
   var m = QrShare.match(p), job = p.j, t = calcJobTotals(job), exists = !!m.job;
-  var custLine = m.customer ? 'Kayıtlı müşteriye eklenecek: ' + m.customer.name : 'Yeni müşteri eklenecek';
+  var custLine = p.c.id === Data.UNA ? 'Müşterisiz iş olarak eklenecek' : m.customer ? 'Kayıtlı müşteriye eklenecek: ' + m.customer.name : 'Yeni müşteri eklenecek';
   var row = function (l, v) { return '<div class="r"><span>' + esc(l) + ':</span><span>' + esc(v) + '</span></div>'; };
   var html = '<div class="sh-head"><div class="sh-title hud">Gelen İş<small>' + esc(p.c.name) + '</small></div>' +
     '<button class="ibtn" data-act="back" aria-label="Kapat">' + icon('x') + '</button></div>' +
@@ -3653,7 +3711,7 @@ function jfPaint() {
     '<button class="ibtn" data-act="jf-close" aria-label="Kapat">' + icon('x') + '</button></div><div class="sh-body" data-jf-body>';
   if (!JF.isNew) {
     var del = d.status === 'delivered';
-    html += '<div class="stack" style="gap:8px">' +
+    html += '<div class="stack" style="gap:8px">' + (Data.isUna(c) ? '<button class="btn block amb" data-act="jf-assign">' + icon('tag', 18) + ' Müşteriye ata</button>' : '') +
       '<button class="btn block ' + (del ? 'ok' : 'amb') + '" data-act="jf-status">' + icon(del ? 'undo' : 'check', 18) + (del ? ' Teslim Edildi · Aktife Al' : ' Teslim Edildi Olarak İşaretle') + '</button>' +
       '<button class="btn block ' + (d.printed ? 'blue' : 'amb') + '" data-act="jf-printed">' + icon(d.printed ? 'check' : 'info', 18) + (d.printed ? ' Baskı Yapıldı' : ' Baskı Bekliyor') + '</button></div>';
   }
