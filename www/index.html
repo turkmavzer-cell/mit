@@ -13282,6 +13282,28 @@ Object.assign(window.AR_DICT, {
 });
 window.AR_RULES.unshift([/^(\d+) iş müşteri bekliyor$/, '$1 أوردر مستني عميل']);
 
+/* Yeni oyunlar */
+Object.assign(window.AR_DICT, {
+  'Trafik Yarışı': 'سباق الزحمة', 'Tuğla Kır': 'اكسر الطوب', 'Sayı Birleştir': 'ادمج الأرقام', 'Hızlı Hesap': 'حساب سريع', 'Refleks Avı': 'صيد ردّ الفعل',
+  'Yarış · Arabayı sürükle': 'سباق · اسحب العربية', 'Arcade · Raketi sürükle': 'أركيد · اسحب المضرب', 'Bulmaca · Kaydırarak birleştir': 'ألغاز · اسحب وادمج',
+  'Zeka · Doğru sonucu seç': 'ذكاء · اختار النتيجة الصح', 'Refleks · Dairelere dokun': 'ردّ فعل · دوس على الدواير',
+  'Parmağınla arabayı sağa sola sürükle.': 'اسحب العربية بإصبعك يمين وشمال.', 'Önündeki trafiğe çarpmadan geç.': 'عدّي من الزحمة من غير ما تخبط.',
+  'Her 8 araçta seviye ve hız artar.': 'كل 8 عربيات المستوى والسرعة بيزيدوا.', 'Yakın geçiş bonus verir · 3 can.': 'العبور القريب بيدّي نقط زيادة · 3 أرواح.',
+  'Parmağınla raketi sağa sola sürükle.': 'اسحب المضرب بإصبعك يمين وشمال.', 'Topu düşürmeden tuğlaları kır.': 'اكسر الطوب من غير ما الكورة تقع.',
+  'Tüm tuğlalar bitince seviye atlar,': 'لما الطوب كله يخلص تعدّي المستوى،', 'top hızlanır · 3 can.': 'والكورة بتسرّع · 3 أرواح.',
+  'Yukarı, aşağı, sağa ya da sola kaydır.': 'اسحب فوق أو تحت أو يمين أو شمال.', 'Aynı sayılar çarpışınca birleşir:': 'الأرقام المتشابهة بتتدمج لما تتخبط:',
+  '2, 4, 8, 16 ... ikiye katlanır.': '2، 4، 8، 16 ... بتتضاعف.', 'Yer kalmayınca oyun biter.': 'لما المكان يخلص اللعبة بتخلص.',
+  'Soruyu oku, süre dolmadan': 'اقرا السؤال وقبل ما الوقت يخلص', 'doğru sonucu seç.': 'اختار النتيجة الصح.',
+  'Art arda doğrular fazladan puan verir.': 'الإجابات الصح ورا بعض بتدّي نقط زيادة.', 'Her 6 doğruda seviye artar · 3 can.': 'كل 6 إجابات صح المستوى بيزيد · 3 أرواح.',
+  'Çıkan dairelere kaybolmadan dokun.': 'دوس على الدواير قبل ما تختفي.', 'Hızlı dokunursan fazladan puan.': 'لو دوست بسرعة بتاخد نقط زيادة.',
+  'Altın daire +3 · kaçırırsan can gider.': 'الدايرة الدهب +3 · لو فوّتّها بتخسر روح.', 'Her 8 vuruşta seviye artar · 3 can.': 'كل 8 ضربات المستوى بيزيد · 3 أرواح.',
+  'YAKIN! +1': 'قريب! +1', 'KAÇTI': 'فاتت', 'dokun: fırlat': 'دوس: اطلق'
+});
+window.AR_RULES.unshift(
+  [/^\+(\d+) seri!$/, '+$1 سلسلة!'], [/^\+(\d+) hızlı!$/, '+$1 سريع!'], [/^(\d+) seri$/, '$1 سلسلة'], [/^En büyük: (\d+)$/, 'الأكبر: $1']
+);
+Object.assign(window.AR_DICT, { 'Skor:': 'النقاط:', 'Rekor:': 'الرقم القياسي:', 'Hamle:': 'الحركات:', 'Seviye:': 'المستوى:', 'Yem:': 'الأكل:', 'Uzunluk:': 'الطول:' });
+
 /* English dictionary — keys are the Turkish UI strings used in the app.
    EN_DICT: exact match. EN_RULES: [RegExp, template] — $n raw capture, @n translated capture. */
 window.EN_DICT = {
@@ -13499,6 +13521,28 @@ Object.assign(window.EN_DICT, {
   'Önce kaydedin, sonra müşteriye atayın': 'Save first, then assign to a customer', 'Müşterisiz iş olarak eklenecek': 'Will be added as a job without customer'
 });
 window.EN_RULES.unshift([/^(\d+) iş müşteri bekliyor$/, '$1 jobs waiting for a customer']);
+
+/* Yeni oyunlar */
+Object.assign(window.EN_DICT, {
+  'Trafik Yarışı': 'Traffic Race', 'Tuğla Kır': 'Break Bricks', 'Sayı Birleştir': 'Merge Numbers', 'Hızlı Hesap': 'Quick Math', 'Refleks Avı': 'Reflex Hunt',
+  'Yarış · Arabayı sürükle': 'Racing · Drag the car', 'Arcade · Raketi sürükle': 'Arcade · Drag the paddle', 'Bulmaca · Kaydırarak birleştir': 'Puzzle · Swipe to merge',
+  'Zeka · Doğru sonucu seç': 'Brain · Pick the right answer', 'Refleks · Dairelere dokun': 'Reflex · Tap the circles',
+  'Parmağınla arabayı sağa sola sürükle.': 'Drag the car left and right.', 'Önündeki trafiğe çarpmadan geç.': 'Get past the traffic without crashing.',
+  'Her 8 araçta seviye ve hız artar.': 'Every 8 cars the level and speed go up.', 'Yakın geçiş bonus verir · 3 can.': 'Close passes give a bonus · 3 lives.',
+  'Parmağınla raketi sağa sola sürükle.': 'Drag the paddle left and right.', 'Topu düşürmeden tuğlaları kır.': 'Break the bricks without dropping the ball.',
+  'Tüm tuğlalar bitince seviye atlar,': 'When all bricks are gone you level up,', 'top hızlanır · 3 can.': 'and the ball speeds up · 3 lives.',
+  'Yukarı, aşağı, sağa ya da sola kaydır.': 'Swipe up, down, left or right.', 'Aynı sayılar çarpışınca birleşir:': 'Equal numbers merge when they collide:',
+  '2, 4, 8, 16 ... ikiye katlanır.': '2, 4, 8, 16 ... they double.', 'Yer kalmayınca oyun biter.': 'The game ends when there is no room left.',
+  'Soruyu oku, süre dolmadan': 'Read the question and, before time runs out,', 'doğru sonucu seç.': 'pick the right answer.',
+  'Art arda doğrular fazladan puan verir.': 'Consecutive correct answers give extra points.', 'Her 6 doğruda seviye artar · 3 can.': 'Every 6 correct answers the level rises · 3 lives.',
+  'Çıkan dairelere kaybolmadan dokun.': 'Tap the circles before they vanish.', 'Hızlı dokunursan fazladan puan.': 'Tap fast for extra points.',
+  'Altın daire +3 · kaçırırsan can gider.': 'Golden circle +3 · miss one and lose a life.', 'Her 8 vuruşta seviye artar · 3 can.': 'Every 8 hits the level rises · 3 lives.',
+  'YAKIN! +1': 'CLOSE! +1', 'KAÇTI': 'MISSED', 'dokun: fırlat': 'tap: launch'
+});
+window.EN_RULES.unshift(
+  [/^\+(\d+) seri!$/, '+$1 streak!'], [/^\+(\d+) hızlı!$/, '+$1 fast!'], [/^(\d+) seri$/, '$1 streak'], [/^En büyük: (\d+)$/, 'Biggest: $1']
+);
+Object.assign(window.EN_DICT, { 'Skor:': 'Score:', 'Rekor:': 'Best:', 'Hamle:': 'Moves:', 'Seviye:': 'Level:', 'Yem:': 'Food:', 'Uzunluk:': 'Length:' });
 </script>
 <script>
 'use strict';
@@ -13511,7 +13555,7 @@ window.EN_RULES.unshift([/^(\d+) iş müşteri bekliyor$/, '$1 jobs waiting for 
      "localStorage doldu, kayıt sessizce başarısız oldu" sorununun çözümü budur.
    - Her yazma işleminin sonucu kontrol edilir; hata olursa kullanıcı görür.
    ===================================================================== */
-var APP_VERSION = '2.19.0';
+var APP_VERSION = '2.20.0';
 var SCHEMA_VERSION = 2; // 1 = eski localStorage sürümü (MİT 1.0), 2 = IndexedDB
 
 var IN_FRAME = (function () { try { return window.self !== window.top; } catch (e) { return true; } })();
@@ -14113,9 +14157,9 @@ var I18n = {
   },
   // Sayı + birim: 12,5 mt → 12,5 م
   units: function (t) {
-    if (this.lang === 'en') return t.replace(/(\d)\s*mt\b/g, '$1 m').replace(/(\d)\s*gr\b/g, '$1 g').replace(/(\d)\s*sn\b/g, '$1 s');
+    if (this.lang === 'en') return t.replace(/(\d)\s*mt\b/g, '$1 m').replace(/(\d)\s*gr\b/g, '$1 g').replace(/(\d)\s*sn\b/g, '$1 s').replace(/(\d)\s*km\/sa\b/g, '$1 km/h');
     return t.replace(/(\d)\s*mt\b/g, '$1 م').replace(/(\d)\s*kg\b/g, '$1 كجم').replace(/(\d)\s*gr\b/g, '$1 جم')
-      .replace(/(\d)\s*sn\b/g, '$1 ث').replace(/(\d)\s*MB\b/g, '$1 ميجا');
+      .replace(/(\d)\s*sn\b/g, '$1 ث').replace(/(\d)\s*MB\b/g, '$1 ميجا').replace(/(\d)\s*km\/sa\b/g, '$1 كم/س');
   },
   // Büyük harfle yazılacak başlıklar: Arapçada büyük harf yok
   up: function (s) { return this.lang === 'ar' ? this.tr(s) : this.lang === 'en' ? this.tr(String(s)).toUpperCase() : String(s).toLocaleUpperCase('tr-TR'); },
@@ -18202,6 +18246,407 @@ Game.list.push({
     g.beginPath(); g.moveTo(x, y - 24); g.lineTo(x + 20, y + 16); g.lineTo(x + 7, y + 10); g.lineTo(x, y + 18); g.lineTo(x - 7, y + 10); g.lineTo(x - 20, y + 16); g.closePath();
     g.fill(); g.stroke(); noGlow(g);
     g.fillStyle = s.pw > 0 ? P.am : P.cy; g.beginPath(); g.ellipse(x, y - 4, 4, 7, 0, 0, Math.PI * 2); g.fill();
+  }
+});
+
+/* ================= Yeni oyunlar: yarış · arcade · bulmaca · zeka · refleks ================= */
+function gHearts(n) { n = Math.max(0, n); return '♥♥♥'.slice(0, n) + '♡♡♡'.slice(0, 3 - n); }
+
+/* 8) Trafik Yarışı (yarış): arabayı sağa sola sürükle, önündeki trafikten kaç; seviye arttıkça hız artar */
+function tfCar(g, x, y, w, h, c1, c2, P, player, braking) {
+  g.save(); g.translate(x, y);
+  if (player) { glow(g, c1, 16); } else { g.fillStyle = 'rgba(0,0,0,.28)'; rr(g, -w / 2 + 3, -h / 2 + 5, w, h, w * 0.3); g.fill(); }
+  var bg = g.createLinearGradient(-w / 2, 0, w / 2, 0); bg.addColorStop(0, c2); bg.addColorStop(0.5, c1); bg.addColorStop(1, c2);
+  g.fillStyle = bg; rr(g, -w / 2, -h / 2, w, h, w * 0.3); g.fill(); noGlow(g);
+  g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = 1.2; g.stroke();
+  // camlar
+  g.fillStyle = P.light ? 'rgba(20,40,60,.78)' : 'rgba(5,12,24,.85)';
+  rr(g, -w * 0.36, -h * 0.26, w * 0.72, h * 0.17, w * 0.1); g.fill();   // ön cam
+  rr(g, -w * 0.34, h * 0.14, w * 0.68, h * 0.14, w * 0.1); g.fill();    // arka cam
+  g.fillStyle = 'rgba(255,255,255,.14)'; rr(g, -w * 0.2, -h * 0.08, w * 0.4, h * 0.2, 4); g.fill(); // tavan
+  if (player) {
+    g.fillStyle = '#FFF6C8'; g.fillRect(-w * 0.4, -h / 2 + 2, w * 0.2, 4); g.fillRect(w * 0.2, -h / 2 + 2, w * 0.2, 4);
+  }
+  g.fillStyle = braking ? '#FF4D5E' : '#B8212F'; g.fillRect(-w * 0.42, h / 2 - 5, w * 0.24, 3.5); g.fillRect(w * 0.18, h / 2 - 5, w * 0.24, 3.5);
+  g.restore();
+}
+Game.list.push({
+  id: 'traffic', name: 'Trafik Yarışı', hint: 'Yarış · Arabayı sürükle',
+  howto: ['Parmağınla arabayı sağa sola sürükle.', 'Önündeki trafiğe çarpmadan geç.', 'Her 8 araçta seviye ve hız artar.', 'Yakın geçiş bonus verir · 3 can.'],
+  LANES: 4,
+  init: function (s) {
+    var rw = Math.min(s.W - 16, 360); s.rw = rw; s.rl = (s.W - rw) / 2; s.lw = rw / this.LANES;
+    s.cw = Math.min(40, s.lw * 0.58); s.ch = s.cw * 1.9;
+    s.px = s.W / 2; s.tx = s.W / 2; s.py = s.H - 96; s.cars = []; s.dist = 0; s.gap = 0; s.free = 1;
+    s.lives = 3; s.inv = 0; s.lvl = 1; s.passed = 0; s.tilt = 0;
+    s.cols = [['#FF4D5E', '#B8212F'], ['#3D8BFF', '#1F4FB0'], ['#2EE6A6', '#12906A'], ['#B06BFF', '#6B35B8'], ['#E6F7FF', '#8FB3C7'], ['#FFB300', '#B87A00']];
+    s.trees = []; for (var i = 0; i < 14; i++) s.trees.push({ y: Math.random() * s.H, side: i % 2 ? 1 : -1, k: Math.random() });
+    this.hud(s);
+  },
+  speed: function (s) { return Math.min(820, 300 + (s.lvl - 1) * 52); },
+  hud: function (s) { Game.setExtra('Sv ' + s.lvl + ' · ' + Math.round(70 + this.speed(s) * 0.28) + ' km/sa · ' + gHearts(s.lives)); },
+  begin: function (s, p) { s.tx = p.x; },
+  down: function (s, p) { s.tx = p.x; },
+  move: function (s, p) { s.tx = p.x; },
+  spawnRow: function (s) {
+    var n = s.lvl < 3 ? 1 : s.lvl < 6 ? 2 : 3, L = this.LANES, lanes = [], i;
+    s.free = Math.max(0, Math.min(L - 1, s.free + Math.floor(Math.random() * 3) - 1));
+    for (i = 0; i < L; i++) if (i !== s.free) lanes.push(i);
+    for (i = lanes.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = lanes[i]; lanes[i] = lanes[j]; lanes[j] = t; }
+    var base = 0.82 + Math.random() * 0.2;
+    for (i = 0; i < Math.min(n, lanes.length); i++) {
+      var col = s.cols[Math.floor(Math.random() * s.cols.length)];
+      s.cars.push({ x: s.rl + (lanes[i] + 0.5) * s.lw, y: -s.ch, k: base, c1: col[0], c2: col[1], done: false, w: s.cw * (0.95 + Math.random() * 0.1), h: s.ch * (0.95 + Math.random() * 0.12) });
+    }
+    s.gap = Math.max(165, 268 - s.lvl * 9) + Math.random() * 70;
+  },
+  step: function (s, dt) {
+    var P = gPal(), v = this.speed(s), vr = v * 0.6, self = this;
+    var lvl = 1 + Math.floor(s.passed / 8);
+    if (lvl !== s.lvl) { s.lvl = lvl; this.hud(s); Game.pop(s.W / 2, s.H * 0.32, 'HIZ ' + lvl + '!', P.am); Sound.play('open'); }
+    var nx = s.px + (s.tx - s.px) * Math.min(1, dt * 15);
+    s.tilt += ((nx - s.px) / Math.max(dt, 0.001) / 900 - s.tilt) * Math.min(1, dt * 10);
+    s.px = Math.max(s.rl + s.cw / 2 + 3, Math.min(s.rl + s.rw - s.cw / 2 - 3, nx));
+    s.dist += v * dt; s.inv = Math.max(0, s.inv - dt);
+    s.gap -= vr * dt; if (s.gap <= 0) this.spawnRow(s);
+    s.cars = s.cars.filter(function (c) {
+      c.y += vr * c.k * dt;
+      var dx = Math.abs(c.x - s.px), dy = Math.abs(c.y - s.py);
+      if (s.inv <= 0 && dx < (c.w + s.cw) / 2 * 0.84 && dy < (c.h + s.ch) / 2 * 0.86) {
+        s.lives--; s.inv = 1.7; self.hud(s);
+        Game.burst((c.x + s.px) / 2, c.y, P.red, 26); Game.burst((c.x + s.px) / 2, c.y, P.am, 14); Game.shake(14); fb('err');
+        if (s.lives <= 0) { Game.end(s.score); return false; }
+        return false;
+      }
+      if (!c.done && c.y > s.py + s.ch * 0.6) {
+        c.done = true; s.passed++;
+        var add = 1;
+        if (dx < (c.w + s.cw) / 2 + 9 && dx >= (c.w + s.cw) / 2 * 0.84) { add = 2; Game.pop(s.px, s.py - 54, 'YAKIN! +1', P.am); }
+        Game.setScore(s.score + add);
+      }
+      return c.y < s.H + 90;
+    });
+  },
+  draw: function (g, s, P) {
+    var W = s.W, H = s.H, rl = s.rl, rw = s.rw, lw = s.lw, light = P.light;
+    // yol kenarı
+    g.fillStyle = light ? '#9CCB8A' : '#07101C'; g.fillRect(0, 0, W, H);
+    s.trees.forEach(function (t) {
+      var y = ((t.y + s.dist * 0.9) % (H + 60)) - 30, x = t.side < 0 ? rl - 14 - t.k * Math.max(0, rl - 30) * 0.7 : rl + rw + 14 + t.k * Math.max(0, rl - 30) * 0.7;
+      if (rl < 26) return;
+      g.fillStyle = light ? '#4F9A4A' : '#0C2A3A'; g.beginPath(); g.arc(x, y, 9 + t.k * 5, 0, 6.2832); g.fill();
+      g.fillStyle = light ? '#6BB864' : '#0E3F55'; g.beginPath(); g.arc(x - 2, y - 2, 5 + t.k * 3, 0, 6.2832); g.fill();
+    });
+    // asfalt
+    var ag = g.createLinearGradient(rl, 0, rl + rw, 0); ag.addColorStop(0, light ? '#5A6672' : '#101C2C'); ag.addColorStop(0.5, light ? '#69757F' : '#16263A'); ag.addColorStop(1, light ? '#5A6672' : '#101C2C');
+    g.fillStyle = ag; g.fillRect(rl, 0, rw, H);
+    g.fillStyle = light ? '#F4F7FA' : P.cy; g.globalAlpha = light ? 1 : 0.8;
+    g.fillRect(rl, 0, 3, H); g.fillRect(rl + rw - 3, 0, 3, H); g.globalAlpha = 1;
+    // şerit çizgileri (hızla kayar)
+    g.fillStyle = light ? 'rgba(255,255,255,.85)' : 'rgba(230,247,255,.55)';
+    var seg = 46, per = 90, off = s.dist % per;
+    for (var i = 1; i < this.LANES; i++) for (var y = -per + off; y < H; y += per) g.fillRect(rl + i * lw - 1.5, y, 3, seg);
+    // hız çizgileri
+    if (s.lvl > 2) { g.strokeStyle = 'rgba(255,255,255,' + Math.min(0.22, 0.04 * s.lvl) + ')'; g.lineWidth = 1.5; for (var k = 0; k < 8; k++) { var xx = rl + ((k * 53.7 + 11) % rw), yy = ((s.dist * 1.6 + k * 131) % (H + 80)) - 40; g.beginPath(); g.moveTo(xx, yy); g.lineTo(xx, yy + 22 + s.lvl * 3); g.stroke(); } }
+    // trafik
+    s.cars.forEach(function (c) { tfCar(g, c.x, c.y, c.w, c.h, c.c1, c.c2, P, false, false); });
+    // oyuncu
+    if (s.inv <= 0 || Math.floor(s.t * 14) % 2) {
+      if (!light) { var cone = g.createLinearGradient(0, s.py - s.ch / 2, 0, s.py - s.ch / 2 - 150); cone.addColorStop(0, 'rgba(255,246,200,.28)'); cone.addColorStop(1, 'rgba(255,246,200,0)'); g.fillStyle = cone; g.beginPath(); g.moveTo(s.px - s.cw * 0.3, s.py - s.ch / 2); g.lineTo(s.px - s.cw * 0.9, s.py - s.ch / 2 - 150); g.lineTo(s.px + s.cw * 0.9, s.py - s.ch / 2 - 150); g.lineTo(s.px + s.cw * 0.3, s.py - s.ch / 2); g.fill(); }
+      g.save(); g.translate(s.px, s.py); g.rotate(Math.max(-0.22, Math.min(0.22, s.tilt))); tfCar(g, 0, 0, s.cw, s.ch, P.am, P.amd, P, true, false); g.restore();
+    }
+  }
+});
+
+/* 9) Tuğla Kır (arcade): topu raketle sektir, tuğlaları yık; her seviyede top hızlanır */
+Game.list.push({
+  id: 'bricks', name: 'Tuğla Kır', hint: 'Arcade · Raketi sürükle',
+  howto: ['Parmağınla raketi sağa sola sürükle.', 'Topu düşürmeden tuğlaları kır.', 'Tüm tuğlalar bitince seviye atlar,', 'top hızlanır · 3 can.'],
+  build: function (s) {
+    var cols = 7, rows = Math.min(8, 3 + s.lvl), gap = 4, bw = (s.W - 24 - gap * (cols - 1)) / cols, bh = 22; s.bricks = [];
+    for (var r = 0; r < rows; r++) for (var c = 0; c < cols; c++) s.bricks.push({ x: 12 + c * (bw + gap), y: 56 + r * (bh + gap), w: bw, h: bh, r: r, hp: (s.lvl >= 2 && r < Math.min(2, s.lvl - 1)) ? 2 : 1 });
+    s.left = s.bricks.length;
+  },
+  init: function (s) {
+    s.pw = Math.min(112, s.W * 0.3); s.px = s.W / 2; s.tx = s.W / 2; s.py = s.H - 56; s.lives = 3; s.lvl = 1;
+    this.build(s); this.reset(s); this.hud(s);
+  },
+  hud: function (s) { Game.setExtra('Sv ' + s.lvl + ' · ' + gHearts(s.lives)); },
+  speed: function (s) { return Math.min(640, 330 + (s.lvl - 1) * 38); },
+  reset: function (s) { s.ball = { x: s.px, y: s.py - 12, vx: 0, vy: 0, r: 7, stuck: true }; s.wait = 0.9; },
+  launch: function (s) { var b = s.ball; if (!b.stuck) return; b.stuck = false; var a = (Math.random() * 40 - 20) * Math.PI / 180, sp = this.speed(s); b.vx = Math.sin(a) * sp; b.vy = -Math.cos(a) * sp; },
+  begin: function (s, p) { s.tx = p.x; s.wait = 0.25; },
+  down: function (s, p) { s.tx = p.x; this.launch(s); },
+  move: function (s, p) { s.tx = p.x; },
+  step: function (s, dt) {
+    var P = gPal(), b = s.ball, self = this, cols = [P.red, P.am, P.ok, P.cy, P.blue, '#B06BFF', P.red, P.am];
+    s.px += (s.tx - s.px) * Math.min(1, dt * 28); s.px = Math.max(s.pw / 2, Math.min(s.W - s.pw / 2, s.px));
+    if (b.stuck) { b.x = s.px; b.y = s.py - 12; s.wait -= dt; if (s.wait <= 0) this.launch(s); return; }
+    var dist = Math.hypot(b.vx, b.vy) * dt, n = Math.max(1, Math.ceil(dist / 4)), i, k;
+    for (i = 0; i < n; i++) {
+      b.x += b.vx * dt / n; b.y += b.vy * dt / n;
+      if (b.x < b.r) { b.x = b.r; b.vx = Math.abs(b.vx); } else if (b.x > s.W - b.r) { b.x = s.W - b.r; b.vx = -Math.abs(b.vx); }
+      if (b.y < b.r + 6) { b.y = b.r + 6; b.vy = Math.abs(b.vy); }
+      if (b.vy > 0 && b.y + b.r >= s.py - 8 && b.y + b.r <= s.py + 12 && Math.abs(b.x - s.px) < s.pw / 2 + b.r) {
+        var off = Math.max(-1, Math.min(1, (b.x - s.px) / (s.pw / 2))), a = off * 62 * Math.PI / 180, sp = this.speed(s);
+        b.vx = Math.sin(a) * sp; b.vy = -Math.cos(a) * sp; b.y = s.py - 8 - b.r; Sound.play('tap'); haptic(8);
+      }
+      for (k = 0; k < s.bricks.length; k++) {
+        var br = s.bricks[k]; if (br.hp <= 0) continue;
+        var cx = Math.max(br.x, Math.min(b.x, br.x + br.w)), cy = Math.max(br.y, Math.min(b.y, br.y + br.h)), dx = b.x - cx, dy = b.y - cy;
+        if (dx * dx + dy * dy <= b.r * b.r) {
+          if (Math.abs(dx) > Math.abs(dy)) b.vx = dx > 0 ? Math.abs(b.vx) : -Math.abs(b.vx); else b.vy = dy > 0 ? Math.abs(b.vy) : -Math.abs(b.vy);
+          br.hp--;
+          if (br.hp <= 0) { s.left--; Game.setScore(s.score + 1); Game.burst(br.x + br.w / 2, br.y + br.h / 2, cols[br.r % cols.length], 9, 120); Sound.play('pop'); }
+          else { Game.burst(br.x + br.w / 2, br.y + br.h / 2, P.tx, 4, 80); Sound.play('tap'); }
+          break;
+        }
+      }
+      if (s.left <= 0) {
+        s.lvl++; this.hud(s); Game.pop(s.W / 2, s.H * 0.5, 'SEVİYE ' + s.lvl + '!', P.am); Sound.play('open'); fb('ok');
+        this.build(s); this.reset(s); return;
+      }
+    }
+    if (b.y > s.H + 14) {
+      s.lives--; this.hud(s); Game.shake(8); fb('err');
+      if (s.lives <= 0) { Game.end(s.score); return; }
+      this.reset(s);
+    }
+  },
+  draw: function (g, s, P) {
+    var cols = [P.red, P.am, P.ok, P.cy, P.blue, '#B06BFF', P.red, P.am];
+    s.bricks.forEach(function (br) {
+      if (br.hp <= 0) return;
+      var c = cols[br.r % cols.length]; g.globalAlpha = br.hp > 1 ? 1 : 0.88;
+      glow(g, c, 6); g.fillStyle = c; rr(g, br.x, br.y, br.w, br.h, 5); g.fill(); noGlow(g);
+      g.fillStyle = 'rgba(255,255,255,.28)'; rr(g, br.x + 2, br.y + 2, br.w - 4, br.h * 0.38, 3); g.fill();
+      if (br.hp > 1) { g.strokeStyle = P.light ? '#102238' : '#E6F7FF'; g.lineWidth = 2; rr(g, br.x + 1, br.y + 1, br.w - 2, br.h - 2, 5); g.stroke(); }
+      g.globalAlpha = 1;
+    });
+    var x = s.px, w = s.pw, y = s.py;
+    glow(g, P.cy, 14); var pg = g.createLinearGradient(0, y - 8, 0, y + 10); pg.addColorStop(0, P.light ? '#FFFFFF' : '#4DD8F0'); pg.addColorStop(1, P.light ? '#8FD8F2' : '#0E7490');
+    g.fillStyle = pg; rr(g, x - w / 2, y - 8, w, 14, 7); g.fill(); noGlow(g);
+    var b = s.ball; glow(g, P.am, 16); g.fillStyle = shade(g, b.x, b.y, b.r, '#FFF2C0', P.am); g.beginPath(); g.arc(b.x, b.y, b.r, 0, 6.2832); g.fill(); noGlow(g);
+    if (b.stuck) { g.fillStyle = P.tx2; g.font = '14px system-ui, sans-serif'; g.textAlign = 'center'; g.fillText('dokun: fırlat', s.W / 2, s.py - 40); }
+  }
+});
+
+/* 10) Sayı Birleştir (bulmaca): kaydırarak aynı sayıları birleştir */
+Game.list.push({
+  id: 'merge', name: 'Sayı Birleştir', hint: 'Bulmaca · Kaydırarak birleştir',
+  howto: ['Yukarı, aşağı, sağa ya da sola kaydır.', 'Aynı sayılar çarpışınca birleşir:', '2, 4, 8, 16 ... ikiye katlanır.', 'Yer kalmayınca oyun biter.'],
+  N: 4,
+  init: function (s) {
+    var N = this.N; s.bs = Math.min(s.W - 24, s.H * 0.66, 420); s.bx = (s.W - s.bs) / 2; s.by = Math.max(18, (s.H - s.bs) / 2 - 8); s.cs = s.bs / N;
+    s.tiles = []; s.dying = []; s.sw = null; s.endT = 0; s.best = 2;
+    this.add(s); this.add(s); this.hud(s);
+  },
+  hud: function (s) { Game.setExtra('En büyük: ' + s.best); },
+  pos: function (s, r, c) { return { x: s.bx + (c + 0.5) * s.cs, y: s.by + (r + 0.5) * s.cs }; },
+  add: function (s) {
+    var N = this.N, used = {}, free = [], r, c;
+    s.tiles.forEach(function (t) { used[t.r + ',' + t.c] = 1; });
+    for (r = 0; r < N; r++) for (c = 0; c < N; c++) if (!used[r + ',' + c]) free.push([r, c]);
+    if (!free.length) return;
+    var f = free[Math.floor(Math.random() * free.length)], p = this.pos(s, f[0], f[1]);
+    s.tiles.push({ v: Math.random() < 0.88 ? 2 : 4, r: f[0], c: f[1], x: p.x, y: p.y, sc: 0.2 });
+  },
+  slide: function (s, dr, dc) {
+    var N = this.N, moved = false, gained = 0, self = this, line, i, L, lines = [];
+    // her satır/sütun, hedef kenara en yakın taştan başlayarak işlenir
+    for (L = 0; L < N; L++) {
+      line = s.tiles.filter(function (t) { return dr ? t.c === L : t.r === L; });
+      line.sort(function (a, b) { return dr ? (dr > 0 ? b.r - a.r : a.r - b.r) : (dc > 0 ? b.c - a.c : a.c - b.c); });
+      var out = [];
+      line.forEach(function (t) {
+        var last = out[out.length - 1];
+        if (last && last.v === t.v && !last.m) { last.v *= 2; last.m = true; t.into = last; gained += last.v; last.pop = true; }
+        else out.push(t);
+      });
+      out.forEach(function (t, idx) {
+        var nr = dr ? (dr > 0 ? N - 1 - idx : idx) : t.r, nc = dc ? (dc > 0 ? N - 1 - idx : idx) : t.c;
+        if (nr !== t.r || nc !== t.c) moved = true; t.r = nr; t.c = nc;
+      });
+      line.forEach(function (t) { if (t.into) { t.r = t.into.r; t.c = t.into.c; moved = true; } });
+    }
+    if (!moved) { s.tiles.forEach(function (t) { delete t.into; delete t.m; delete t.pop; }); return false; }
+    s.tiles = s.tiles.filter(function (t) { if (t.into) { s.dying.push(t); return false; } return true; });
+    s.tiles.forEach(function (t) { delete t.m; if (t.pop) { t.sc = 1.25; delete t.pop; } if (t.v > s.best) s.best = t.v; });
+    if (gained) { Game.setScore(s.score + gained); Sound.play('pop'); haptic(10); } else Sound.play('tap');
+    this.add(s); this.hud(s);
+    if (!this.canMove(s)) s.endT = 0.9;
+    return true;
+  },
+  canMove: function (s) {
+    var N = this.N, g = {}, r, c;
+    s.tiles.forEach(function (t) { g[t.r + ',' + t.c] = t.v; });
+    if (s.tiles.length < N * N) return true;
+    for (r = 0; r < N; r++) for (c = 0; c < N; c++) { var v = g[r + ',' + c]; if (g[r + ',' + (c + 1)] === v || g[(r + 1) + ',' + c] === v) return true; }
+    return false;
+  },
+  begin: function (s, p) { s.sw = { x: p.x, y: p.y }; },
+  down: function (s, p) { s.sw = { x: p.x, y: p.y }; },
+  up: function (s) { s.sw = null; },
+  move: function (s, p) {
+    if (!s.sw || s.endT > 0) return;
+    var dx = p.x - s.sw.x, dy = p.y - s.sw.y;
+    if (Math.hypot(dx, dy) < 26) return;
+    s.sw = null;
+    if (Math.abs(dx) > Math.abs(dy)) this.slide(s, 0, dx > 0 ? 1 : -1); else this.slide(s, dy > 0 ? 1 : -1, 0);
+  },
+  step: function (s, dt) {
+    var self = this, k = Math.min(1, dt * 22);
+    s.tiles.forEach(function (t) { var p = self.pos(s, t.r, t.c); t.x += (p.x - t.x) * k; t.y += (p.y - t.y) * k; t.sc += (1 - t.sc) * Math.min(1, dt * 14); });
+    s.dying.forEach(function (t) { var p = self.pos(s, t.r, t.c); t.x += (p.x - t.x) * k; t.y += (p.y - t.y) * k; });
+    s.dying = s.dying.filter(function (t) { var p = self.pos(s, t.r, t.c); return Math.hypot(t.x - p.x, t.y - p.y) > 3; });
+    if (s.endT > 0) { s.endT -= dt; if (s.endT <= 0) Game.end(s.score); }
+  },
+  tileCol: function (v, P) {
+    var e = Math.log(v) / Math.LN2, h = Math.max(0, 190 - (e - 1) * 17);
+    return 'hsl(' + Math.round(h) + ',' + (P.light ? '78%,' + Math.max(36, 66 - e * 2.2) : '82%,' + Math.max(32, 58 - e * 1.4)) + '%)';
+  },
+  draw: function (g, s, P) {
+    var N = this.N, i, j, self = this;
+    g.fillStyle = P.light ? 'rgba(255,255,255,.55)' : 'rgba(15,27,51,.8)'; rr(g, s.bx - 8, s.by - 8, s.bs + 16, s.bs + 16, 14); g.fill();
+    g.strokeStyle = P.cy; g.lineWidth = 1.5; g.globalAlpha = 0.5; rr(g, s.bx - 8, s.by - 8, s.bs + 16, s.bs + 16, 14); g.stroke(); g.globalAlpha = 1;
+    for (i = 0; i < N; i++) for (j = 0; j < N; j++) { var p = this.pos(s, i, j); g.fillStyle = P.light ? 'rgba(0,115,158,.10)' : 'rgba(0,229,255,.07)'; rr(g, p.x - s.cs / 2 + 3, p.y - s.cs / 2 + 3, s.cs - 6, s.cs - 6, 10); g.fill(); }
+    var drawT = function (t) {
+      var sz = (s.cs - 8) * t.sc, c = self.tileCol(t.v, P);
+      glow(g, c, 8); g.fillStyle = c; rr(g, t.x - sz / 2, t.y - sz / 2, sz, sz, 10); g.fill(); noGlow(g);
+      g.fillStyle = 'rgba(255,255,255,.22)'; rr(g, t.x - sz / 2 + 3, t.y - sz / 2 + 3, sz - 6, sz * 0.34, 7); g.fill();
+      var d = String(t.v).length; g.fillStyle = P.light ? '#102238' : '#05080F'; g.font = '700 ' + Math.round(sz * (d > 3 ? 0.3 : d > 2 ? 0.37 : 0.46)) + 'px "Exo 2", sans-serif';
+      g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(String(t.v), t.x, t.y + 1); g.textBaseline = 'alphabetic';
+    };
+    s.dying.forEach(drawT); s.tiles.forEach(drawT);
+  }
+});
+
+/* 11) Hızlı Hesap (zeka): süre dolmadan doğru sonucu seç */
+Game.list.push({
+  id: 'math', name: 'Hızlı Hesap', hint: 'Zeka · Doğru sonucu seç',
+  howto: ['Soruyu oku, süre dolmadan', 'doğru sonucu seç.', 'Art arda doğrular fazladan puan verir.', 'Her 6 doğruda seviye artar · 3 can.'],
+  init: function (s) { s.lives = 3; s.lvl = 1; s.right = 0; s.streak = 0; s.fb = 0; this.next(s); this.hud(s); },
+  hud: function (s) { Game.setExtra('Sv ' + s.lvl + ' · ' + gHearts(s.lives)); },
+  rnd: function (a, b) { return a + Math.floor(Math.random() * (b - a + 1)); },
+  next: function (s) {
+    var l = s.lvl, a, b, op, ans, text, opts = [], d, guard = 0;
+    var maxA = l === 1 ? 20 : l === 2 ? 50 : l === 3 ? 99 : 150;
+    var ops = l === 1 ? ['+', '-'] : l === 2 ? ['+', '-', '×'] : ['+', '-', '×', '×'];
+    op = ops[this.rnd(0, ops.length - 1)];
+    if (op === '×') { a = this.rnd(2, l >= 4 ? 12 : 9); b = this.rnd(2, l >= 4 ? 12 : 9); ans = a * b; }
+    else if (op === '+') { a = this.rnd(3, maxA); b = this.rnd(3, maxA); ans = a + b; }
+    else { a = this.rnd(8, maxA); b = this.rnd(2, a - 1); ans = a - b; }
+    text = a + ' ' + (op === '-' ? '−' : op) + ' ' + b + ' = ?';
+    opts.push(ans);
+    while (opts.length < 3 && guard++ < 60) {
+      d = this.rnd(1, Math.max(3, Math.round(ans * 0.2) + 3)) * (Math.random() < 0.5 ? -1 : 1);
+      var v = ans + d; if (v >= 0 && opts.indexOf(v) < 0) opts.push(v);
+    }
+    while (opts.length < 3) opts.push(ans + opts.length + 1);
+    for (var i = opts.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = opts[i]; opts[i] = opts[j]; opts[j] = t; }
+    s.q = { text: text, ans: ans, opts: opts }; s.limit = Math.max(2.8, 7 - l * 0.55); s.left = s.limit; s.fb = 0; s.pick = -1;
+  },
+  btn: function (s, i) { var w = Math.min(s.W - 48, 320), h = 64, gap = 14, y0 = s.H * 0.46; return { x: (s.W - w) / 2, y: y0 + i * (h + gap), w: w, h: h }; },
+  fail: function (s, pick) {
+    var P = gPal(); s.lives--; s.streak = 0; s.fb = 0.75; s.pick = pick; this.hud(s); Game.shake(8); fb('err');
+    Game.burst(s.W / 2, s.H * 0.3, P.red, 16);
+    if (s.lives <= 0) { s.over = true; s.endT = 0.8; }
+  },
+  down: function (s, p) {
+    if (s.fb > 0 || s.over) return;
+    for (var i = 0; i < 3; i++) {
+      var b = this.btn(s, i);
+      if (p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h) {
+        var P = gPal();
+        if (s.q.opts[i] === s.q.ans) {
+          s.right++; s.streak++; var add = 1 + (s.streak >= 4 ? 1 : 0);
+          Game.setScore(s.score + add); Game.pop(s.W / 2, s.H * 0.38, '+' + add + (s.streak >= 4 ? ' seri!' : ''), P.ok); Game.burst(b.x + b.w / 2, b.y + b.h / 2, P.ok, 14); Sound.play('pop'); haptic(10);
+          var lvl = 1 + Math.floor(s.right / 6);
+          if (lvl !== s.lvl) { s.lvl = lvl; this.hud(s); Game.pop(s.W / 2, s.H * 0.25, 'SEVİYE ' + lvl + '!', P.am); }
+          this.next(s);
+        } else this.fail(s, i);
+        return;
+      }
+    }
+  },
+  step: function (s, dt) {
+    if (s.over) { s.endT -= dt; if (s.endT <= 0) Game.end(s.score); return; }
+    if (s.fb > 0) { s.fb -= dt; if (s.fb <= 0) this.next(s); return; }
+    s.left -= dt;
+    if (s.left <= 0) this.fail(s, -1);
+  },
+  draw: function (g, s, P) {
+    var W = s.W, q = s.q, i;
+    // süre çubuğu
+    var bw = Math.min(W - 48, 320), bx = (W - bw) / 2, by = 24, frac = Math.max(0, s.left / s.limit);
+    g.fillStyle = P.light ? 'rgba(0,115,158,.15)' : 'rgba(0,229,255,.12)'; rr(g, bx, by, bw, 10, 5); g.fill();
+    g.fillStyle = frac > 0.35 ? P.cy : P.red; if (frac > 0) { rr(g, bx, by, bw * frac, 10, 5); g.fill(); }
+    g.textAlign = 'center'; g.fillStyle = P.tx; g.font = '700 44px "Exo 2", sans-serif'; g.fillText(q.text, W / 2, s.H * 0.26);
+    g.fillStyle = P.tx2; g.font = '15px system-ui, sans-serif'; g.fillText(s.streak >= 2 ? s.streak + ' seri' : ' ', W / 2, s.H * 0.26 + 30);
+    for (i = 0; i < 3; i++) {
+      var b = this.btn(s, i), st = '';
+      if (s.fb > 0) st = q.opts[i] === q.ans ? 'ok' : (i === s.pick ? 'bad' : '');
+      var c = st === 'ok' ? P.ok : st === 'bad' ? P.red : P.cy;
+      glow(g, c, st ? 14 : 6); g.fillStyle = P.light ? 'rgba(255,255,255,.85)' : 'rgba(15,27,51,.92)'; rr(g, b.x, b.y, b.w, b.h, 14); g.fill();
+      g.strokeStyle = c; g.lineWidth = 2; g.stroke(); noGlow(g);
+      g.fillStyle = st ? c : P.tx; g.font = '700 28px "Exo 2", sans-serif'; g.fillText(String(q.opts[i]), b.x + b.w / 2, b.y + b.h / 2 + 10);
+    }
+  }
+});
+
+/* 12) Refleks Avı (refleks): daireler kaybolmadan dokun */
+Game.list.push({
+  id: 'reflex', name: 'Refleks Avı', hint: 'Refleks · Dairelere dokun',
+  howto: ['Çıkan dairelere kaybolmadan dokun.', 'Hızlı dokunursan fazladan puan.', 'Altın daire +3 · kaçırırsan can gider.', 'Her 8 vuruşta seviye artar · 3 can.'],
+  init: function (s) { s.t1 = []; s.spawn = 0.4; s.lives = 3; s.lvl = 1; s.hits = 0; s.combo = 0; this.hud(s); },
+  hud: function (s) { Game.setExtra('Sv ' + s.lvl + ' · ' + gHearts(s.lives)); },
+  place: function (s) {
+    var r = 28 + Math.random() * 12, tries = 0, x, y, ok;
+    do {
+      x = r + 10 + Math.random() * (s.W - 2 * r - 20); y = r + 20 + Math.random() * (s.H - 2 * r - 60); ok = true;
+      s.t1.forEach(function (t) { if (Math.hypot(t.x - x, t.y - y) < t.r + r + 12) ok = false; });
+    } while (!ok && ++tries < 25);
+    var gold = Math.random() < 0.1, life = Math.max(0.7, 2 - s.lvl * 0.13) * (gold ? 0.8 : 1);
+    s.t1.push({ x: x, y: y, r: r, age: 0, life: life, gold: gold });
+  },
+  begin: function (s, p) { },
+  down: function (s, p) {
+    var P = gPal(), best = null, bd = 1e9;
+    s.t1.forEach(function (t) { var d = Math.hypot(t.x - p.x, t.y - p.y); if (d < t.r + 14 && d < bd) { bd = d; best = t; } });
+    if (!best) { s.combo = 0; return; }
+    s.t1.splice(s.t1.indexOf(best), 1);
+    var fast = best.age < best.life * 0.35, add = (best.gold ? 3 : 1) + (fast ? 1 : 0);
+    s.combo++; s.hits++;
+    Game.setScore(s.score + add); Game.burst(best.x, best.y, best.gold ? P.am : P.cy, 16); Game.pop(best.x, best.y - best.r, '+' + add + (fast ? ' hızlı!' : ''), best.gold ? P.am : P.cy);
+    Sound.play('pop'); haptic(10);
+    var lvl = 1 + Math.floor(s.hits / 8);
+    if (lvl !== s.lvl) { s.lvl = lvl; this.hud(s); Game.pop(s.W / 2, s.H * 0.3, 'SEVİYE ' + lvl + '!', P.am); }
+  },
+  step: function (s, dt) {
+    var P = gPal(), self = this, maxT = Math.min(4, 1 + Math.floor(s.lvl / 3));
+    s.spawn -= dt;
+    if (s.spawn <= 0 && s.t1.length < maxT) { this.place(s); s.spawn = Math.max(0.25, 0.9 - s.lvl * 0.07) * (0.7 + Math.random() * 0.6); }
+    s.t1 = s.t1.filter(function (t) {
+      t.age += dt;
+      if (t.age >= t.life) {
+        s.lives--; s.combo = 0; self.hud(s); Game.burst(t.x, t.y, P.red, 14); Game.shake(7); fb('err');
+        Game.pop(t.x, t.y, 'KAÇTI', P.red);
+        if (s.lives <= 0) Game.end(s.score);
+        return false;
+      }
+      return true;
+    });
+  },
+  draw: function (g, s, P) {
+    s.t1.forEach(function (t) {
+      var f = t.age / t.life, c = t.gold ? P.am : P.cy, appear = Math.min(1, t.age * 7);
+      glow(g, c, 14); g.fillStyle = shade(g, t.x, t.y, t.r * appear, t.gold ? '#FFE08A' : (P.light ? '#8FD8F2' : '#4DD8F0'), t.gold ? P.amd : (P.light ? '#00739E' : '#0E7490'));
+      g.beginPath(); g.arc(t.x, t.y, t.r * appear, 0, 6.2832); g.fill(); noGlow(g);
+      g.strokeStyle = f > 0.7 ? P.red : P.tx; g.lineWidth = 3; g.lineCap = 'round';
+      g.beginPath(); g.arc(t.x, t.y, t.r + 7, -Math.PI / 2, -Math.PI / 2 + (1 - f) * 6.2832); g.stroke();
+      g.fillStyle = 'rgba(255,255,255,.7)'; g.beginPath(); g.arc(t.x, t.y, 4, 0, 6.2832); g.fill();
+    });
+    if (s.combo >= 3) { g.fillStyle = P.am; g.font = '600 15px "Exo 2", sans-serif'; g.textAlign = 'center'; g.fillText(s.combo + ' seri', s.W / 2, 22); }
   }
 });
 

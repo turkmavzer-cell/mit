@@ -215,3 +215,25 @@ Object.assign(window.EN_DICT, {
   'Önce kaydedin, sonra müşteriye atayın': 'Save first, then assign to a customer', 'Müşterisiz iş olarak eklenecek': 'Will be added as a job without customer'
 });
 window.EN_RULES.unshift([/^(\d+) iş müşteri bekliyor$/, '$1 jobs waiting for a customer']);
+
+/* Yeni oyunlar */
+Object.assign(window.EN_DICT, {
+  'Trafik Yarışı': 'Traffic Race', 'Tuğla Kır': 'Break Bricks', 'Sayı Birleştir': 'Merge Numbers', 'Hızlı Hesap': 'Quick Math', 'Refleks Avı': 'Reflex Hunt',
+  'Yarış · Arabayı sürükle': 'Racing · Drag the car', 'Arcade · Raketi sürükle': 'Arcade · Drag the paddle', 'Bulmaca · Kaydırarak birleştir': 'Puzzle · Swipe to merge',
+  'Zeka · Doğru sonucu seç': 'Brain · Pick the right answer', 'Refleks · Dairelere dokun': 'Reflex · Tap the circles',
+  'Parmağınla arabayı sağa sola sürükle.': 'Drag the car left and right.', 'Önündeki trafiğe çarpmadan geç.': 'Get past the traffic without crashing.',
+  'Her 8 araçta seviye ve hız artar.': 'Every 8 cars the level and speed go up.', 'Yakın geçiş bonus verir · 3 can.': 'Close passes give a bonus · 3 lives.',
+  'Parmağınla raketi sağa sola sürükle.': 'Drag the paddle left and right.', 'Topu düşürmeden tuğlaları kır.': 'Break the bricks without dropping the ball.',
+  'Tüm tuğlalar bitince seviye atlar,': 'When all bricks are gone you level up,', 'top hızlanır · 3 can.': 'and the ball speeds up · 3 lives.',
+  'Yukarı, aşağı, sağa ya da sola kaydır.': 'Swipe up, down, left or right.', 'Aynı sayılar çarpışınca birleşir:': 'Equal numbers merge when they collide:',
+  '2, 4, 8, 16 ... ikiye katlanır.': '2, 4, 8, 16 ... they double.', 'Yer kalmayınca oyun biter.': 'The game ends when there is no room left.',
+  'Soruyu oku, süre dolmadan': 'Read the question and, before time runs out,', 'doğru sonucu seç.': 'pick the right answer.',
+  'Art arda doğrular fazladan puan verir.': 'Consecutive correct answers give extra points.', 'Her 6 doğruda seviye artar · 3 can.': 'Every 6 correct answers the level rises · 3 lives.',
+  'Çıkan dairelere kaybolmadan dokun.': 'Tap the circles before they vanish.', 'Hızlı dokunursan fazladan puan.': 'Tap fast for extra points.',
+  'Altın daire +3 · kaçırırsan can gider.': 'Golden circle +3 · miss one and lose a life.', 'Her 8 vuruşta seviye artar · 3 can.': 'Every 8 hits the level rises · 3 lives.',
+  'YAKIN! +1': 'CLOSE! +1', 'KAÇTI': 'MISSED', 'dokun: fırlat': 'tap: launch'
+});
+window.EN_RULES.unshift(
+  [/^\+(\d+) seri!$/, '+$1 streak!'], [/^\+(\d+) hızlı!$/, '+$1 fast!'], [/^(\d+) seri$/, '$1 streak'], [/^En büyük: (\d+)$/, 'Biggest: $1']
+);
+Object.assign(window.EN_DICT, { 'Skor:': 'Score:', 'Rekor:': 'Best:', 'Hamle:': 'Moves:', 'Seviye:': 'Level:', 'Yem:': 'Food:', 'Uzunluk:': 'Length:' });

@@ -73,3 +73,7 @@ uygulamayı kaldır, yeni APK'yı kur, Yedekleme → yedekten geri yükle. Sonra
 - Bu işler İşler listesinin en üstünde amber "Müşteri atanmadı" başlığıyla görünür; üstte "N iş müşteri bekliyor" yazar. Karttaki veya iş formundaki **Müşteriye ata** ile bir müşteriye bağlanır (iş kimliği ve verisi aynen taşınır).
 - Arka planda "Müşteri atanmadı" adlı görünmeyen bir sistem müşterisi altında tutulur; müşteri listesine, müşteri sayılarına ve "müşterinin işi var" sayısına girmez.
 - QR ile gelen/giden müşterisiz iş, alıcıda da müşterisiz olarak eklenir.
+
+## Oyunlar (12)
+Uzay kedisine dokununca ya da üst menüdeki **Sonraki** ile sırayla/rastgele açılır. Kategoriler: yakalama (Yumak Yakala), uçuş (Glif Kapıları), hafıza (Glif Hafızası, Sinyal Sırası), kesme (Gezegen Patlat), klasik (Yılan), uzay savaşı, **yarış (Trafik Yarışı)**, **arcade (Tuğla Kır)**, **bulmaca (Sayı Birleştir)**, **zeka (Hızlı Hesap)**, **refleks (Refleks Avı)**.
+- Trafik Yarışı: arabayı sürükle, trafikten kaç; her 8 araçta seviye ve hız artar, yakın geçiş bonus verir.

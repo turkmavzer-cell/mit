@@ -242,3 +242,25 @@ Object.assign(window.AR_DICT, {
   'Önce kaydedin, sonra müşteriye atayın': 'احفظ الأول وبعدين اربطه بعميل', 'Müşterisiz iş olarak eklenecek': 'هيتضاف أوردر من غير عميل'
 });
 window.AR_RULES.unshift([/^(\d+) iş müşteri bekliyor$/, '$1 أوردر مستني عميل']);
+
+/* Yeni oyunlar */
+Object.assign(window.AR_DICT, {
+  'Trafik Yarışı': 'سباق الزحمة', 'Tuğla Kır': 'اكسر الطوب', 'Sayı Birleştir': 'ادمج الأرقام', 'Hızlı Hesap': 'حساب سريع', 'Refleks Avı': 'صيد ردّ الفعل',
+  'Yarış · Arabayı sürükle': 'سباق · اسحب العربية', 'Arcade · Raketi sürükle': 'أركيد · اسحب المضرب', 'Bulmaca · Kaydırarak birleştir': 'ألغاز · اسحب وادمج',
+  'Zeka · Doğru sonucu seç': 'ذكاء · اختار النتيجة الصح', 'Refleks · Dairelere dokun': 'ردّ فعل · دوس على الدواير',
+  'Parmağınla arabayı sağa sola sürükle.': 'اسحب العربية بإصبعك يمين وشمال.', 'Önündeki trafiğe çarpmadan geç.': 'عدّي من الزحمة من غير ما تخبط.',
+  'Her 8 araçta seviye ve hız artar.': 'كل 8 عربيات المستوى والسرعة بيزيدوا.', 'Yakın geçiş bonus verir · 3 can.': 'العبور القريب بيدّي نقط زيادة · 3 أرواح.',
+  'Parmağınla raketi sağa sola sürükle.': 'اسحب المضرب بإصبعك يمين وشمال.', 'Topu düşürmeden tuğlaları kır.': 'اكسر الطوب من غير ما الكورة تقع.',
+  'Tüm tuğlalar bitince seviye atlar,': 'لما الطوب كله يخلص تعدّي المستوى،', 'top hızlanır · 3 can.': 'والكورة بتسرّع · 3 أرواح.',
+  'Yukarı, aşağı, sağa ya da sola kaydır.': 'اسحب فوق أو تحت أو يمين أو شمال.', 'Aynı sayılar çarpışınca birleşir:': 'الأرقام المتشابهة بتتدمج لما تتخبط:',
+  '2, 4, 8, 16 ... ikiye katlanır.': '2، 4، 8، 16 ... بتتضاعف.', 'Yer kalmayınca oyun biter.': 'لما المكان يخلص اللعبة بتخلص.',
+  'Soruyu oku, süre dolmadan': 'اقرا السؤال وقبل ما الوقت يخلص', 'doğru sonucu seç.': 'اختار النتيجة الصح.',
+  'Art arda doğrular fazladan puan verir.': 'الإجابات الصح ورا بعض بتدّي نقط زيادة.', 'Her 6 doğruda seviye artar · 3 can.': 'كل 6 إجابات صح المستوى بيزيد · 3 أرواح.',
+  'Çıkan dairelere kaybolmadan dokun.': 'دوس على الدواير قبل ما تختفي.', 'Hızlı dokunursan fazladan puan.': 'لو دوست بسرعة بتاخد نقط زيادة.',
+  'Altın daire +3 · kaçırırsan can gider.': 'الدايرة الدهب +3 · لو فوّتّها بتخسر روح.', 'Her 8 vuruşta seviye artar · 3 can.': 'كل 8 ضربات المستوى بيزيد · 3 أرواح.',
+  'YAKIN! +1': 'قريب! +1', 'KAÇTI': 'فاتت', 'dokun: fırlat': 'دوس: اطلق'
+});
+window.AR_RULES.unshift(
+  [/^\+(\d+) seri!$/, '+$1 سلسلة!'], [/^\+(\d+) hızlı!$/, '+$1 سريع!'], [/^(\d+) seri$/, '$1 سلسلة'], [/^En büyük: (\d+)$/, 'الأكبر: $1']
+);
+Object.assign(window.AR_DICT, { 'Skor:': 'النقاط:', 'Rekor:': 'الرقم القياسي:', 'Hamle:': 'الحركات:', 'Seviye:': 'المستوى:', 'Yem:': 'الأكل:', 'Uzunluk:': 'الطول:' });
