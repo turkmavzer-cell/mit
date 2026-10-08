@@ -264,3 +264,11 @@ window.AR_RULES.unshift(
   [/^\+(\d+) seri!$/, '+$1 سلسلة!'], [/^\+(\d+) hızlı!$/, '+$1 سريع!'], [/^(\d+) seri$/, '$1 سلسلة'], [/^En büyük: (\d+)$/, 'الأكبر: $1']
 );
 Object.assign(window.AR_DICT, { 'Skor:': 'النقاط:', 'Rekor:': 'الرقم القياسي:', 'Hamle:': 'الحركات:', 'Seviye:': 'المستوى:', 'Yem:': 'الأكل:', 'Uzunluk:': 'الطول:' });
+
+/* Müşteri değiştirme */
+Object.assign(window.AR_DICT, {
+  'Müşteri Değiştirme': 'تغيير العميل', 'Eklenmiş işin müşterisini sonradan değiştirebilirsin': 'تقدر تغيّر عميل الأوردر بعد ما يتضاف',
+  'Müşteriyi değiştir': 'غيّر العميل', 'Hangi Müşteriye Taşınsın?': 'تنقله لأنهي عميل؟', 'Taşıma geri alındı': 'النقل اتلغى',
+  'Önce kaydedin, sonra müşteriyi değiştirin': 'احفظ الأول وبعدين غيّر العميل'
+});
+window.AR_RULES.unshift([/^İş şu müşteriye taşındı: (.*)$/, 'الأوردر اتنقل للعميل: $1']);

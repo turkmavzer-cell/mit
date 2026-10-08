@@ -77,3 +77,8 @@ uygulamayı kaldır, yeni APK'yı kur, Yedekleme → yedekten geri yükle. Sonra
 ## Oyunlar (12)
 Uzay kedisine dokununca ya da üst menüdeki **Sonraki** ile sırayla/rastgele açılır. Kategoriler: yakalama (Yumak Yakala), uçuş (Glif Kapıları), hafıza (Glif Hafızası, Sinyal Sırası), kesme (Gezegen Patlat), klasik (Yılan), uzay savaşı, **yarış (Trafik Yarışı)**, **arcade (Tuğla Kır)**, **bulmaca (Sayı Birleştir)**, **zeka (Hızlı Hesap)**, **refleks (Refleks Avı)**.
 - Trafik Yarışı: arabayı sürükle, trafikten kaç; her 8 araçta seviye ve hız artar, yakın geçiş bonus verir.
+
+## Müşteri değiştirme
+- İşi açınca (iş formu) **Müşteriyi değiştir** düğmesi: listeden başka bir müşteri seçilir (ya da yeni müşteri eklenir), iş tüm bilgileriyle taşınır. 5 saniye içinde **Geri Al** çıkar.
+- Ayarlar → **Müşteri Değiştirme** anahtarı ile bu düğme açılıp kapatılabilir (varsayılan: açık). Müşterisiz işlerdeki "Müşteriye ata" her zaman çalışır.
+- Değişiklik kaydedilmemişse önce kaydetmek gerekir.

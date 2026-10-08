@@ -624,7 +624,7 @@ textarea.inp { padding: 12px; resize: none; line-height: 1.4; }
      "localStorage doldu, kayıt sessizce başarısız oldu" sorununun çözümü budur.
    - Her yazma işleminin sonucu kontrol edilir; hata olursa kullanıcı görür.
    ===================================================================== */
-var APP_VERSION = '2.20.0';
+var APP_VERSION = '2.21.0';
 var SCHEMA_VERSION = 2; // 1 = eski localStorage sürümü (MİT 1.0), 2 = IndexedDB
 
 var IN_FRAME = (function () { try { return window.self !== window.top; } catch (e) { return true; } })();
@@ -743,7 +743,7 @@ var Photos = {
 };
 
 /* ---------- Ayarlar ve meta ---------- */
-var Settings = { sound: true, vibrate: true, reminder: false, cat: true, autoBackup: true, theme: 'dark', asteroid: true, lang: 'tr' };
+var Settings = { sound: true, vibrate: true, reminder: false, cat: true, autoBackup: true, theme: 'dark', asteroid: true, lang: 'tr', reassign: true };
 /* Tema: koyu (hologram gece) / açık (gün doğumu). Açılışta titreme olmasın diye
    seçim ayrıca localStorage'da tutulur (iş verisi değil, yalnızca görünüm tercihi). */
 var Theme = {
@@ -2964,6 +2964,7 @@ var Screens = {
       sw('vibrate', 'Titreşim', 'Dokunmada kısa titreşim') +
       sw('autoBackup', 'Otomatik Yedek', 'Sormadan telefona yedek yazar, eskisinin üstüne kaydeder') +
       sw('reminder', 'Günlük Yedek Hatırlatıcısı', 'Her gün ilk açılışta yedeği paylaşmayı hatırlatır') +
+      sw('reassign', 'Müşteri Değiştirme', 'Eklenmiş işin müşterisini sonradan değiştirebilirsin') +
       sw('cat', 'Uzay Kedisi', 'Küre ekranında ara sıra görünür, dokununca mini oyun açılır') +
       sw('asteroid', 'Asteroit Olayı', 'Her 30 saniyede küreye asteroit gelir; roketle durdurabilirsin') +
       '<div class="blk"><h3 class="hud">Hakkında</h3>' +
@@ -3315,17 +3316,20 @@ var Forms = {};
 
 /* Müşterisiz işi bir müşteriye ata */
 Forms.assign = function (fromCid, jid, after) {
+  var from = Data.find(fromCid), wasUna = Data.isUna(from);
+  var refresh = function () { Screens.refresh(); Screens.renderDetail(); };
   var move = function (toId) {
+    var to = Data.find(toId);
     Data.moveJob(jid, fromCid, toId).then(function (ok) {
       if (!ok) return;
-      fb('ok'); UI.toast('İş müşteriye atandı');
-      if (after) after();
-      Screens.refresh();
+      fb('ok'); if (after) after(); refresh();
+      if (wasUna) UI.toast('İş müşteriye atandı');
+      else UI.undoToast('İş şu müşteriye taşındı: ' + (to ? to.name : ''), function () { Data.moveJob(jid, toId, fromCid).then(function () { refresh(); UI.toast('Taşıma geri alındı'); }); });
     });
   };
   UI.openDrawer({
-    title: 'Hangi Müşteriye Ait?', multi: false, emptyText: 'Henüz müşteri yok',
-    items: Data.real().map(function (c) { return { id: c.id, name: c.name }; }),
+    title: wasUna ? 'Hangi Müşteriye Ait?' : 'Hangi Müşteriye Taşınsın?', multi: false, emptyText: 'Henüz müşteri yok',
+    items: Data.real().filter(function (c) { return c.id !== fromCid; }).map(function (c) { return { id: c.id, name: c.name }; }),
     newLabel: 'Yeni Müşteri Ekle',
     onNew: function () { Forms.customer(null, function (c) { move(c.id); }); },
     onDone: function (ids) { move(ids[0]); }
@@ -3334,7 +3338,7 @@ Forms.assign = function (fromCid, jid, after) {
 Actions['job-assign'] = function (el, e) { e.stopPropagation(); Forms.assign(el.getAttribute('data-c'), el.getAttribute('data-j')); };
 Actions['jf-assign'] = function () {
   if (!JF) return;
-  if (JF.dirty) { UI.toast('Önce kaydedin, sonra müşteriye atayın', 'info'); return; }
+  if (JF.dirty) { UI.toast(Data.isUna(Data.find(JF.cid)) ? 'Önce kaydedin, sonra müşteriye atayın' : 'Önce kaydedin, sonra müşteriyi değiştirin', 'info'); return; }
   var jf = JF;
   Forms.assign(jf.cid, jf.draft.id, function () { jf.dirty = false; UI.pop(); });
 };
@@ -3711,7 +3715,7 @@ function jfPaint() {
     '<button class="ibtn" data-act="jf-close" aria-label="Kapat">' + icon('x') + '</button></div><div class="sh-body" data-jf-body>';
   if (!JF.isNew) {
     var del = d.status === 'delivered';
-    html += '<div class="stack" style="gap:8px">' + (Data.isUna(c) ? '<button class="btn block amb" data-act="jf-assign">' + icon('tag', 18) + ' Müşteriye ata</button>' : '') +
+    html += '<div class="stack" style="gap:8px">' + (Data.isUna(c) ? '<button class="btn block amb" data-act="jf-assign">' + icon('tag', 18) + ' Müşteriye ata</button>' : Settings.reassign ? '<button class="btn block" data-act="jf-assign">' + icon('tag', 18) + ' Müşteriyi değiştir</button>' : '') +
       '<button class="btn block ' + (del ? 'ok' : 'amb') + '" data-act="jf-status">' + icon(del ? 'undo' : 'check', 18) + (del ? ' Teslim Edildi · Aktife Al' : ' Teslim Edildi Olarak İşaretle') + '</button>' +
       '<button class="btn block ' + (d.printed ? 'blue' : 'amb') + '" data-act="jf-printed">' + icon(d.printed ? 'check' : 'info', 18) + (d.printed ? ' Baskı Yapıldı' : ' Baskı Bekliyor') + '</button></div>';
   }

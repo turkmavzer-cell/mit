@@ -237,3 +237,11 @@ window.EN_RULES.unshift(
   [/^\+(\d+) seri!$/, '+$1 streak!'], [/^\+(\d+) hızlı!$/, '+$1 fast!'], [/^(\d+) seri$/, '$1 streak'], [/^En büyük: (\d+)$/, 'Biggest: $1']
 );
 Object.assign(window.EN_DICT, { 'Skor:': 'Score:', 'Rekor:': 'Best:', 'Hamle:': 'Moves:', 'Seviye:': 'Level:', 'Yem:': 'Food:', 'Uzunluk:': 'Length:' });
+
+/* Müşteri değiştirme */
+Object.assign(window.EN_DICT, {
+  'Müşteri Değiştirme': 'Change Customer', 'Eklenmiş işin müşterisini sonradan değiştirebilirsin': 'You can change the customer of an added job later',
+  'Müşteriyi değiştir': 'Change customer', 'Hangi Müşteriye Taşınsın?': 'Move it to which customer?', 'Taşıma geri alındı': 'Move undone',
+  'Önce kaydedin, sonra müşteriyi değiştirin': 'Save first, then change the customer'
+});
+window.EN_RULES.unshift([/^İş şu müşteriye taşındı: (.*)$/, 'Job moved to customer: $1']);
