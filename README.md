@@ -25,7 +25,7 @@ MİT Holo'da:
 | Kalıplar | Kalıp kütüphanesi (ad + fotoğraf, düzenle, sil) |
 | Rapor | Bu hafta / bu ay / geçen ay: metraj, yeni ve teslim edilen iş, müşteri ve kalıp dağılımı, görsel olarak paylaş |
 | Yedekleme | Otomatik yedek durumu, yedeği paylaş (fotoğraflar dahil), yedekten geri yükle (yalnızca eksikleri ekler) |
-| Ayarlar | Tema (koyu / açık gün doğumu), ses, titreşim, otomatik yedek, asteroit olayı, günlük yedek hatırlatıcısı, uzay kedisi, hakkında |
+| Ayarlar | Firma bilgileri (firma adı, para birimi), tema (koyu / açık gün doğumu), ses, titreşim, otomatik yedek, asteroit olayı, günlük yedek hatırlatıcısı, uzay kedisi, hakkında |
 
 İş formu: durum (imalatta/teslim), baskı durumu, kumaş türü/rengi/gramajı, atanmamış toplar,
 kalıp grupları (metre/kilo topları, uzun basınca düzenleme), kalıba top gönderme,
@@ -87,3 +87,6 @@ Uzay kedisine dokununca ya da üst menüdeki **Sonraki** ile sırayla/rastgele a
 - İşi açınca (iş formu) **Müşteriyi değiştir** düğmesi: listeden başka bir müşteri seçilir (ya da yeni müşteri eklenir), iş tüm bilgileriyle taşınır. 5 saniye içinde **Geri Al** çıkar.
 - Ayarlar → **Müşteri Değiştirme** anahtarı ile bu düğme açılıp kapatılabilir (varsayılan: açık). Müşterisiz işlerdeki "Müşteriye ata" her zaman çalışır.
 - Değişiklik kaydedilmemişse önce kaydetmek gerekir.
+
+## Değişiklik geçmişi
+Tüm sürümler, eklenen ve kaldırılan özellikler: [CHANGELOG.md](CHANGELOG.md). Kalıcı kurallar ve kararlar: [CLAUDE.md](CLAUDE.md).
