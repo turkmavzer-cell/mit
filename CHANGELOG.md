@@ -3,6 +3,10 @@
 Her sürüm: **Eklendi** · **Değişti** · **Düzeltildi** · **Kaldırıldı**. En yeni sürüm en üstte.
 Geliştirme dalı: `ccr-ae266e58-ytuhvz` (APK bu daldan derlenir). `main` eski 1.x sürümünde kaldı.
 
+## 2.22.1 — 2026-10-18
+- **Değişti:** İrsaliyede ve kalıp tutarında, kilodan metreye çevrilen miktarın küsuratı atılır (50,98 mt → 50 mt; yuvarlama yok). Metre olarak girilen toplar olduğu gibi kalır.
+- **Not:** Kilo topu olan işlerde daha önce oluşturulmuş irsaliye (henüz teslim edilmemişse) yeniden oluşturulmalıdır.
+
 ## 2.22.0 — 2026-10-18
 - **Eklendi:** Ayarlar'da **Firma Bilgileri** (firma adı, isteğe bağlı para birimi).
 - **Eklendi:** İş formunda her kalıba **Metre Fiyatı** ve tutar (kalıp başına ayrı fiyat).

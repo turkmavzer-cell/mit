@@ -635,7 +635,7 @@ textarea.inp { padding: 12px; resize: none; line-height: 1.4; }
      "localStorage doldu, kayıt sessizce başarısız oldu" sorununun çözümü budur.
    - Her yazma işleminin sonucu kontrol edilir; hata olursa kullanıcı görür.
    ===================================================================== */
-var APP_VERSION = '2.22.0';
+var APP_VERSION = '2.22.1';
 var SCHEMA_VERSION = 3; // 1 = eski localStorage sürümü (MİT 1.0), 2 = IndexedDB, 3 = kalıp metre fiyatı + irsaliye
 
 var IN_FRAME = (function () { try { return window.self !== window.top; } catch (e) { return true; } })();
@@ -3822,7 +3822,8 @@ function jfTotals() {
     var gt = calcRollTotals(g.fabricRolls, d.fabricGramsPerMeter);
     el.textContent = g.fabricRolls.length ? fmtNum(gt.grandTotalMeters) + ' mt' + (JF.expanded === g.id ? '' : ' (' + g.fabricRolls.length + ')') : '';
     var am = root.querySelector('[data-gamt="' + g.id + '"]');
-    if (am) am.textContent = g.pricePerMeter && gt.grandTotalMeters > 0 ? fmtMoney(gt.grandTotalMeters * g.pricePerMeter) : '';
+    var bm = billMeters(gt);
+    if (am) am.textContent = g.pricePerMeter && bm > 0 ? fmtMoney(bm * g.pricePerMeter) : '';
   });
   var ul = root.querySelector('[data-un-label]');
   if (ul) ul.textContent = 'Atanmamış Toplar' + (d.unassignedRolls.length ? ' (' + d.unassignedRolls.length + ' top)' : '');
@@ -3993,6 +3994,8 @@ function wbMoney(n, cur) {
   var v = (Math.round((n || 0) * 100) / 100).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   return cur ? v + ' ' + cur : v;
 }
+// İrsaliye metresi: metre topları olduğu gibi; kilodan çevrilen metrenin küsuratı atılır (50,98 → 50)
+function billMeters(t) { return Math.round((t.totalMeters + Math.floor(t.kgEquivalentMeters + 1e-9)) * 100) / 100; }
 // İrsaliyeye girecek satırlar + eksik bilgi kontrolü
 function waybillCalc(job) {
   var lines = [], noPrice = [], noMeter = [], unnamed = false, kgNoGram = false;
@@ -4002,7 +4005,7 @@ function waybillCalc(job) {
     if (!name) { unnamed = true; return; }
     var t = calcRollTotals(g.fabricRolls, job.fabricGramsPerMeter);
     if (t.kgRolls.length && !(job.fabricGramsPerMeter > 0)) kgNoGram = true;
-    var m = Math.round(t.grandTotalMeters * 100) / 100;
+    var m = billMeters(t);
     if (!(m > 0)) noMeter.push(name);
     if (!g.pricePerMeter) noPrice.push({ id: g.id, name: name });
     var price = g.pricePerMeter || 0;
