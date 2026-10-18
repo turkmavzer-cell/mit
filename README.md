@@ -31,6 +31,11 @@ MİT Holo'da:
 kalıp grupları (metre/kilo topları, uzun basınca düzenleme), kalıba top gönderme,
 notlar, 25 fotoğrafa kadar, iş özeti görseli paylaşma.
 
+**İrsaliye:** Ayarlar'da firma adı (ve isteğe bağlı para birimi) girilir. İş formunda her kalıbın altında
+**Metre Fiyatı** kutusu vardır. İmalattaki iş **İrsaliye Oluştur** yapılmadan **Teslim Edildi** olamaz;
+irsaliyeden sonra metre/fiyat değişirse irsaliye yeniden oluşturulmalıdır. İrsaliye (müşteri, işi yapan firma,
+kalıp · metre · birim fiyat · tutar, toplam) ekranda gösterilir ve `Belgeler/MIT-Holo/Irsaliyeler/` klasörüne PNG olarak kaydedilir.
+
 ## Eski uygulamadan veri aktarma
 1. Eski MİT → Ayarlar → Veri Yedekleme → **Yedekle**, dosyayı telefona kaydet.
 2. MİT Holo → Yedekleme → **Yedek Dosyası Seç** → o dosyayı aç.

@@ -245,3 +245,31 @@ Object.assign(window.EN_DICT, {
   'Önce kaydedin, sonra müşteriyi değiştirin': 'Save first, then change the customer'
 });
 window.EN_RULES.unshift([/^İş şu müşteriye taşındı: (.*)$/, 'Job moved to customer: $1']);
+
+/* Firma bilgileri, kalıp metre fiyatı, irsaliye */
+Object.assign(window.EN_DICT, {
+  'Firma Bilgileri': 'Company Info', 'Firma Adı': 'Company Name', 'Para Birimi': 'Currency',
+  'Örn: AB İstanbul Taş Baskı': 'e.g. AB Istanbul Rhinestone Print', 'Örn: EGP, TL, $': 'e.g. EGP, TL, $',
+  'İrsaliyede işi yapan firma olarak yazılır. Firma adı girilmeden irsaliye oluşturulamaz.': 'Printed on the delivery note as the company doing the work. A delivery note cannot be created without a company name.',
+  'Metre Fiyatı': 'Price / m', 'İrsaliye': 'Delivery Note', 'İrsaliye Oluştur': 'Create Delivery Note', 'İrsaliye Hazır': 'Delivery Note Ready',
+  'Aktife Al': 'Make Active', 'Teslim Edildi': 'Delivered', 'Fatura kestin mi? Tekrar dokun': 'Invoiced? Tap again',
+  'Önce irsaliye oluştur': 'Create the delivery note first',
+  'İrsaliyeden sonra iş değişti. İrsaliyeyi yeniden oluştur.': 'The job changed after the delivery note. Create it again.',
+  "Önce Ayarlar'dan firma adını yaz": 'First enter your company name in Settings',
+  'Atanmamış toplar var. Önce bir kalıba gönder.': 'There are unassigned rolls. Send them to a pattern first.',
+  'Kalıp seçilmemiş toplar var. Önce kalıp seç.': 'Some rolls have no pattern. Choose a pattern first.',
+  'İrsaliye için en az bir kalıp gerekli': 'At least one pattern is needed for a delivery note',
+  'Kilo topları var. Metreye çevirmek için gramaj gir.': 'There are kilo rolls. Enter the grammage to convert them to meters.',
+  'İrsaliye telefona kaydedildi': 'Delivery note saved to the phone', 'Önizlemede dosya kaydı kapalı': 'Saving files is off in preview',
+  'İRSALİYE': 'DELIVERY NOTE', 'MÜŞTERİ': 'CUSTOMER', 'İŞİ YAPAN': 'ISSUED BY', 'KALIP': 'PATTERN', 'METRE': 'METERS',
+  'BİRİM FİYAT': 'UNIT PRICE', 'TUTAR': 'AMOUNT', 'TOPLAM': 'TOTAL'
+});
+window.EN_RULES.unshift(
+  [/^(.+): metre girilmemiş$/, '$1: no meters entered'],
+  [/^(.+): metre fiyatı yazılmamış$/, '$1: price per meter missing'],
+  [/^İrsaliye oluşturulamadı: (.+)$/, 'Could not create delivery note: $1'],
+  [/^İrsaliye kaydedilemedi: (.+?)\. Paylaş ile gönderebilirsin\.$/, 'Could not save delivery note: $1. You can send it with Share.'],
+  [/^İrsaliye kaydedilemedi: (.+)$/, 'Could not save delivery note: $1'],
+  [/^Kaydedildi: (.+)$/, 'Saved: $1'],
+  [/^No (\d+) · (.+)$/, 'No $1 · $2'], [/^No: (\d+)$/, 'No: $1']
+);

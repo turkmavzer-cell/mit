@@ -272,3 +272,31 @@ Object.assign(window.AR_DICT, {
   'Önce kaydedin, sonra müşteriyi değiştirin': 'احفظ الأول وبعدين غيّر العميل'
 });
 window.AR_RULES.unshift([/^İş şu müşteriye taşındı: (.*)$/, 'الأوردر اتنقل للعميل: $1']);
+
+/* Firma bilgileri, kalıp metre fiyatı, irsaliye */
+Object.assign(window.AR_DICT, {
+  'Firma Bilgileri': 'بيانات الشركة', 'Firma Adı': 'اسم الشركة', 'Para Birimi': 'العملة',
+  'Örn: AB İstanbul Taş Baskı': 'مثال: AB إسطنبول طباعة استراس', 'Örn: EGP, TL, $': 'مثال: جنيه، ليرة، $',
+  'İrsaliyede işi yapan firma olarak yazılır. Firma adı girilmeden irsaliye oluşturulamaz.': 'بيتكتب في إذن التسليم كالشركة اللي عملت الشغل. مينفعش تعمل إذن تسليم من غير اسم الشركة.',
+  'Metre Fiyatı': 'سعر المتر', 'İrsaliye': 'إذن تسليم', 'İrsaliye Oluştur': 'اعمل إذن تسليم', 'İrsaliye Hazır': 'إذن التسليم جاهز',
+  'Aktife Al': 'رجّعه نشط', 'Teslim Edildi': 'اتسلّم', 'Fatura kestin mi? Tekrar dokun': 'عملت الفاتورة؟ دوس تاني',
+  'Önce irsaliye oluştur': 'اعمل إذن التسليم الأول',
+  'İrsaliyeden sonra iş değişti. İrsaliyeyi yeniden oluştur.': 'الأوردر اتغيّر بعد إذن التسليم. اعمله من جديد.',
+  "Önce Ayarlar'dan firma adını yaz": 'اكتب اسم شركتك الأول من الإعدادات',
+  'Atanmamış toplar var. Önce bir kalıba gönder.': 'فيه توبات مش متوزعة. ابعتها لقالب الأول.',
+  'Kalıp seçilmemiş toplar var. Önce kalıp seç.': 'فيه توبات من غير قالب. اختار قالب الأول.',
+  'İrsaliye için en az bir kalıp gerekli': 'لازم قالب واحد على الأقل لإذن التسليم',
+  'Kilo topları var. Metreye çevirmek için gramaj gir.': 'فيه توبات بالكيلو. اكتب الجرام عشان تتحوّل لمتر.',
+  'İrsaliye telefona kaydedildi': 'إذن التسليم اتحفظ على الموبايل', 'Önizlemede dosya kaydı kapalı': 'حفظ الملفات مقفول في المعاينة',
+  'İRSALİYE': 'إذن تسليم', 'MÜŞTERİ': 'العميل', 'İŞİ YAPAN': 'الشركة المنفذة', 'KALIP': 'القالب', 'METRE': 'المتر',
+  'BİRİM FİYAT': 'سعر الوحدة', 'TUTAR': 'المبلغ', 'TOPLAM': 'الإجمالي'
+});
+window.AR_RULES.unshift(
+  [/^(.+): metre girilmemiş$/, '$1: مفيش أمتار'],
+  [/^(.+): metre fiyatı yazılmamış$/, '$1: سعر المتر مش مكتوب'],
+  [/^İrsaliye oluşturulamadı: (.+)$/, 'معرفناش نعمل إذن التسليم: $1'],
+  [/^İrsaliye kaydedilemedi: (.+?)\. Paylaş ile gönderebilirsin\.$/, 'معرفناش نحفظ إذن التسليم: $1. تقدر تبعته بالمشاركة.'],
+  [/^İrsaliye kaydedilemedi: (.+)$/, 'معرفناش نحفظ إذن التسليم: $1'],
+  [/^Kaydedildi: (.+)$/, 'اتحفظ: $1'],
+  [/^No (\d+) · (.+)$/, 'رقم $1 · $2'], [/^No: (\d+)$/, 'رقم: $1']
+);

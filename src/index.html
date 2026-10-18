@@ -375,16 +375,17 @@ textarea.inp { padding: 12px; resize: none; line-height: 1.4; }
 .tab.on.t-ok { border-color: var(--st-done); background: rgba(var(--ok-rgb),.1); color: var(--st-done); box-shadow: inset 0 -2px 0 var(--st-done); }
 
 /* Kartlar (2.5D) */
-.cards { display: flex; flex-direction: column; gap: 10px; perspective: 1000px; }
+/* Perspektif listeye değil her karta verilir: liste uzayınca alttaki kartlar büyüyüp üst üste binmesin */
+.cards { display: flex; flex-direction: column; gap: 10px; }
 .card {
   position: relative; display: block; width: 100%; text-align: start; color: var(--tx);
   background: var(--raised); border: 1px solid var(--cy-a20); border-left: 3px solid var(--st-arch);
   border-radius: var(--r6); padding: 12px 12px 12px 14px; min-height: 64px;
-  transform: rotateX(4deg); transform-origin: 50% 100%; transition: transform 120ms ease-out;
+  transform: perspective(1000px) rotateX(4deg); transform-origin: 50% 100%; transition: transform 120ms ease-out;
   animation: cardIn 220ms ease-out both; animation-delay: calc(var(--i, 0) * 40ms);
 }
-.card:active { transform: rotateX(4deg) translateZ(-14px); }
-@keyframes cardIn { from { opacity: 0; transform: rotateX(4deg) translateY(12px); } to { opacity: 1; transform: rotateX(4deg); } }
+.card:active { transform: perspective(1000px) rotateX(4deg) translateZ(-14px); }
+@keyframes cardIn { from { opacity: 0; transform: perspective(1000px) rotateX(4deg) translateY(12px); } to { opacity: 1; transform: perspective(1000px) rotateX(4deg); } }
 .card.s-wait { border-left-color: var(--st-wait); }
 .card.s-print { border-left-color: var(--st-print); }
 .card.s-done { border-left-color: var(--st-done); }
@@ -512,6 +513,16 @@ textarea.inp { padding: 12px; resize: none; line-height: 1.4; }
 .grp-name span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .grp-tot { font-size: 14px; color: var(--cy); white-space: nowrap; }
 .grp-body { padding: 4px 10px 12px; display: flex; flex-direction: column; gap: 10px; }
+.grp-price { display: flex; align-items: center; gap: 8px; padding: 0 10px 10px; }
+.grp-price .lbl { flex-shrink: 0; }
+.grp-price .inp { flex: 1; min-width: 0; }
+.grp-price .amt { flex-shrink: 0; min-width: 72px; text-align: end; font-size: 14px; color: var(--am); white-space: nowrap; }
+.st-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.st-row .btn { padding: 0 8px; white-space: normal; line-height: 1.15; }
+.btn.locked { opacity: .55; }
+.btn.nudge { animation: iaPulse .35s ease-in-out 4 alternate; }
+.wb-img { display: block; width: 100%; height: auto; border-radius: var(--r6); border: 1px solid var(--cy-a20); }
+.wb-where { font-size: 13px; color: var(--tx2); margin: 8px 0 0; word-break: break-all; }
 .grand { border: 1px solid var(--cy); border-radius: var(--r6); background: var(--cy-a10); padding: 12px; }
 .grand b { font-family: var(--hud); font-weight: 600; font-size: 20px; color: var(--cy); }
 .grand p { margin: 4px 0 0; font-size: 13px; color: var(--tx2); }
@@ -624,8 +635,8 @@ textarea.inp { padding: 12px; resize: none; line-height: 1.4; }
      "localStorage doldu, kayıt sessizce başarısız oldu" sorununun çözümü budur.
    - Her yazma işleminin sonucu kontrol edilir; hata olursa kullanıcı görür.
    ===================================================================== */
-var APP_VERSION = '2.21.0';
-var SCHEMA_VERSION = 2; // 1 = eski localStorage sürümü (MİT 1.0), 2 = IndexedDB
+var APP_VERSION = '2.22.0';
+var SCHEMA_VERSION = 3; // 1 = eski localStorage sürümü (MİT 1.0), 2 = IndexedDB, 3 = kalıp metre fiyatı + irsaliye
 
 var IN_FRAME = (function () { try { return window.self !== window.top; } catch (e) { return true; } })();
 var REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -743,7 +754,7 @@ var Photos = {
 };
 
 /* ---------- Ayarlar ve meta ---------- */
-var Settings = { sound: true, vibrate: true, reminder: false, cat: true, autoBackup: true, theme: 'dark', asteroid: true, lang: 'tr', reassign: true };
+var Settings = { sound: true, vibrate: true, reminder: false, cat: true, autoBackup: true, theme: 'dark', asteroid: true, lang: 'tr', reassign: true, company: '', currency: '' };
 /* Tema: koyu (hologram gece) / açık (gün doğumu). Açılışta titreme olmasın diye
    seçim ayrıca localStorage'da tutulur (iş verisi değil, yalnızca görünüm tercihi). */
 var Theme = {
@@ -762,12 +773,12 @@ var Meta = {
 };
 
 /* ---------- Model ---------- */
-function emptyPatternGroup(name) { return { id: uid(), patternName: name || '', fabricRolls: [] }; }
+function emptyPatternGroup(name) { return { id: uid(), patternName: name || '', fabricRolls: [], pricePerMeter: null }; }
 function emptyJob() {
   return {
     id: uid(), createdAt: new Date().toISOString(), status: 'active', deliveredAt: null, printed: false,
     patternGroups: [emptyPatternGroup()], unassignedRolls: [], photos: [], notes: '',
-    fabricType: '', fabricColor: '', fabricGramsPerMeter: null
+    fabricType: '', fabricColor: '', fabricGramsPerMeter: null, waybill: null
   };
 }
 function emptyCustomer() {
@@ -792,7 +803,7 @@ function normalizeJob(j) {
     j.patternGroups = [{ id: uid(), patternName: j.name || '', fabricRolls: normRolls(j.fabricRolls) }];
   } else {
     j.patternGroups = j.patternGroups.map(function (g) {
-      return Object.assign({}, g, { id: g.id || uid(), patternName: g.patternName || '', fabricRolls: normRolls(g.fabricRolls) });
+      return Object.assign({}, g, { id: g.id || uid(), patternName: g.patternName || '', fabricRolls: normRolls(g.fabricRolls), pricePerMeter: normPrice(g.pricePerMeter) });
     });
   }
   if (!j.patternGroups.length) j.patternGroups = [emptyPatternGroup()];
@@ -802,7 +813,18 @@ function normalizeJob(j) {
   j.fabricType = j.fabricType || '';
   j.fabricColor = j.fabricColor || '';
   j.fabricGramsPerMeter = j.fabricGramsPerMeter ? Number(j.fabricGramsPerMeter) : null;
+  j.waybill = normWaybill(j.waybill);
   return j;
+}
+function normPrice(v) { var n = Number(v); return v !== null && v !== '' && isFinite(n) && n > 0 ? n : null; }
+// İrsaliye: oluşturulduğu andaki bilgilerin kopyası (sonradan değişen iş eski irsaliyeyi bozmaz)
+function normWaybill(w) {
+  if (!w || typeof w !== 'object' || !Array.isArray(w.lines)) return null;
+  return {
+    no: Number(w.no) || 0, at: w.at || new Date().toISOString(), company: String(w.company || ''), customer: String(w.customer || ''),
+    currency: String(w.currency || ''), sig: String(w.sig || ''), total: Number(w.total) || 0, meters: Number(w.meters) || 0,
+    lines: w.lines.map(function (l) { return { name: String(l.name || ''), meters: Number(l.meters) || 0, price: Number(l.price) || 0, amount: Number(l.amount) || 0 }; })
+  };
 }
 function normalizeCustomer(c) {
   c = Object.assign({}, c);
@@ -1044,6 +1066,7 @@ function runMigrations() {
         }
       });
     }
+    // v3: kalıp metre fiyatı (pricePerMeter) ve irsaliye (waybill) alanları; normalizeJob boş değerle tamamlar, mevcut veri değişmez
     return chain.then(function () { if (v !== SCHEMA_VERSION) return Meta.set('schemaVersion', SCHEMA_VERSION); });
   });
 }
@@ -2242,6 +2265,7 @@ var ICONS = {
   image: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/>',
   info: '<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>',
   check: '<path d="M20 6 9 17l-5-5"/>',
+  doc: '<path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4M9 12h6M9 16h6"/>',
   undo: '<path d="M3 12a9 9 0 1 0 9-9 9.7 9.7 0 0 0-6.7 2.7L3 8"/><path d="M3 3v5h5"/>',
   share: '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/>',
   down: '<path d="m6 9 6 6 6-6"/>',
@@ -2957,6 +2981,10 @@ var Screens = {
     };
     var th = Settings.theme === 'light' ? 'light' : 'dark';
     body.innerHTML = '<div class="stack">' +
+      '<div class="blk"><h3 class="hud">Firma Bilgileri</h3>' +
+      '<div class="field"><label class="lbl">Firma Adı</label><input class="inp' + (Settings.company ? '' : ' empty-f') + '" data-in="set-text" data-k="company" data-nt value="' + esc(Settings.company) + '" placeholder="Örn: AB İstanbul Taş Baskı" /></div>' +
+      '<div class="field" style="margin-top:8px"><label class="lbl">Para Birimi</label><input class="inp" data-in="set-text" data-k="currency" data-nt value="' + esc(Settings.currency) + '" placeholder="Örn: EGP, TL, $" /></div>' +
+      '<p class="hint">İrsaliyede işi yapan firma olarak yazılır. Firma adı girilmeden irsaliye oluşturulamaz.</p></div>' +
       '<div class="set-row" style="flex-wrap:wrap;padding-right:14px"><div class="grow"><b>Tema</b><span>Koyu: gece hologramı · Açık: gün doğumu</span></div>' +
       '<div class="theme-seg" style="width:100%;padding-bottom:4px"><button class="btn' + (th === 'dark' ? ' on' : '') + '" data-act="set-theme" data-t="dark">Koyu</button>' +
       '<button class="btn' + (th === 'light' ? ' on' : '') + '" data-act="set-theme" data-t="light">Açık</button></div></div>' +
@@ -3015,6 +3043,15 @@ Actions['job-info'] = function (el, e) {
   e.stopPropagation();
   var c = Data.find(el.getAttribute('data-c')), j = Data.findJob(el.getAttribute('data-c'), el.getAttribute('data-j'));
   if (c && j) Forms.info(c, j);
+};
+var setTextTimer = null;
+Inputs['set-text'] = function (el) {
+  var k = el.getAttribute('data-k');
+  if (k !== 'company' && k !== 'currency') return;
+  Settings[k] = el.value.slice(0, 80);
+  if (k === 'company') el.classList.toggle('empty-f', !el.value.trim());
+  clearTimeout(setTextTimer);
+  setTextTimer = setTimeout(function () { Meta.set('settings', Settings).catch(function () { UI.toast('Ayar kaydedilemedi', 'err'); }); }, 400);
 };
 Actions['set-theme'] = function (el) {
   Settings.theme = el.getAttribute('data-t') === 'light' ? 'light' : 'dark';
@@ -3445,6 +3482,8 @@ var QrShare = {
     var m = this.match(p), chain = Promise.resolve(), cust;
     if (m.job) {
       if (!update) return Promise.resolve('exists');
+      var oldPrice = {}; m.job.patternGroups.forEach(function (g) { if (g.pricePerMeter) oldPrice[low(g.patternName)] = g.pricePerMeter; });
+      p.j.patternGroups.forEach(function (g) { if (!g.pricePerMeter && oldPrice[low(g.patternName)]) g.pricePerMeter = oldPrice[low(g.patternName)]; });
       ['createdAt', 'status', 'deliveredAt', 'printed', 'fabricType', 'fabricColor', 'fabricGramsPerMeter', 'notes', 'patternGroups', 'unassignedRolls'].forEach(function (k) { m.job[k] = p.j[k]; });
       cust = m.owner;
     } else {
@@ -3716,7 +3755,11 @@ function jfPaint() {
   if (!JF.isNew) {
     var del = d.status === 'delivered';
     html += '<div class="stack" style="gap:8px">' + (Data.isUna(c) ? '<button class="btn block amb" data-act="jf-assign">' + icon('tag', 18) + ' Müşteriye ata</button>' : Settings.reassign ? '<button class="btn block" data-act="jf-assign">' + icon('tag', 18) + ' Müşteriyi değiştir</button>' : '') +
-      '<button class="btn block ' + (del ? 'ok' : 'amb') + '" data-act="jf-status">' + icon(del ? 'undo' : 'check', 18) + (del ? ' Teslim Edildi · Aktife Al' : ' Teslim Edildi Olarak İşaretle') + '</button>' +
+      (del ? (d.waybill ? '<div class="st-row"><button class="btn" data-act="jf-waybill">' + icon('doc', 18) + ' İrsaliye</button>' +
+          '<button class="btn ok" data-act="jf-status">' + icon('undo', 18) + ' Aktife Al</button></div>'
+        : '<button class="btn block ok" data-act="jf-status">' + icon('undo', 18) + ' Teslim Edildi · Aktife Al</button>')
+      : '<div class="st-row"><button class="btn ' + (waybillValid(d) ? 'ok' : 'pri') + '" data-act="jf-waybill">' + icon(waybillValid(d) ? 'check' : 'doc', 18) + (waybillValid(d) ? ' İrsaliye Hazır' : ' İrsaliye Oluştur') + '</button>' +
+        '<button class="btn amb' + (waybillValid(d) ? '' : ' locked') + '" data-act="jf-status">' + icon('check', 18) + ' Teslim Edildi</button></div>') +
       '<button class="btn block ' + (d.printed ? 'blue' : 'amb') + '" data-act="jf-printed">' + icon(d.printed ? 'check' : 'info', 18) + (d.printed ? ' Baskı Yapıldı' : ' Baskı Bekliyor') + '</button></div>';
   }
   html += '<div class="grid2"><div class="field"><label class="lbl">Kumaş Türü</label><input class="inp' + empty(d.fabricType) + '" data-in="jf-ftype" value="' + esc(d.fabricType) + '" placeholder="30/1 Süprem" /></div>' +
@@ -3756,6 +3799,9 @@ function jfPaintGroups() {
       '<span class="grp-tot" data-gtot="' + g.id + '"></span>' +
       (can ? '<button class="ibtn danger" data-act="jf-del-group" data-g="' + g.id + '" aria-label="Kalıbı kaldır">' + icon('x', 18) + '</button>' : '') +
       '<button class="ibtn" data-act="jf-toggle-group" data-g="' + g.id + '" aria-label="' + (open ? 'Daralt' : 'Genişlet') + '">' + icon(open ? 'up' : 'down', 20) + '</button></div>' +
+      '<div class="grp-price"><label class="lbl" for="pr-' + g.id + '">Metre Fiyatı</label>' +
+      '<input id="pr-' + g.id + '" class="inp' + (g.pricePerMeter ? '' : ' empty-f') + '" type="text" inputmode="decimal" enterkeyhint="done" data-in="jf-price" data-g="' + g.id + '" value="' + (g.pricePerMeter ? fmtNum(g.pricePerMeter) : '') + '" placeholder="0,00" />' +
+      '<span class="amt" data-gamt="' + g.id + '"></span></div>' +
       (open ? '<div class="grp-body">' + rollSkeleton(g.id) + '</div>' : '') + '</div>';
   }).join('');
   d.patternGroups.forEach(function (g) { if (JF.expanded === g.id) rollPaint(g.id); });
@@ -3775,10 +3821,13 @@ function jfTotals() {
     if (!el) return;
     var gt = calcRollTotals(g.fabricRolls, d.fabricGramsPerMeter);
     el.textContent = g.fabricRolls.length ? fmtNum(gt.grandTotalMeters) + ' mt' + (JF.expanded === g.id ? '' : ' (' + g.fabricRolls.length + ')') : '';
+    var am = root.querySelector('[data-gamt="' + g.id + '"]');
+    if (am) am.textContent = g.pricePerMeter && gt.grandTotalMeters > 0 ? fmtMoney(gt.grandTotalMeters * g.pricePerMeter) : '';
   });
   var ul = root.querySelector('[data-un-label]');
   if (ul) ul.textContent = 'Atanmamış Toplar' + (d.unassignedRolls.length ? ' (' + d.unassignedRolls.length + ' top)' : '');
   jfPaintSend();
+  jfStatusPaint();
 }
 function jfPaintSend() {
   var w = JF.root.querySelector('[data-send-wrap]');
@@ -3931,6 +3980,233 @@ var LongPress = {
   }
 };
 
+
+/* ===== İrsaliye =====
+   İmalattaki iş, irsaliye oluşturulmadan teslim edilemez. İrsaliye her kalıbın
+   metresini, metre fiyatını ve tutarını içerir; görsel olarak ekranda gösterilir
+   ve telefona (Belgeler/MIT-Holo/Irsaliyeler) kaydedilir. */
+function fmtMoney(n) {
+  var v = (Math.round((n || 0) * 100) / 100).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return Settings.currency ? v + ' ' + Settings.currency : v;
+}
+function wbMoney(n, cur) {
+  var v = (Math.round((n || 0) * 100) / 100).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return cur ? v + ' ' + cur : v;
+}
+// İrsaliyeye girecek satırlar + eksik bilgi kontrolü
+function waybillCalc(job) {
+  var lines = [], noPrice = [], noMeter = [], unnamed = false, kgNoGram = false;
+  job.patternGroups.forEach(function (g) {
+    var name = (g.patternName || '').trim();
+    if (!name && !g.fabricRolls.length) return; // boş kalıp satırı
+    if (!name) { unnamed = true; return; }
+    var t = calcRollTotals(g.fabricRolls, job.fabricGramsPerMeter);
+    if (t.kgRolls.length && !(job.fabricGramsPerMeter > 0)) kgNoGram = true;
+    var m = Math.round(t.grandTotalMeters * 100) / 100;
+    if (!(m > 0)) noMeter.push(name);
+    if (!g.pricePerMeter) noPrice.push({ id: g.id, name: name });
+    var price = g.pricePerMeter || 0;
+    lines.push({ gid: g.id, name: name, meters: m, price: price, amount: Math.round(m * price * 100) / 100 });
+  });
+  var err = null, focus = null;
+  if (job.unassignedRolls.length) err = 'Atanmamış toplar var. Önce bir kalıba gönder.';
+  else if (unnamed) err = 'Kalıp seçilmemiş toplar var. Önce kalıp seç.';
+  else if (!lines.length) err = 'İrsaliye için en az bir kalıp gerekli';
+  else if (kgNoGram) err = 'Kilo topları var. Metreye çevirmek için gramaj gir.';
+  else if (noMeter.length) err = noMeter.join(', ') + ': metre girilmemiş';
+  else if (noPrice.length) { err = noPrice.map(function (x) { return x.name; }).join(', ') + ': metre fiyatı yazılmamış'; focus = noPrice[0].id; }
+  var total = 0, meters = 0;
+  lines.forEach(function (l) { total += l.amount; meters += l.meters; });
+  return { lines: lines, total: Math.round(total * 100) / 100, meters: Math.round(meters * 100) / 100, err: err, focus: focus, noPrice: noPrice };
+}
+function waybillSig(job, calc) {
+  return JSON.stringify([calc.lines.map(function (l) { return [l.name, l.meters, l.price]; }), job.fabricGramsPerMeter || 0]);
+}
+// İrsaliye var ve iş o günden beri değişmediyse geçerli
+function waybillValid(job) {
+  if (!job.waybill) return false;
+  var c = waybillCalc(job);
+  return !c.err && job.waybill.sig === waybillSig(job, c);
+}
+Inputs['jf-price'] = function (el) {
+  var g = jfGroup(el.getAttribute('data-g'));
+  if (!g) return;
+  g.pricePerMeter = normPrice(String(el.value).replace(/\s/g, '').replace(',', '.'));
+  el.classList.toggle('empty-f', !g.pricePerMeter);
+  jfDirty(); jfTotals();
+};
+// Teslim düğmesinin kilit görünümü, giriş kutularına dokunmadan güncellenir
+function jfStatusPaint() {
+  if (!JF || JF.draft.status !== 'active') return;
+  var ok = waybillValid(JF.draft), st = JF.root.querySelector('[data-act="jf-status"]'), wb = JF.root.querySelector('[data-act="jf-waybill"]');
+  if (st && !st.classList.contains('invoice-ask')) st.classList.toggle('locked', !ok);
+  if (wb) { wb.className = 'btn ' + (ok ? 'ok' : 'pri'); wb.innerHTML = icon(ok ? 'check' : 'doc', 18) + (ok ? ' İrsaliye Hazır' : ' İrsaliye Oluştur'); }
+}
+Actions['jf-waybill'] = function (el) {
+  var d = JF.draft, c = jfCustomer();
+  if (!c) return;
+  // Teslim edilmiş işte ya da geçerli irsaliye varken: kayıtlı irsaliye gösterilir
+  if (d.waybill && (d.status === 'delivered' || waybillValid(d))) return Forms.waybill(d.waybill, false);
+  if (!String(Settings.company || '').trim()) { UI.toast('Önce Ayarlar\'dan firma adını yaz', 'err'); return; }
+  var calc = waybillCalc(d);
+  if (calc.err) {
+    UI.toast(calc.err, 'err');
+    calc.noPrice.forEach(function (x) { var i = JF.root.querySelector('[data-in="jf-price"][data-g="' + x.id + '"]'); if (i) i.classList.add('empty-f'); });
+    if (calc.focus) {
+      var inp = JF.root.querySelector('[data-in="jf-price"][data-g="' + calc.focus + '"]');
+      if (inp) { if (inp.scrollIntoView) inp.scrollIntoView({ block: 'center' }); inp.focus(); }
+    }
+    return;
+  }
+  el.disabled = true;
+  var jf = JF;
+  var noP = d.waybill && d.waybill.no ? Promise.resolve(d.waybill.no) : Meta.get('waybillSeq').then(function (n) {
+    var next = (Number(n) || 0) + 1;
+    return Meta.set('waybillSeq', next).then(function () { return next; });
+  });
+  return noP.then(function (no) {
+    d.waybill = normWaybill({
+      no: no, at: new Date().toISOString(), company: String(Settings.company).trim(), customer: Data.isUna(c) ? '' : c.name,
+      currency: Settings.currency || '', total: calc.total, meters: calc.meters, sig: waybillSig(d, calc), lines: calc.lines
+    });
+    // İrsaliye işle birlikte hemen kaydedilir (form açık kalır)
+    var nc = clone(c), found = false;
+    nc.jobs = nc.jobs.map(function (j) { if (j.id === d.id) { found = true; return clone(d); } return j; });
+    if (!found) nc.jobs.push(clone(d));
+    return Data.saveCustomer(nc);
+  }).then(function () {
+    if (JF === jf) { jf.dirty = false; jfPaint(); }
+    Screens.refresh();
+    fb('ok');
+    return Forms.waybill(d.waybill, true);
+  }).catch(function (e) {
+    console.error(e);
+    UI.toast('İrsaliye oluşturulamadı: ' + (e && e.message ? e.message : 'hata'), 'err');
+  }).then(function () { if (el.isConnected) el.disabled = false; });
+};
+
+// İrsaliye görseli (canvas, dış kütüphane yok). Beyaz kâğıt görünümü: yazdırma ve WhatsApp için okunaklı.
+function waybillCanvas(w) {
+  var W = 900, pad = 44, C = { ink: '#05080F', sub: '#3A4A5C', acc: '#0E7490', line: '#C9D6E2', band: '#EAF6FA' };
+  var cv = document.createElement('canvas'), g = cv.getContext('2d');
+  var F = function (sz, b) { return (b ? '600 ' : '') + sz + 'px "Exo 2", Cairo, Arial, sans-serif'; };
+  var S = function (sz, b) { return (b ? '600 ' : '') + sz + 'px Cairo, Roboto, Arial, sans-serif'; };
+  // Sütunlar: Kalıp | Metre | Birim Fiyat | Tutar
+  var cx = [pad + 12, 470, 650, W - pad - 12], nameW = 470 - 24 - (pad + 12);
+  g.font = S(22);
+  var rows = w.lines.map(function (l) { var parts = wrapText(g, l.name, nameW); return { l: l, parts: parts, h: Math.max(56, parts.length * 30 + 22) }; });
+  var H = pad + 70 + 24 + 92 + 88 + 30 + 52 + rows.reduce(function (s, r) { return s + r.h; }, 0) + 78 + 60 + pad;
+  cv.width = W; cv.height = Math.ceil(H);
+  g = cv.getContext('2d');
+  g.fillStyle = '#FFFFFF'; g.fillRect(0, 0, W, cv.height);
+  g.fillStyle = C.acc; g.fillRect(0, 0, W, 10);
+  var y = pad + 40;
+  g.textBaseline = 'alphabetic';
+  g.fillStyle = C.ink; g.font = F(40, true); g.textAlign = 'left'; g.fillText('İRSALİYE', pad, y);
+  g.textAlign = 'right'; g.font = F(20, true); g.fillStyle = C.acc; g.fillText('No: ' + String(w.no).padStart(4, '0'), W - pad, y - 16);
+  g.font = S(18); g.fillStyle = C.sub; g.fillText(new Date(w.at).toLocaleDateString('tr-TR'), W - pad, y + 10);
+  y += 30;
+  g.strokeStyle = C.line; g.lineWidth = 2; g.beginPath(); g.moveTo(pad, y); g.lineTo(W - pad, y); g.stroke();
+  y += 24;
+  // Müşteri (üstte), işi yapan firma (altında)
+  g.textAlign = 'left'; g.font = F(15, true); g.fillStyle = C.sub; g.fillText('MÜŞTERİ', pad, y + 18);
+  g.font = S(30, true); g.fillStyle = C.ink; g.fillText(w.customer || '—', pad, y + 58);
+  y += 92;
+  g.font = F(15, true); g.fillStyle = C.sub; g.fillText('İŞİ YAPAN', pad, y + 18);
+  g.font = S(24, true); g.fillStyle = C.acc; g.fillText(w.company, pad, y + 54);
+  y += 88;
+  y += 30;
+  // Tablo başlığı
+  g.fillStyle = C.band; g.fillRect(pad, y, W - pad * 2, 52);
+  g.font = F(15, true); g.fillStyle = C.acc;
+  g.textAlign = 'left'; g.fillText('KALIP', cx[0], y + 33);
+  g.textAlign = 'right'; g.fillText('METRE', cx[1], y + 33); g.fillText('BİRİM FİYAT', cx[2], y + 33); g.fillText('TUTAR', cx[3], y + 33);
+  y += 52;
+  rows.forEach(function (r) {
+    g.font = S(22); g.fillStyle = C.ink; g.textAlign = 'left';
+    r.parts.forEach(function (p, i) { g.fillText(p, cx[0], y + 36 + i * 30); });
+    g.textAlign = 'right';
+    g.fillText(fmtNum(r.l.meters) + ' mt', cx[1], y + 36);
+    g.fillText(wbMoney(r.l.price, ''), cx[2], y + 36);
+    g.font = S(22, true); g.fillText(wbMoney(r.l.amount, ''), cx[3], y + 36);
+    y += r.h;
+    g.strokeStyle = C.line; g.lineWidth = 1; g.beginPath(); g.moveTo(pad, y); g.lineTo(W - pad, y); g.stroke();
+  });
+  // Toplam
+  y += 10;
+  g.fillStyle = C.ink; g.fillRect(pad, y, W - pad * 2, 68);
+  g.fillStyle = '#FFFFFF'; g.textAlign = 'left'; g.font = F(20, true); g.fillText('TOPLAM', cx[0], y + 43);
+  g.textAlign = 'right'; g.font = S(20, true); g.fillText(fmtNum(w.meters) + ' mt', cx[1], y + 43);
+  g.font = S(26, true); g.fillText(wbMoney(w.total, w.currency), cx[3], y + 44);
+  y += 68 + 40;
+  g.textAlign = 'left'; g.font = S(15); g.fillStyle = C.sub; g.fillText(w.lines.length + ' kalıp', pad, y);
+  return cv;
+}
+function waybillFileName(w) {
+  var safe = String(w.customer || 'musteri').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/ı/g, 'i').replace(/İ/g, 'I')
+    .replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 30) || 'musteri';
+  return 'irsaliye-' + String(w.no).padStart(4, '0') + '-' + safe + '.png';
+}
+// Telefona kaydet: APK'da Belgeler/MIT-Holo/Irsaliyeler, tarayıcıda indirme
+function waybillSave(blob, name) {
+  if (isNative() && plugin('Filesystem')) {
+    var path = 'MIT-Holo/Irsaliyeler/' + name, fs = plugin('Filesystem');
+    return blobToBase64(blob).then(function (b64) {
+      var w = function (dir) { return fs.writeFile({ path: path, data: b64, directory: dir, recursive: true }); };
+      return w('DOCUMENTS').then(function () { return 'Belgeler/' + path; }, function () {
+        return w('EXTERNAL').then(function () { return 'Android/data/com.turkmavzercell.mitholo/files/' + path; });
+      });
+    });
+  }
+  if (IN_FRAME) return Promise.resolve(null);
+  var url = URL.createObjectURL(blob), a = document.createElement('a');
+  a.href = url; a.download = name; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
+  return Promise.resolve('İndirilenler/' + name);
+}
+function canvasBlob(cv) {
+  return new Promise(function (resolve, reject) { cv.toBlob(function (b) { if (b) resolve(b); else reject(new Error('Görsel oluşturulamadı')); }, 'image/png'); });
+}
+// İrsaliyeyi ekranda göster; autoSave ise telefona da kaydet
+Forms.waybill = function (w, autoSave) {
+  var cv = waybillCanvas(w), name = waybillFileName(w);
+  var html = '<div class="sh-head"><div class="sh-title hud">İrsaliye<small>No ' + String(w.no).padStart(4, '0') + ' · ' + fmtDate(w.at) + '</small></div>' +
+    '<button class="ibtn" data-act="back" aria-label="Kapat">' + icon('x') + '</button></div>' +
+    '<div class="sh-body"><img class="wb-img" alt="İrsaliye" data-wb-img /><p class="wb-where" data-wb-where></p></div>' +
+    '<div class="sh-foot"><button class="btn" data-act="back">Kapat</button>' +
+    '<button class="btn" data-act="wb-save">' + icon('download', 18) + ' Kaydet</button>' +
+    '<button class="btn pri wide" data-act="wb-share">' + icon('share', 18) + ' Paylaş</button></div>';
+  var ov = UI.openSheet({ html: html });
+  ov.__wb = { w: w, name: name };
+  ov.querySelector('[data-wb-img]').src = cv.toDataURL('image/png');
+  if (!autoSave) return Promise.resolve();
+  return canvasBlob(cv).then(function (b) { return waybillSave(b, name); }).then(function (where) {
+    var p = ov.querySelector('[data-wb-where]');
+    if (where) { if (p) p.textContent = 'Kaydedildi: ' + where; UI.toast('İrsaliye telefona kaydedildi'); }
+    else if (p) p.textContent = 'Önizlemede dosya kaydı kapalı';
+  }, function (e) {
+    console.error(e);
+    UI.toast('İrsaliye kaydedilemedi: ' + (e && e.message ? e.message : 'hata') + '. Paylaş ile gönderebilirsin.', 'err');
+  });
+};
+function wbCtx() { var t = UI.top(); return t && t.el.__wb ? t.el.__wb : null; }
+Actions['wb-share'] = function (el) {
+  var x = wbCtx(); if (!x) return;
+  el.disabled = true;
+  return canvasBlob(waybillCanvas(x.w)).then(function (b) { return shareOrDownload(b, x.name, 'İrsaliye'); }).then(function (r) {
+    if (r === 'blocked') UI.toast('Önizlemede dosya indirme kapalı', 'info');
+  }, function (e) { UI.toast('Paylaşılamadı: ' + (e && e.message ? e.message : 'hata'), 'err'); }).then(function () { el.disabled = false; });
+};
+Actions['wb-save'] = function (el) {
+  var x = wbCtx(); if (!x) return;
+  el.disabled = true;
+  return canvasBlob(waybillCanvas(x.w)).then(function (b) { return waybillSave(b, x.name); }).then(function (where) {
+    var p = UI.top() && UI.top().el.querySelector('[data-wb-where]');
+    if (where) { UI.toast('İrsaliye telefona kaydedildi'); if (p) p.textContent = 'Kaydedildi: ' + where; fb('ok'); }
+    else UI.toast('Önizlemede dosya kaydı kapalı', 'info');
+  }, function (e) { UI.toast('İrsaliye kaydedilemedi: ' + (e && e.message ? e.message : 'hata'), 'err'); }).then(function () { el.disabled = false; });
+};
+
 /* İş formu alanları */
 Inputs['jf-ftype'] = function (el) { JF.draft.fabricType = el.value; el.classList.toggle('empty-f', !el.value); jfDirty(); };
 Inputs['jf-fcolor'] = function (el) { JF.draft.fabricColor = el.value; el.classList.toggle('empty-f', !el.value); jfDirty(); };
@@ -3947,11 +4223,19 @@ Inputs['jf-grams'] = function (el) {
 };
 Actions['jf-status'] = function (el) {
   var d = JF.draft;
+  // İrsaliye oluşturulmadan (ya da irsaliyeden sonra iş değiştiyse) teslim edilemez
+  if (d.status === 'active' && !waybillValid(d)) {
+    UI.toast(d.waybill ? 'İrsaliyeden sonra iş değişti. İrsaliyeyi yeniden oluştur.' : 'Önce irsaliye oluştur', 'info');
+    haptic(30);
+    var wb = JF.root.querySelector('[data-act="jf-waybill"]');
+    if (wb) { wb.classList.remove('nudge'); void wb.offsetWidth; wb.classList.add('nudge'); }
+    return;
+  }
   // Teslimden önce fatura hatırlatması: ilk dokunuş uyarır, 4 sn içinde ikinci dokunuş teslim eder
   if (d.status === 'active' && !(JF.invoiceAsk && Date.now() - JF.invoiceAsk < 4000)) {
     JF.invoiceAsk = Date.now();
     el.classList.add('invoice-ask');
-    el.innerHTML = icon('alert', 18) + ' Fatura kestin mi? Teslim için tekrar dokun';
+    el.innerHTML = icon('alert', 18) + ' Fatura kestin mi? Tekrar dokun';
     UI.toast('Önce fatura kesmeyi unutma', 'info');
     haptic(30);
     var jf = JF;
@@ -3959,7 +4243,7 @@ Actions['jf-status'] = function (el) {
       if (JF !== jf || !el.isConnected || jf.draft.status !== 'active' || Date.now() - jf.invoiceAsk < 3900) return;
       jf.invoiceAsk = 0;
       el.classList.remove('invoice-ask');
-      el.innerHTML = icon('check', 18) + ' Teslim Edildi Olarak İşaretle';
+      el.innerHTML = icon('check', 18) + ' Teslim Edildi';
     }, 4000);
     return;
   }
