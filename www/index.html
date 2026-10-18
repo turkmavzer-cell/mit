@@ -13638,7 +13638,7 @@ window.EN_RULES.unshift(
      "localStorage doldu, kayıt sessizce başarısız oldu" sorununun çözümü budur.
    - Her yazma işleminin sonucu kontrol edilir; hata olursa kullanıcı görür.
    ===================================================================== */
-var APP_VERSION = '2.22.1';
+var APP_VERSION = '2.22.2';
 var SCHEMA_VERSION = 3; // 1 = eski localStorage sürümü (MİT 1.0), 2 = IndexedDB, 3 = kalıp metre fiyatı + irsaliye
 
 var IN_FRAME = (function () { try { return window.self !== window.top; } catch (e) { return true; } })();
@@ -16997,8 +16997,8 @@ function wbMoney(n, cur) {
   var v = (Math.round((n || 0) * 100) / 100).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   return cur ? v + ' ' + cur : v;
 }
-// İrsaliye metresi: metre topları olduğu gibi; kilodan çevrilen metrenin küsuratı atılır (50,98 → 50)
-function billMeters(t) { return Math.round((t.totalMeters + Math.floor(t.kgEquivalentMeters + 1e-9)) * 100) / 100; }
+// İrsaliye metresi: kalıbın toplam metresinin küsuratı atılır, yuvarlanmaz (50,98 → 50; 100,5 → 100)
+function billMeters(t) { return Math.floor(t.grandTotalMeters + 1e-9); }
 // İrsaliyeye girecek satırlar + eksik bilgi kontrolü
 function waybillCalc(job) {
   var lines = [], noPrice = [], noMeter = [], unnamed = false, kgNoGram = false;

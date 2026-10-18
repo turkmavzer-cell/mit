@@ -3,6 +3,10 @@
 Her sürüm: **Eklendi** · **Değişti** · **Düzeltildi** · **Kaldırıldı**. En yeni sürüm en üstte.
 Geliştirme dalı: `ccr-ae266e58-ytuhvz` (APK bu daldan derlenir). `main` eski 1.x sürümünde kaldı.
 
+## 2.22.2 — 2026-10-18
+- **Değişti:** İrsaliyede her kalıbın metresi tam sayıdır: metre ya da kilo fark etmeksizin kalıp toplamının küsuratı atılır (100,5 → 100; 50,98 → 50). Tutar bu metreyle hesaplanır.
+- **Not:** Küsuratlı metresi olan, irsaliyesi oluşturulmuş ama teslim edilmemiş işlerde irsaliye yeniden oluşturulmalıdır.
+
 ## 2.22.1 — 2026-10-18
 - **Değişti:** İrsaliyede ve kalıp tutarında, kilodan metreye çevrilen miktarın küsuratı atılır (50,98 mt → 50 mt; yuvarlama yok). Metre olarak girilen toplar olduğu gibi kalır.
 - **Not:** Kilo topu olan işlerde daha önce oluşturulmuş irsaliye (henüz teslim edilmemişse) yeniden oluşturulmalıdır.

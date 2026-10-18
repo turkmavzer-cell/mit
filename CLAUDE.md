@@ -32,7 +32,7 @@
 - Teslim öncesi fatura hatırlatması (iki dokunuş) kalır.
 - **İrsaliye (2.22.0):** İmalattaki iş irsaliye oluşturulmadan teslim edilemez (`waybillValid`). İrsaliye için Ayarlar'da firma adı, her kalıpta metre ve metre fiyatı zorunlu; atanmamış top olmamalı. İrsaliyeden sonra metre/fiyat değişirse yeniden oluşturulur (numara aynı kalır). İş formunda solda "İrsaliye Oluştur", sağda "Teslim Edildi" yan yana.
 - İrsaliye görseli: üstte müşteri, altında işi yapan firma, kalıp · metre · birim fiyat · tutar, toplam. Beyaz kâğıt görünümü. Ekranda gösterilir, `Belgeler/MIT-Holo/Irsaliyeler/` klasörüne PNG kaydedilir. Kullanıcı ileride içeriğini değiştirecek.
-- İrsaliye metresi (`billMeters`): kilodan çevrilen metrenin küsuratı **atılır** (yuvarlanmaz, 50,98 → 50); metre olarak girilen toplar aynen kalır. Tutar bu metre üzerinden hesaplanır (2.22.1).
+- İrsaliye metresi (`billMeters`): her kalıbın toplam metresinin küsuratı **atılır**, yuvarlanmaz (metre veya kilo fark etmez; 100,5 → 100, 50,98 → 50). Tutar bu metre üzerinden hesaplanır (2.22.2). Liste ve rapor metreleri küsuratlı kalır.
 - Kalıp metre fiyatı işe özeldir (`patternGroups[].pricePerMeter`), kalıp kütüphanesinde tutulmaz.
 - İş kartı listesinde perspektif kartın kendisindedir (`perspective(1000px) rotateX(4deg)`); `.cards` kabına perspektif verme, yoksa uzun listede kartlar büyüyüp üst üste biner.
 - Klavye açıkken küre yeniden boyutlanmaz; `backdrop-filter` kullanılmaz (titreme).
