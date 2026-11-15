@@ -27,14 +27,16 @@ MİT Holo'da:
 | Yedekleme | Otomatik yedek durumu, yedeği paylaş (fotoğraflar dahil), yedekten geri yükle (yalnızca eksikleri ekler) |
 | Ayarlar | Firma bilgileri (firma adı, para birimi), tema (koyu / açık gün doğumu), ses, titreşim, otomatik yedek, asteroit olayı, günlük yedek hatırlatıcısı, uzay kedisi, hakkında |
 
-İş formu: durum (imalatta/teslim), baskı durumu, kumaş türü/rengi/gramajı, atanmamış toplar,
-kalıp grupları (metre/kilo topları, uzun basınca düzenleme), kalıba top gönderme,
+İş formu: durum (imalatta/teslim), baskı durumu, kumaş türü/rengi, kalıp grupları
+(her kalıbın altında metre fiyatı ve 1 mt gramı alanı; metre/kilo topları, uzun basınca düzenleme),
 notlar, 25 fotoğrafa kadar, iş özeti görseli paylaşma.
 
-**İrsaliye:** Ayarlar'da firma adı (ve isteğe bağlı para birimi) girilir. İş formunda her kalıbın altında
-**Metre Fiyatı** kutusu vardır. İmalattaki iş **İrsaliye Oluştur** yapılmadan **Teslim Edildi** olamaz;
-irsaliyeden sonra metre/fiyat değişirse irsaliye yeniden oluşturulmalıdır. İrsaliye (müşteri, işi yapan firma,
-kalıp · metre · birim fiyat · tutar, toplam) ekranda gösterilir ve `Belgeler/MIT-Holo/Irsaliyeler/` klasörüne PNG olarak kaydedilir.
+**İrsaliye ve Ödeme Takibi:** Ayarlar'da firma adı (ve isteğe bağlı para birimi) girilir. İş formunda her kalıbın altında
+**Metre Fiyatı** ve **1 mt Gramı (gr)** kutuları vardır. İmalattaki iş **İrsaliye Oluştur** yapılmadan **Teslim Edildi** olamaz;
+ödenmemiş irsaliyelerde işte yapılan metre/fiyat/gramaj değişiklikleri irsaliyeye otomatik yansır. En az bir irsaliye varsa
+ana ekranda sağ üstte bağımsız tek **İRSALİYELER** gezegeni görünür ve ödenmemiş adedini gösterir; menü içinde
+**Ödenmeyenler / Ödenenler** sekmeleri ve **Ara** düğmesi (müşteri, tutar, tarih, kalıp, irsaliye no) yer alır. İrsaliye PNG
+görseli ekranda gösterilir ve `Belgeler/MIT-Holo/Irsaliyeler/` klasörüne kaydedilir.
 
 ## Eski uygulamadan veri aktarma
 1. Eski MİT → Ayarlar → Veri Yedekleme → **Yedekle**, dosyayı telefona kaydet.

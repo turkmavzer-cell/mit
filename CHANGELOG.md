@@ -3,6 +3,24 @@
 Her sürüm: **Eklendi** · **Değişti** · **Düzeltildi** · **Kaldırıldı**. En yeni sürüm en üstte.
 Geliştirme dalı: `ccr-ae266e58-ytuhvz` (APK bu daldan derlenir). `main` eski 1.x sürümünde kaldı.
 
+## 2.25.0 — 2026-11-14
+- **Eklendi:** İrsaliyeler ekranına **Ara** düğmesi ve arama çubuğu; müşteri adı, toplam tutar, tarih, irsaliye numarası ve kalıp ismine göre (Türkçe karakter duyarsız ve çoklu kelime destekli) anlık irsaliye arama ve ödenmeyen/ödenen sekmeleri arasında filtreleme.
+
+## 2.24.1 — 2026-11-14
+- **Değişti:** Ana ekranda sadeleştirme — ikinci (sol üst) ödenenler butonu kaldırıldı; yalnızca tek **İrsaliyeler** gezegeni (`#waybill-planet`) kalır ve üzerinde sadece **ödenmemiş irsaliye sayısı** gösterilir.
+- **Değişti:** Aynı İrsaliyeler menüsü içinde **Ödenmeyenler** ve **Ödenenler** sekmeleri birleştirildi; üst bilgi ve sekmelerde yalnızca ödenmemiş irsaliye adedi gösterilir, ödenenler sayısı gösterilmez.
+
+## 2.24.0 — 2026-11-14
+- **Eklendi:** Ödeme alınan faturalar silinmeden **Ödenenler** sekmesine atanır ve tüm faturalar ödense bile ana ekrandaki irsaliye butonu `0` durumunda sakin tonda görünmeye devam eder.
+
+## 2.23.0 — 2026-11-12
+- **Eklendi:** Ana arayüzde gezegenin dışında bağımsız **İrsaliye Gezegeni** (`#waybill-planet`). Ana kürenin dönüşüne bağlı olmadan harici yörüngede parlar ve ödenmemiş (tahsil edilmemiş) irsaliye sayısını gösterir.
+- **Eklendi:** **İrsaliye ve Fatura Takibi Menüsü** (`Screens.waybills`). Ödenmemiş faturaları, toplam metrajı ve toplam tutarı listeler; "İrsaliyeyi Gör" ile belgeyi açma/paylaşma ve "Ödendi" butonu ile faturayı ödenmiş yapıp listeden kaldırma desteği sunar.
+- **Eklendi:** **Otomatik Fatura Senkronizasyonu**. İşler sekmesinde bir işte fiyat, metre veya kumaş gramajı düzenlendiğinde, eğer aynı işin faturası ödenmeyenler listesindeyse irsaliye otomatik olarak yeni fiyat ve metrelerle güncellenir.
+- **Eklendi:** Her kalıp içinde bağımsız **1 metre kumaşın gramajı (1 mt Gramı)** giriş kutusu eklendi. Metre fiyatının yanına yerleştirildi; kilo girilen toplar kalıbın kendi gramajına göre anında metreye çevrilir.
+- **Kaldırıldı:** İş detayındaki genel gramaj alanı ve "Atanmamış Toplar" çekmecesi kaldırıldı.
+- **Değişti:** Kurulum sırasında telefon uygulamasının adı "mit" olarak güncellendi (`capacitor.config.json` appName: "mit").
+
 ## 2.22.2 — 2026-10-18
 - **Değişti:** İrsaliyede her kalıbın metresi tam sayıdır: metre ya da kilo fark etmeksizin kalıp toplamının küsuratı atılır (100,5 → 100; 50,98 → 50). Tutar bu metreyle hesaplanır.
 - **Not:** Küsuratlı metresi olan, irsaliyesi oluşturulmuş ama teslim edilmemiş işlerde irsaliye yeniden oluşturulmalıdır.

@@ -31,6 +31,8 @@
 - Hiçbir işlem tüm veriyi silemez; içe aktarma ve QR yalnızca ekler/günceller.
 - Teslim öncesi fatura hatırlatması (iki dokunuş) kalır.
 - **İrsaliye (2.22.0):** İmalattaki iş irsaliye oluşturulmadan teslim edilemez (`waybillValid`). İrsaliye için Ayarlar'da firma adı, her kalıpta metre ve metre fiyatı zorunlu; atanmamış top olmamalı. İrsaliyeden sonra metre/fiyat değişirse yeniden oluşturulur (numara aynı kalır). İş formunda solda "İrsaliye Oluştur", sağda "Teslim Edildi" yan yana.
+- **Bağımsız Tek İrsaliye Gezegeni & Ödenen/Ödenmeyen Sekmeleri (2.23.0 – 2.25.0):** En az bir irsaliye varsa ana küre dönüşüne bağlı olmayan tek bir **İRSALİYELER** gezegeni (`#waybill-planet`, sağ üst) belirir; üzerinde yalnızca **ödenmemiş irsaliye adedi** yazar (`0` olduğunda bile kaybolmaz, sakin tona geçer). Aynı menü içinde **Ödenmeyenler** ve **Ödenenler** sekmeleri bulunur (ödenenlerin sayısı buton veya sekme sayaçlarında gösterilmez). Üst çubuktaki **Ara** düğmesiyle müşteri adı, toplam tutar, tarih, irsaliye no ve kalıp ismine göre irsaliye aranabilir. "Ödeme Alındı" dendiğinde irsaliye silinmez, **Ödenenler** sekmesine atanır. Ödenmeyen irsaliyelerde iş düzenlendiğinde tutar/metre otomatik güncellenir; ödenmiş olanların tutarı korunur.
+- **Kalıp Gramajı & Atanmamış Toplar (2.23.0):** İş detayındaki genel gramaj alanı ile Atanmamış Toplar çekmecesi kaldırıldı; her kalıp kendi içinde metre fiyatının yanında `1 mt Gramı (gr)` alanına sahiptir. Uygulama kurulum adı `"mit"`.
 - İrsaliye görseli: üstte müşteri, altında işi yapan firma, kalıp · metre · birim fiyat · tutar, toplam. Beyaz kâğıt görünümü. Ekranda gösterilir, `Belgeler/MIT-Holo/Irsaliyeler/` klasörüne PNG kaydedilir. Kullanıcı ileride içeriğini değiştirecek.
 - İrsaliye metresi (`billMeters`): her kalıbın toplam metresinin küsuratı **atılır**, yuvarlanmaz (metre veya kilo fark etmez; 100,5 → 100, 50,98 → 50). Tutar bu metre üzerinden hesaplanır (2.22.2). Liste ve rapor metreleri küsuratlı kalır.
 - Kalıp metre fiyatı işe özeldir (`patternGroups[].pricePerMeter`), kalıp kütüphanesinde tutulmaz.
@@ -38,6 +40,7 @@
 - Klavye açıkken küre yeniden boyutlanmaz; `backdrop-filter` kullanılmaz (titreme).
 
 ## Kaldırılanlar (kullanıcı istemedikçe geri ekleme)
+- İş detayındaki genel 1 mt gramajı alanı ve Atanmamış Toplar çekmecesi (2.23.0).
 - Dil balonlarının üstündeki animasyonlu kedi (2.17.0). Uzay kedisi ve mini oyunlar duruyor.
 - Menü çekip bırakma animasyonundaki alt bildirim yazıları (2.12.2).
 - Ayrı "Aktif İşler", "Teslim Edilen", "Yeni Müşteri", "Hakkında" düğümleri (2.1.0).

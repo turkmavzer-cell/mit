@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
 <meta name="theme-color" content="#05080F" />
-<title>MİT Holo</title>
+<title>mit</title>
 <!--
   MİT Holo — Müşteri & İmalat İş Takip Asistanı (hologram küre arayüzü)
   KAYNAK DOSYA: src/index.html. www/index.html, tools/build.mjs ile üretilir
@@ -171,7 +171,9 @@ body.panel-open #shock-cv { visibility: hidden; }
 :root[dir="rtl"] svg.dir { transform: scaleX(-1); }
 :root[dir="rtl"] .fab { right: auto; left: 16px; }
 :root[dir="rtl"] .search .inp { padding-left: 12px; padding-right: 42px; }
+:root[dir="rtl"] .search.wb-sbar .inp { padding-left: 46px; padding-right: 42px; }
 :root[dir="rtl"] .search .s-ic { left: auto; right: 26px; }
+:root[dir="rtl"] .search .s-clr { right: auto; left: 16px; }
 :root[dir="rtl"] input[type="number"], :root[dir="rtl"] input[type="tel"] { direction: ltr; text-align: right; }
 :root[dir="rtl"] .lb .lb-p { left: auto; right: 8px; }
 :root[dir="rtl"] .lb .lb-n { right: auto; left: 8px; }
@@ -253,6 +255,122 @@ body.no-gl #stage-hint, body.panel-open #stage-hint { display: none; }
   font-family: var(--hud); font-weight: 600; font-size: 11px; display: flex; align-items: center; justify-content: center;
 }
 .node-badge:empty { display: none; }
+
+/* İrsaliye Gezegeni (Ana küreden bağımsız tek dış yörünge butonu) */
+#waybill-planet-wrap {
+  position: absolute;
+  top: calc(var(--sat) + 68px);
+  right: calc(var(--sar) + 14px);
+  z-index: 5;
+  pointer-events: auto;
+}
+.waybill-planet {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition: transform 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+}
+.waybill-planet:active {
+  transform: scale(0.92);
+}
+.waybill-planet.hidden {
+  display: none !important;
+}
+.wp-orbit-ring {
+  position: absolute;
+  top: 10px;
+  width: 66px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(var(--am-rgb), 0.7);
+  box-shadow: 0 0 12px rgba(var(--am-rgb), 0.4);
+  transform: rotate(-22deg);
+  pointer-events: none;
+  animation: wpOrbitSpin 14s linear infinite;
+}
+@keyframes wpOrbitSpin {
+  0% { transform: rotate(-22deg) rotateY(0deg); }
+  50% { transform: rotate(-22deg) rotateY(180deg); }
+  100% { transform: rotate(-22deg) rotateY(360deg); }
+}
+.wp-core {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, rgba(var(--am-rgb), 0.4), rgba(var(--ink), 0.85) 75%);
+  border: 1.5px solid var(--am);
+  box-shadow: 0 0 16px rgba(var(--am-rgb), 0.5), inset 0 0 12px rgba(var(--am-rgb), 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--am);
+  animation: wpPulse 3s ease-in-out infinite alternate;
+}
+@keyframes wpPulse {
+  0% { box-shadow: 0 0 12px rgba(var(--am-rgb), 0.4), inset 0 0 8px rgba(var(--am-rgb), 0.2); }
+  100% { box-shadow: 0 0 24px rgba(var(--am-rgb), 0.8), inset 0 0 16px rgba(var(--am-rgb), 0.5); }
+}
+.wp-badge {
+  position: absolute;
+  top: -4px;
+  right: -6px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 10px;
+  background: #FF3B30;
+  color: #fff;
+  font-family: var(--hud);
+  font-weight: 700;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 8px rgba(255, 59, 48, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+.wp-label {
+  margin-top: 5px;
+  font-family: var(--hud);
+  font-weight: 700;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--am);
+  text-shadow: 0 0 6px var(--bg), 0 0 2px var(--bg);
+  white-space: nowrap;
+}
+/* Ödenmemiş irsaliye 0 olunca buton kaybolmaz, sakin tona geçer */
+.waybill-planet.zero .wp-orbit-ring {
+  border-color: rgba(var(--cy-rgb), 0.45);
+  box-shadow: 0 0 8px rgba(var(--cy-rgb), 0.2);
+}
+.waybill-planet.zero .wp-core {
+  background: radial-gradient(circle at 35% 30%, rgba(var(--cy-rgb), 0.24), rgba(var(--ink), 0.85) 75%);
+  border-color: var(--cy-a40);
+  box-shadow: 0 0 10px rgba(var(--cy-rgb), 0.25);
+  color: var(--cy-soft);
+  animation: none;
+}
+.waybill-planet.zero .wp-badge {
+  background: var(--cy-dim);
+  box-shadow: none;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+.waybill-planet.zero .wp-label { color: var(--tx2); }
+@media (prefers-reduced-motion: reduce) {
+  .wp-orbit-ring, .wp-core { animation: none !important; }
+}
+
 /* WebGL yoksa: 2 sütunlu düz ızgara */
 body.no-gl #gl, body.no-gl #center-stats { display: none; }
 body.no-gl #nodes {
@@ -336,7 +454,7 @@ body.kb .panel::after, body.kb .sheet::after { display: none; }
 .btn.invoice-ask { background: var(--am); color: var(--bg); border-color: var(--am); animation: iaPulse .7s ease-in-out infinite alternate; text-transform: none; letter-spacing: .02em; }
 :root[data-theme="light"] .btn.invoice-ask { color: #fff; }
 a.btn { text-decoration: none; }
-body.panel-open #nodes, body.panel-open #center-stats, body.panel-open #stage-top, body.panel-open #lang-bar { visibility: hidden; }
+body.panel-open #nodes, body.panel-open #center-stats, body.panel-open #stage-top, body.panel-open #lang-bar, body.panel-open #waybill-planet-wrap { visibility: hidden; }
 .btn.sm { min-height: 40px; font-size: 11px; padding: 0 10px; }
 .row { display: flex; gap: 8px; align-items: center; }
 .row > .grow { flex: 1; min-width: 0; }
@@ -361,7 +479,15 @@ textarea.inp { padding: 12px; resize: none; line-height: 1.4; }
 
 .search { position: sticky; top: -12px; z-index: 3; margin: -12px -12px 10px; padding: 12px 12px 8px; background: var(--panel); }
 .search .inp { padding-left: 42px; }
+.search.wb-sbar .inp { padding-right: 46px; }
+.search.wb-sbar .inp::-webkit-search-cancel-button { display: none; }
 .search .s-ic { position: absolute; left: 26px; top: 50%; margin-top: 2px; transform: translateY(-50%); color: var(--tx2); display: flex; }
+.search .s-clr {
+  position: absolute; right: 16px; top: 50%; margin-top: 2px; transform: translateY(-50%);
+  min-width: 40px; min-height: 40px; display: inline-flex; align-items: center; justify-content: center;
+  border-radius: var(--r6); color: var(--tx2);
+}
+.search .s-clr:active { background: var(--cy-a10); color: var(--tx); }
 
 .tabs { display: flex; gap: 8px; margin-bottom: 12px; }
 .tab {
@@ -517,6 +643,12 @@ textarea.inp { padding: 12px; resize: none; line-height: 1.4; }
 .grp-price .lbl { flex-shrink: 0; }
 .grp-price .inp { flex: 1; min-width: 0; }
 .grp-price .amt { flex-shrink: 0; min-width: 72px; text-align: end; font-size: 14px; color: var(--am); white-space: nowrap; }
+.grp-price-grid { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; padding: 0 10px 10px; }
+.grp-col { flex: 1 1 110px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.grp-col .lbl { font-size: 10px; }
+.grp-col .inp { width: 100%; min-width: 0; }
+.grp-amt-box { width: 100%; display: flex; justify-content: flex-end; }
+.grp-amt-box .amt { font-size: 14px; color: var(--am); font-weight: 600; font-family: var(--hud); }
 .st-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .st-row .btn { padding: 0 8px; white-space: normal; line-height: 1.15; }
 .btn.locked { opacity: .55; }
@@ -611,6 +743,21 @@ textarea.inp { padding: 12px; resize: none; line-height: 1.4; }
     </div>
   </div>
   <div id="nodes"></div>
+  <div id="waybill-planet-wrap">
+    <button id="waybill-planet" class="waybill-planet hidden" data-act="open-waybills" aria-label="İrsaliyeler">
+      <div class="wp-orbit-ring"></div>
+      <div class="wp-core">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <line x1="16" y1="13" x2="8" y2="13"></line>
+          <line x1="16" y1="17" x2="8" y2="17"></line>
+        </svg>
+        <span class="wp-badge" id="wp-badge">0</span>
+      </div>
+      <span class="wp-label hud">İRSALİYELER</span>
+    </button>
+  </div>
   <div id="lang-bar" data-nt="1" role="group" aria-label="Language · Dil · اللغة">
     <button class="lang-orb tr" data-act="lang" data-lang="tr" aria-label="Türkçe" aria-pressed="true"><b>TR</b><i class="lo-ring"></i><i class="lo-ring r2"></i></button>
     <button class="lang-orb en" data-act="lang" data-lang="en" aria-label="English" aria-pressed="false"><b>EN</b><i class="lo-ring"></i><i class="lo-ring r2"></i></button>
@@ -635,10 +782,11 @@ textarea.inp { padding: 12px; resize: none; line-height: 1.4; }
      "localStorage doldu, kayıt sessizce başarısız oldu" sorununun çözümü budur.
    - Her yazma işleminin sonucu kontrol edilir; hata olursa kullanıcı görür.
    ===================================================================== */
-var APP_VERSION = '2.22.2';
+var APP_VERSION = '2.25.0';
 var SCHEMA_VERSION = 3; // 1 = eski localStorage sürümü (MİT 1.0), 2 = IndexedDB, 3 = kalıp metre fiyatı + irsaliye
 
 var IN_FRAME = (function () { try { return window.self !== window.top; } catch (e) { return true; } })();
+var IS_PREVIEW_HOST = typeof location === 'object' && /github\.io$/i.test(location.hostname || '');
 var REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 9); }
@@ -773,7 +921,7 @@ var Meta = {
 };
 
 /* ---------- Model ---------- */
-function emptyPatternGroup(name) { return { id: uid(), patternName: name || '', fabricRolls: [], pricePerMeter: null }; }
+function emptyPatternGroup(name) { return { id: uid(), patternName: name || '', fabricRolls: [], pricePerMeter: null, gramsPerMeter: null }; }
 function emptyJob() {
   return {
     id: uid(), createdAt: new Date().toISOString(), status: 'active', deliveredAt: null, printed: false,
@@ -790,6 +938,7 @@ function normRolls(arr) {
     return { id: r.id || uid(), value: Number(r.value), unit: r.unit === 'kg' ? 'kg' : 'mt' };
   });
 }
+function normGrams(v) { var n = Number(v); return v !== null && v !== '' && isFinite(n) && n > 0 ? n : null; }
 // Her sürümden gelen iş kaydını güncel şemaya çevirir (alan kaybı olmadan)
 function normalizeJob(j) {
   j = Object.assign({}, j);
@@ -800,10 +949,16 @@ function normalizeJob(j) {
   j.printed = !!j.printed;
   if (!Array.isArray(j.patternGroups)) {
     // En eski sürüm: işin adı + tek top listesi
-    j.patternGroups = [{ id: uid(), patternName: j.name || '', fabricRolls: normRolls(j.fabricRolls) }];
+    j.patternGroups = [{ id: uid(), patternName: j.name || '', fabricRolls: normRolls(j.fabricRolls), pricePerMeter: null, gramsPerMeter: null }];
   } else {
     j.patternGroups = j.patternGroups.map(function (g) {
-      return Object.assign({}, g, { id: g.id || uid(), patternName: g.patternName || '', fabricRolls: normRolls(g.fabricRolls), pricePerMeter: normPrice(g.pricePerMeter) });
+      return Object.assign({}, g, {
+        id: g.id || uid(),
+        patternName: g.patternName || '',
+        fabricRolls: normRolls(g.fabricRolls),
+        pricePerMeter: normPrice(g.pricePerMeter),
+        gramsPerMeter: normGrams(g.gramsPerMeter) || normGrams(j.fabricGramsPerMeter)
+      });
     });
   }
   if (!j.patternGroups.length) j.patternGroups = [emptyPatternGroup()];
@@ -823,6 +978,7 @@ function normWaybill(w) {
   return {
     no: Number(w.no) || 0, at: w.at || new Date().toISOString(), company: String(w.company || ''), customer: String(w.customer || ''),
     currency: String(w.currency || ''), sig: String(w.sig || ''), total: Number(w.total) || 0, meters: Number(w.meters) || 0,
+    paid: !!w.paid, paidAt: w.paidAt || null,
     lines: w.lines.map(function (l) { return { name: String(l.name || ''), meters: Number(l.meters) || 0, price: Number(l.price) || 0, amount: Number(l.amount) || 0 }; })
   };
 }
@@ -851,11 +1007,38 @@ function calcRollTotals(rolls, gramsPerMeter) {
   };
 }
 function jobAllRolls(job) {
-  var all = job.unassignedRolls.slice();
-  job.patternGroups.forEach(function (g) { all = all.concat(g.fabricRolls); });
+  var all = (job.unassignedRolls || []).slice();
+  (job.patternGroups || []).forEach(function (g) { all = all.concat(g.fabricRolls); });
   return all;
 }
-function calcJobTotals(job) { return calcRollTotals(jobAllRolls(job), job.fabricGramsPerMeter); }
+function calcJobTotals(job) {
+  var mt = 0, kg = 0, eq = 0;
+  var allMeter = [], allKg = [];
+  (job.patternGroups || []).forEach(function (g) {
+    var t = calcRollTotals(g.fabricRolls, g.gramsPerMeter || job.fabricGramsPerMeter);
+    mt += t.totalMeters;
+    kg += t.totalKg;
+    eq += t.kgEquivalentMeters;
+    allMeter = allMeter.concat(t.meterRolls);
+    allKg = allKg.concat(t.kgRolls);
+  });
+  if (job.unassignedRolls && job.unassignedRolls.length) {
+    var ut = calcRollTotals(job.unassignedRolls, job.fabricGramsPerMeter);
+    mt += ut.totalMeters;
+    kg += ut.totalKg;
+    eq += ut.kgEquivalentMeters;
+    allMeter = allMeter.concat(ut.meterRolls);
+    allKg = allKg.concat(ut.kgRolls);
+  }
+  return {
+    meterRolls: allMeter,
+    kgRolls: allKg,
+    totalMeters: mt,
+    totalKg: kg,
+    kgEquivalentMeters: eq,
+    grandTotalMeters: mt + eq
+  };
+}
 function jobDisplayName(job) {
   var names = job.patternGroups.map(function (g) { return (g.patternName || '').trim(); }).filter(Boolean);
   if (!names.length) return 'İsimsiz Kalıp';
@@ -2702,6 +2885,83 @@ Inputs['drw-q'] = function (el) { if (UI.drawer) { UI.drawer.q = el.value; UI.pa
    Yeni Müşteri · Teslim Edilen · Kalıplar · Yedekleme · Ayarlar · Hakkında
    İş formu, müşteri formu, iş özeti, fotoğraf görüntüleyici: alt sayfa.
    ===================================================================== */
+function getUnpaidWaybills() {
+  var list = [];
+  (Data.customers || []).forEach(function (c) {
+    (c.jobs || []).forEach(function (j) {
+      if (j.waybill && !j.waybill.paid) {
+        list.push({ customer: c, job: j, waybill: j.waybill });
+      }
+    });
+  });
+  list.sort(function (a, b) { return (b.waybill.no || 0) - (a.waybill.no || 0); });
+  return list;
+}
+function getPaidWaybills() {
+  var list = [];
+  (Data.customers || []).forEach(function (c) {
+    (c.jobs || []).forEach(function (j) {
+      if (j.waybill && j.waybill.paid) {
+        list.push({ customer: c, job: j, waybill: j.waybill });
+      }
+    });
+  });
+  list.sort(function (a, b) {
+    var ta = new Date(a.waybill.paidAt || a.waybill.at).getTime() || 0;
+    var tb = new Date(b.waybill.paidAt || b.waybill.at).getTime() || 0;
+    if (tb !== ta) return tb - ta;
+    return (b.waybill.no || 0) - (a.waybill.no || 0);
+  });
+  return list;
+}
+function foldTr(s) {
+  return low(s).replace(/ç/g, 'c').replace(/ğ/g, 'g').replace(/ı/g, 'i').replace(/ö/g, 'o').replace(/ş/g, 's').replace(/ü/g, 'u');
+}
+function waybillSearchText(x) {
+  var c = x.customer || {}, j = x.job || {}, w = x.waybill || {};
+  var parts = [
+    c.name, w.customer,
+    'no ' + String(w.no || '').padStart(4, '0'),
+    String(w.no || ''),
+    w.currency,
+    j.fabricType, j.fabricColor
+  ];
+  var tot = Number(w.total || 0);
+  var formattedTot = wbMoney(tot, w.currency);
+  parts.push(
+    formattedTot,
+    formattedTot.replace(/\./g, ''),
+    tot.toFixed(2),
+    String(tot),
+    String(tot).replace('.', ',')
+  );
+  [w.at, w.paidAt].forEach(function (iso) {
+    if (!iso) return;
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return;
+    var dd = String(d.getDate()).padStart(2, '0'), mm = String(d.getMonth() + 1).padStart(2, '0'), yy = String(d.getFullYear());
+    parts.push(
+      fmtDate(iso),
+      dd + '.' + mm + '.' + yy,
+      d.getDate() + '.' + (d.getMonth() + 1) + '.' + yy,
+      dd + '/' + mm + '/' + yy,
+      yy + '-' + mm + '-' + dd
+    );
+    try { parts.push(d.toLocaleDateString('tr-TR', { month: 'long' })); } catch (e) {}
+    try { if (typeof I18n !== 'undefined' && I18n.lang !== 'tr') parts.push(d.toLocaleDateString(I18n.lang === 'ar' ? 'ar-EG' : 'en-US', { month: 'long' })); } catch (e) {}
+  });
+  (w.lines || []).forEach(function (l) { parts.push(l.name); });
+  (j.patternGroups || []).forEach(function (g) { parts.push(g.patternName); });
+  return low(parts.filter(Boolean).join(' '));
+}
+function waybillMatches(x, q) {
+  if (!q) return true;
+  var tokens = low(q).trim().split(/\s+/).filter(Boolean);
+  if (!tokens.length) return true;
+  var hay = waybillSearchText(x), folded = foldTr(hay);
+  return tokens.every(function (t) { return hay.indexOf(t) >= 0 || folded.indexOf(foldTr(t)) >= 0; });
+}
+
 var App = {
   booted: false,
   refreshStats: function () {
@@ -2721,7 +2981,25 @@ var App = {
       var b = document.querySelector('[data-badge="' + k + '"]');
       if (b) b.textContent = badges[k] === '' || badges[k] === 0 ? '' : String(badges[k]);
     });
+    this.updateWaybillPlanet();
     if (Sphere.ok && !Sphere.running) Sphere.renderOnce();
+  },
+  updateWaybillPlanet: function () {
+    var el = document.getElementById('waybill-planet');
+    var badge = document.getElementById('wp-badge');
+    if (!el) return;
+    var unpaid = getUnpaidWaybills();
+    var paid = getPaidWaybills();
+    var hasAny = unpaid.length > 0 || paid.length > 0;
+    if (hasAny) {
+      el.classList.remove('hidden');
+      el.classList.toggle('zero', unpaid.length === 0);
+      if (badge) badge.textContent = String(unpaid.length);
+    } else {
+      el.classList.add('hidden');
+      el.classList.remove('zero');
+      if (badge) badge.textContent = '0';
+    }
   },
   openNode: function (id) {
     if (Sphere.busy || UI.panelOpen()) return;
@@ -2741,11 +3019,11 @@ var App = {
 Actions.node = function (el) { App.openNode(el.getAttribute('data-id')); };
 
 var Screens = {
-  st: { jobsQ: '', jobTab: 'active', period: 'week', custQ: '', sort: 'alphabetical', detailTab: 'active', delQ: '', cid: null },
+  st: { jobsQ: '', jobTab: 'active', wbTab: 'unpaid', wbQ: '', wbSearch: false, period: 'week', custQ: '', sort: 'alphabetical', detailTab: 'active', delQ: '', cid: null },
 
   open: function (id) {
-    var titles = { jobs: 'İşler', customers: 'Müşteriler', patterns: 'Kalıp Kütüphanesi', report: 'Rapor', backup: 'Veri Yedekleme', settings: 'Ayarlar' };
-    UI.openPanel({ id: id, title: titles[id] });
+    var titles = { jobs: 'İşler', customers: 'Müşteriler', patterns: 'Kalıp Kütüphanesi', report: 'Rapor', backup: 'Veri Yedekleme', settings: 'Ayarlar', waybills: 'İrsaliyeler' };
+    UI.openPanel({ id: id, title: titles[id] || 'Panel' });
     this.render();
   },
   // Açık olan panel ve (varsa) müşteri alt sayfasını günceller.
@@ -2758,6 +3036,7 @@ var Screens = {
     else if (id === 'patterns') this.patterns(body);
     else if (id === 'backup') this.backup(body);
     else if (id === 'settings') this.settings(body);
+    else if (id === 'waybills') this.waybills(body);
     this.renderDetail();
   },
   refresh: function () {
@@ -2765,6 +3044,7 @@ var Screens = {
     var id = UI.panel.id;
     if (id === 'jobs') this.paintJobs();
     else if (id === 'customers') this.paintCustomers();
+    else if (id === 'waybills') this.paintWaybills();
     else if (id === 'patterns' || id === 'backup' || id === 'settings' || id === 'report') this.render();
     this.renderDetail();
   },
@@ -3000,10 +3280,211 @@ var Screens = {
       '<p>Çevrimdışı çalışır; tüm veriler yalnızca bu cihazda saklanır. Bu cihazda: ' + Data.real().length + ' müşteri · ' + Data.totalJobs() + ' iş · ' + Data.patterns.length + ' kalıp.</p>' +
       '<a class="btn block" href="mailto:krmzchn@gmail.com"' + (IN_FRAME ? ' target="_blank" rel="noopener"' : '') + '>Bize ulaşın: krmzchn@gmail.com</a></div>' +
       '</div>';
+  },
+  waybills: function (body) {
+    var q = this.st.wbQ || '';
+    var sOpen = !!(this.st.wbSearch || q);
+    body.innerHTML =
+      '<div class="search wb-sbar' + (sOpen ? '' : ' hidden') + '" data-wb-search>' +
+        '<span class="s-ic">' + icon('search', 18) + '</span>' +
+        '<input class="inp" type="search" data-in="wb-q" value="' + esc(q) + '" placeholder="Müşteri, tutar, tarih veya kalıp ara..." autocomplete="off" />' +
+        '<button class="s-clr' + (q ? '' : ' hidden') + '" data-act="wb-q-clear" aria-label="Temizle">' + icon('x', 18) + '</button>' +
+      '</div>' +
+      '<div class="tabs" data-wb-tabs></div>' +
+      '<div class="stack" style="gap:12px" data-wb-list></div>';
+    this.paintWaybills();
+  },
+  paintWaybills: function () {
+    var body = UI.pBody(); if (!body || !body.querySelector('[data-wb-tabs]')) return;
+    var tab = this.st.wbTab === 'paid' ? 'paid' : 'unpaid';
+    var q = low(this.st.wbQ).trim();
+    var sOpen = !!(this.st.wbSearch || q);
+    var unpaid = getUnpaidWaybills();
+    var paid = getPaidWaybills();
+    UI.setHead('İrsaliyeler<small>' + unpaid.length + ' ödenmeyen</small>',
+      '<button class="btn' + (sOpen ? ' pri' : '') + '" style="padding:0 12px" data-act="wb-search" aria-label="Ara" aria-pressed="' + sOpen + '">' + icon('search', 18) + ' Ara</button>');
+    var tabsEl = body.querySelector('[data-wb-tabs]');
+    if (tabsEl) {
+      tabsEl.innerHTML =
+        '<button class="tab t-am' + (tab === 'unpaid' ? ' on' : '') + '" data-act="wb-tab" data-t="unpaid"><b>' + unpaid.length + '</b><span>Ödenmeyenler</span></button>' +
+        '<button class="tab t-ok' + (tab === 'paid' ? ' on' : '') + '" data-act="wb-tab" data-t="paid"><b style="display:flex;align-items:center;justify-content:center;min-height:22px">' + icon('check', 18) + '</b><span>Ödenenler</span></button>';
+    }
+    var activeList = tab === 'paid' ? paid : unpaid;
+    var list = q ? activeList.filter(function (x) { return waybillMatches(x, q); }) : activeList;
+    var grandTotal = 0, totalMeters = 0;
+    list.forEach(function (x) {
+      grandTotal += x.waybill.total || 0;
+      totalMeters += x.waybill.meters || 0;
+    });
+    var cur = (list[0] && list[0].waybill.currency) || (activeList[0] && activeList[0].waybill.currency) || Settings.currency || '';
+    var html = '';
+    if (tab === 'unpaid') {
+      html += '<div class="grand"><div class="between"><span class="hud" style="font-size:12px">' + (q ? 'Bulunan Toplam' : 'Bekleyen Toplam') + '</span><b>' + wbMoney(grandTotal, cur) + '</b></div>' +
+        '<p>' + (q ? list.length + ' adet eşleşen fatura' : unpaid.length + ' adet tahsil edilmemiş fatura') + ' · ' + fmtNum(totalMeters) + ' mt</p></div>';
+      if (!list.length) {
+        if (q && activeList.length) {
+          html += '<div class="empty">' + icon('search', 32) + '<p style="margin-top:10px">Sonuç bulunamadı</p>' +
+            '<button class="btn sm" style="margin-top:8px" data-act="wb-q-clear">Aramayı Temizle</button></div>';
+        } else {
+          html += '<div class="empty">' + icon('check', 36) + '<p style="margin-top:12px">Ödenmemiş irsaliye bulunmuyor.<br><small style="color:var(--tx2)">Ödemesi alınan irsaliyeler Ödenenler sekmesinde saklanır.</small></p>' +
+            (paid.length ? '<button class="btn ok sm" style="margin-top:8px" data-act="wb-tab" data-t="paid">Ödenen İrsaliyeleri Gör</button>' : '') + '</div>';
+        }
+      } else {
+        list.forEach(function (x, i) {
+          var c = x.customer, j = x.job, w = x.waybill;
+          var linesDesc = (w.lines || []).map(function (l) {
+            return esc(l.name) + ': ' + fmtNum(l.meters) + ' mt × ' + wbMoney(l.price, w.currency) + ' = ' + wbMoney(l.amount, w.currency);
+          }).join('<br>');
+          html += '<div class="card s-wait" style="padding:14px;display:flex;flex-direction:column;gap:10px;--i:' + Math.min(i, 10) + '">' +
+            '<div class="between"><div><b style="font-size:15px;color:var(--tx)">' + esc(c.name || 'İsimsiz Müşteri') + '</b>' +
+            '<div style="font-size:12px;color:var(--tx2);margin-top:2px">No ' + String(w.no).padStart(4, '0') + ' · ' + fmtDate(w.at) + '</div></div>' +
+            '<span class="badge" style="background:var(--am-a20);color:var(--am);border:1px solid var(--am);padding:3px 8px;border-radius:var(--r6);font-size:11px;font-family:var(--hud);font-weight:600">ÖDEME BEKLİYOR</span></div>' +
+            (linesDesc ? '<div style="font-size:12px;color:var(--tx2);border-top:1px solid var(--cy-a20);border-bottom:1px solid var(--cy-a20);padding:8px 0;line-height:1.4">' + linesDesc + '</div>' : '') +
+            '<div class="between"><div><span style="font-size:12px;color:var(--tx2)">Toplam Metre: </span><b style="color:var(--cy)">' + fmtNum(w.meters) + ' mt</b></div>' +
+            '<div><span style="font-size:12px;color:var(--tx2)">Tutar: </span><b style="color:var(--am);font-size:16px">' + wbMoney(w.total, w.currency) + '</b></div></div>' +
+            '<div class="between" style="gap:8px;margin-top:2px">' +
+            '<button class="btn" style="flex:1" data-act="wb-view" data-c="' + c.id + '" data-j="' + j.id + '">' + icon('doc', 16) + ' İrsaliyeyi Gör</button>' +
+            '<button class="btn ok" style="flex:1" data-act="wb-paid" data-c="' + c.id + '" data-j="' + j.id + '">' + icon('check', 16) + ' Ödeme Alındı</button>' +
+            '</div></div>';
+        });
+      }
+    } else {
+      html += '<div class="grand" style="border-color:var(--st-done);background:rgba(var(--ok-rgb),.08)"><div class="between"><span class="hud" style="font-size:12px;color:var(--st-done)">' + (q ? 'Bulunan Toplam' : 'Tahsil Edilen Toplam') + '</span><b style="color:var(--st-done)">' + wbMoney(grandTotal, cur) + '</b></div>' +
+        '<p>Toplam metraj: ' + fmtNum(totalMeters) + ' mt</p></div>';
+      if (!list.length) {
+        if (q && activeList.length) {
+          html += '<div class="empty">' + icon('search', 32) + '<p style="margin-top:10px">Sonuç bulunamadı</p>' +
+            '<button class="btn sm" style="margin-top:8px" data-act="wb-q-clear">Aramayı Temizle</button></div>';
+        } else {
+          html += '<div class="empty">' + icon('doc', 36) + '<p style="margin-top:12px">Henüz ödenen irsaliye bulunmuyor.<br><small style="color:var(--tx2)">Ödemesi alınan irsaliyeler burada listelenir.</small></p></div>';
+        }
+      } else {
+        list.forEach(function (x, i) {
+          var c = x.customer, j = x.job, w = x.waybill;
+          var linesDesc = (w.lines || []).map(function (l) {
+            return esc(l.name) + ': ' + fmtNum(l.meters) + ' mt × ' + wbMoney(l.price, w.currency) + ' = ' + wbMoney(l.amount, w.currency);
+          }).join('<br>');
+          html += '<div class="card s-done" style="padding:14px;display:flex;flex-direction:column;gap:10px;--i:' + Math.min(i, 10) + '">' +
+            '<div class="between"><div><b style="font-size:15px;color:var(--tx)">' + esc(c.name || 'İsimsiz Müşteri') + '</b>' +
+            '<div style="font-size:12px;color:var(--tx2);margin-top:2px">No ' + String(w.no).padStart(4, '0') + ' · ' + fmtDate(w.at) + '</div>' +
+            (w.paidAt ? '<div style="font-size:12px;color:var(--st-done);margin-top:2px">Ödeme: ' + fmtDate(w.paidAt) + '</div>' : '') + '</div>' +
+            '<span class="badge" style="background:rgba(var(--ok-rgb),.14);color:var(--st-done);border:1px solid var(--st-done);padding:3px 8px;border-radius:var(--r6);font-size:11px;font-family:var(--hud);font-weight:600">ÖDENDİ</span></div>' +
+            (linesDesc ? '<div style="font-size:12px;color:var(--tx2);border-top:1px solid var(--cy-a20);border-bottom:1px solid var(--cy-a20);padding:8px 0;line-height:1.4">' + linesDesc + '</div>' : '') +
+            '<div class="between"><div><span style="font-size:12px;color:var(--tx2)">Toplam Metre: </span><b style="color:var(--cy)">' + fmtNum(w.meters) + ' mt</b></div>' +
+            '<div><span style="font-size:12px;color:var(--tx2)">Tutar: </span><b style="color:var(--st-done);font-size:16px">' + wbMoney(w.total, w.currency) + '</b></div></div>' +
+            '<div class="between" style="gap:8px;margin-top:2px">' +
+            '<button class="btn" style="flex:1" data-act="wb-view" data-c="' + c.id + '" data-j="' + j.id + '">' + icon('doc', 16) + ' İrsaliyeyi Gör</button>' +
+            '<button class="btn" style="flex:1" data-act="wb-unpaid" data-c="' + c.id + '" data-j="' + j.id + '">' + icon('undo', 16) + ' Ödenmediye Al</button>' +
+            '</div></div>';
+        });
+      }
+    }
+    var listEl = body.querySelector('[data-wb-list]');
+    if (listEl) listEl.innerHTML = html;
   }
 };
 
 /* ---------- Ekran olayları ---------- */
+Actions['open-waybills'] = function () { Screens.st.wbTab = 'unpaid'; Screens.st.wbQ = ''; Screens.st.wbSearch = false; Screens.open('waybills'); };
+Actions['wb-tab'] = function (el) { Screens.st.wbTab = el.getAttribute('data-t') === 'paid' ? 'paid' : 'unpaid'; Screens.paintWaybills(); };
+Actions['wb-search'] = function () {
+  var body = UI.pBody(); if (!body) return;
+  var box = body.querySelector('[data-wb-search]'); if (!box) return;
+  var inp = box.querySelector('[data-in="wb-q"]');
+  var clr = box.querySelector('[data-act="wb-q-clear"]');
+  if (Screens.st.wbSearch) {
+    Screens.st.wbSearch = false;
+    Screens.st.wbQ = '';
+    if (inp) inp.value = '';
+    if (clr) clr.classList.add('hidden');
+    box.classList.add('hidden');
+    Screens.paintWaybills();
+  } else {
+    Screens.st.wbSearch = true;
+    box.classList.remove('hidden');
+    Screens.paintWaybills();
+    if (inp) inp.focus();
+  }
+};
+Actions['wb-q-clear'] = function () {
+  Screens.st.wbQ = '';
+  var body = UI.pBody();
+  var box = body && body.querySelector('[data-wb-search]');
+  var inp = box && box.querySelector('[data-in="wb-q"]');
+  var clr = box && box.querySelector('[data-act="wb-q-clear"]');
+  if (inp) { inp.value = ''; inp.focus(); }
+  if (clr) clr.classList.add('hidden');
+  Screens.paintWaybills();
+};
+Inputs['wb-q'] = function (el) {
+  Screens.st.wbQ = el.value;
+  var box = el.closest('[data-wb-search]');
+  var clr = box && box.querySelector('[data-act="wb-q-clear"]');
+  if (clr) clr.classList.toggle('hidden', !el.value);
+  Screens.paintWaybills();
+};
+Actions['wb-view'] = function (el) {
+  var cid = el.getAttribute('data-c'), jid = el.getAttribute('data-j');
+  var j = Data.findJob(cid, jid);
+  if (j && j.waybill) Forms.waybill(j.waybill, false);
+};
+Actions['wb-paid'] = function (el) {
+  var cid = el.getAttribute('data-c'), jid = el.getAttribute('data-j');
+  var c = Data.find(cid);
+  if (!c) return;
+  var targetJob = null;
+  c.jobs.forEach(function (j) {
+    if (j.id === jid) {
+      targetJob = j;
+      if (j.waybill) {
+        j.waybill.paid = true;
+        j.waybill.paidAt = new Date().toISOString();
+      }
+    }
+  });
+  if (!targetJob) return;
+  Data.saveCustomer(c).then(function () {
+    fb('ok');
+    UI.undoToast('Ödeme alındı · Ödenen irsaliyelere atandı', function () {
+      var cc = Data.find(cid);
+      if (!cc) return;
+      cc.jobs.forEach(function (j) {
+        if (j.id === jid && j.waybill) {
+          j.waybill.paid = false;
+          j.waybill.paidAt = null;
+        }
+      });
+      Data.saveCustomer(cc).then(function () {
+        App.refreshStats();
+        Screens.refresh();
+      });
+    });
+    App.refreshStats();
+    Screens.refresh();
+  });
+};
+Actions['wb-unpaid'] = function (el) {
+  var cid = el.getAttribute('data-c'), jid = el.getAttribute('data-j');
+  UI.twoTap(el, function () {
+    var c = Data.find(cid);
+    if (!c) return;
+    var changed = false;
+    c.jobs.forEach(function (j) {
+      if (j.id === jid && j.waybill) {
+        j.waybill.paid = false;
+        j.waybill.paidAt = null;
+        changed = true;
+      }
+    });
+    if (!changed) return;
+    Data.saveCustomer(c).then(function () {
+      fb('ok');
+      UI.toast('İrsaliye ödenmeyenlere geri alındı');
+      App.refreshStats();
+      Screens.refresh();
+    });
+  }, 'Ödenmemişe döndürmek için tekrar dokun');
+};
 Inputs['jobs-q'] = function (el) { Screens.st.jobsQ = el.value; Screens.paintJobs(); };
 Inputs['cust-q'] = function (el) { Screens.st.custQ = el.value; Screens.paintCustomers(); };
 Actions['job-tab'] = function (el) { Screens.st.jobTab = el.getAttribute('data-t'); Screens.paintJobs(); };
@@ -3763,12 +4244,7 @@ function jfPaint() {
       '<button class="btn block ' + (d.printed ? 'blue' : 'amb') + '" data-act="jf-printed">' + icon(d.printed ? 'check' : 'info', 18) + (d.printed ? ' Baskı Yapıldı' : ' Baskı Bekliyor') + '</button></div>';
   }
   html += '<div class="grid2"><div class="field"><label class="lbl">Kumaş Türü</label><input class="inp' + empty(d.fabricType) + '" data-in="jf-ftype" value="' + esc(d.fabricType) + '" placeholder="30/1 Süprem" /></div>' +
-    '<div class="field"><label class="lbl">Kumaş Rengi</label><input class="inp' + empty(d.fabricColor) + '" data-in="jf-fcolor" value="' + esc(d.fabricColor) + '" placeholder="Lacivert" /></div></div>' +
-    '<div class="field"><label class="lbl">1 Metre Kumaşın Gramajı (gr)</label><input class="inp' + empty(d.fabricGramsPerMeter) + '" type="number" inputmode="decimal" data-in="jf-grams" value="' + (d.fabricGramsPerMeter || '') + '" placeholder="Örn: 180" />' +
-    '<p class="hint">Kilo toplarını metreye çevirmek için kullanılır</p></div>';
-  html += '<div class="sec sec-un"><p class="sec-t hud" data-un-label></p>' +
-    '<p class="hint" style="margin:0">Kalıp seçmeden top girebilir, sonra toplara dokunup seçerek bir kalıba gönderebilirsin.</p>' +
-    rollSkeleton('un') + '<div data-send-wrap></div></div>';
+    '<div class="field"><label class="lbl">Kumaş Rengi</label><input class="inp' + empty(d.fabricColor) + '" data-in="jf-fcolor" value="' + esc(d.fabricColor) + '" placeholder="Lacivert" /></div></div>';
   html += '<div class="sec"><div class="between"><p class="sec-t hud">Kalıplar</p>' +
     '<button class="btn sm" data-act="jf-add-group">' + icon('plus', 16) + ' Kalıp Ekle</button></div>' +
     '<div class="stack" style="gap:8px" data-groups></div><div class="grand" data-grand></div></div>';
@@ -3785,7 +4261,6 @@ function jfPaint() {
   var st = scroll ? scroll.scrollTop : 0;
   JF.root.innerHTML = html;
   JF.root.querySelector('[data-jf-body]').scrollTop = st;
-  rollPaint('un');
   jfPaintGroups();
   jfPaintPhotos();
   jfTotals();
@@ -3799,9 +4274,12 @@ function jfPaintGroups() {
       '<span class="grp-tot" data-gtot="' + g.id + '"></span>' +
       (can ? '<button class="ibtn danger" data-act="jf-del-group" data-g="' + g.id + '" aria-label="Kalıbı kaldır">' + icon('x', 18) + '</button>' : '') +
       '<button class="ibtn" data-act="jf-toggle-group" data-g="' + g.id + '" aria-label="' + (open ? 'Daralt' : 'Genişlet') + '">' + icon(open ? 'up' : 'down', 20) + '</button></div>' +
-      '<div class="grp-price"><label class="lbl" for="pr-' + g.id + '">Metre Fiyatı</label>' +
-      '<input id="pr-' + g.id + '" class="inp' + (g.pricePerMeter ? '' : ' empty-f') + '" type="text" inputmode="decimal" enterkeyhint="done" data-in="jf-price" data-g="' + g.id + '" value="' + (g.pricePerMeter ? fmtNum(g.pricePerMeter) : '') + '" placeholder="0,00" />' +
-      '<span class="amt" data-gamt="' + g.id + '"></span></div>' +
+      '<div class="grp-price-grid">' +
+      '<div class="grp-col"><label class="lbl" for="pr-' + g.id + '">Metre Fiyatı</label>' +
+      '<input id="pr-' + g.id + '" class="inp' + (g.pricePerMeter ? '' : ' empty-f') + '" type="text" inputmode="decimal" enterkeyhint="done" data-in="jf-price" data-g="' + g.id + '" value="' + (g.pricePerMeter ? fmtNum(g.pricePerMeter) : '') + '" placeholder="0,00" /></div>' +
+      '<div class="grp-col"><label class="lbl" for="gr-' + g.id + '">1 mt Gramı (gr)</label>' +
+      '<input id="gr-' + g.id + '" class="inp' + (g.gramsPerMeter ? '' : ' empty-f') + '" type="number" inputmode="decimal" enterkeyhint="done" data-in="jf-pattern-grams" data-g="' + g.id + '" value="' + (g.gramsPerMeter || '') + '" placeholder="Örn: 180" /></div>' +
+      '<div class="grp-amt-box"><span class="amt" data-gamt="' + g.id + '"></span></div></div>' +
       (open ? '<div class="grp-body">' + rollSkeleton(g.id) + '</div>' : '') + '</div>';
   }).join('');
   d.patternGroups.forEach(function (g) { if (JF.expanded === g.id) rollPaint(g.id); });
@@ -3819,15 +4297,12 @@ function jfTotals() {
   d.patternGroups.forEach(function (g) {
     var el = root.querySelector('[data-gtot="' + g.id + '"]');
     if (!el) return;
-    var gt = calcRollTotals(g.fabricRolls, d.fabricGramsPerMeter);
+    var gt = calcRollTotals(g.fabricRolls, g.gramsPerMeter || d.fabricGramsPerMeter);
     el.textContent = g.fabricRolls.length ? fmtNum(gt.grandTotalMeters) + ' mt' + (JF.expanded === g.id ? '' : ' (' + g.fabricRolls.length + ')') : '';
     var am = root.querySelector('[data-gamt="' + g.id + '"]');
     var bm = billMeters(gt);
     if (am) am.textContent = g.pricePerMeter && bm > 0 ? fmtMoney(bm * g.pricePerMeter) : '';
   });
-  var ul = root.querySelector('[data-un-label]');
-  if (ul) ul.textContent = 'Atanmamış Toplar' + (d.unassignedRolls.length ? ' (' + d.unassignedRolls.length + ' top)' : '');
-  jfPaintSend();
   jfStatusPaint();
 }
 function jfPaintSend() {
@@ -3865,7 +4340,9 @@ function rollBox(k) { return JF && JF.root.querySelector('[data-roll="' + k + '"
 function rollPaint(k) {
   var box = rollBox(k);
   if (!box) return;
-  var unit = JF.units[k] || 'mt', t = calcRollTotals(jfRolls(k), JF.draft.fabricGramsPerMeter);
+  var g = jfGroup(k);
+  var grams = g ? (g.gramsPerMeter || JF.draft.fabricGramsPerMeter) : JF.draft.fabricGramsPerMeter;
+  var unit = JF.units[k] || 'mt', t = calcRollTotals(jfRolls(k), grams);
   Array.prototype.forEach.call(box.querySelectorAll('.unit-btn'), function (b) {
     var on = b.getAttribute('data-u') === unit;
     b.classList.toggle('on-mt', on && unit === 'mt');
@@ -4003,8 +4480,9 @@ function waybillCalc(job) {
     var name = (g.patternName || '').trim();
     if (!name && !g.fabricRolls.length) return; // boş kalıp satırı
     if (!name) { unnamed = true; return; }
-    var t = calcRollTotals(g.fabricRolls, job.fabricGramsPerMeter);
-    if (t.kgRolls.length && !(job.fabricGramsPerMeter > 0)) kgNoGram = true;
+    var grams = g.gramsPerMeter || job.fabricGramsPerMeter;
+    var t = calcRollTotals(g.fabricRolls, grams);
+    if (t.kgRolls.length && !(grams > 0)) kgNoGram = true;
     var m = billMeters(t);
     if (!(m > 0)) noMeter.push(name);
     if (!g.pricePerMeter) noPrice.push({ id: g.id, name: name });
@@ -4012,10 +4490,9 @@ function waybillCalc(job) {
     lines.push({ gid: g.id, name: name, meters: m, price: price, amount: Math.round(m * price * 100) / 100 });
   });
   var err = null, focus = null;
-  if (job.unassignedRolls.length) err = 'Atanmamış toplar var. Önce bir kalıba gönder.';
-  else if (unnamed) err = 'Kalıp seçilmemiş toplar var. Önce kalıp seç.';
+  if (unnamed) err = 'Kalıp seçilmemiş toplar var. Önce kalıp seç.';
   else if (!lines.length) err = 'İrsaliye için en az bir kalıp gerekli';
-  else if (kgNoGram) err = 'Kilo topları var. Metreye çevirmek için gramaj gir.';
+  else if (kgNoGram) err = 'Kilo topları var. Metreye çevirmek için kalıbın gramajını gir.';
   else if (noMeter.length) err = noMeter.join(', ') + ': metre girilmemiş';
   else if (noPrice.length) { err = noPrice.map(function (x) { return x.name; }).join(', ') + ': metre fiyatı yazılmamış'; focus = noPrice[0].id; }
   var total = 0, meters = 0;
@@ -4023,7 +4500,8 @@ function waybillCalc(job) {
   return { lines: lines, total: Math.round(total * 100) / 100, meters: Math.round(meters * 100) / 100, err: err, focus: focus, noPrice: noPrice };
 }
 function waybillSig(job, calc) {
-  return JSON.stringify([calc.lines.map(function (l) { return [l.name, l.meters, l.price]; }), job.fabricGramsPerMeter || 0]);
+  var gramsSig = (job.patternGroups || []).map(function (g) { return [g.id, g.gramsPerMeter || 0]; });
+  return JSON.stringify([calc.lines.map(function (l) { return [l.name, l.meters, l.price]; }), gramsSig]);
 }
 // İrsaliye var ve iş o günden beri değişmediyse geçerli
 function waybillValid(job) {
@@ -4037,6 +4515,15 @@ Inputs['jf-price'] = function (el) {
   g.pricePerMeter = normPrice(String(el.value).replace(/\s/g, '').replace(',', '.'));
   el.classList.toggle('empty-f', !g.pricePerMeter);
   jfDirty(); jfTotals();
+};
+Inputs['jf-pattern-grams'] = function (el) {
+  var g = jfGroup(el.getAttribute('data-g'));
+  if (!g) return;
+  var v = parseFloat(String(el.value).replace(/\s/g, '').replace(',', '.'));
+  g.gramsPerMeter = isFinite(v) && v > 0 ? v : null;
+  el.classList.toggle('empty-f', !g.gramsPerMeter);
+  jfDirty(); jfTotals();
+  if (JF.expanded === g.id) rollPaint(g.id);
 };
 // Teslim düğmesinin kilit görünümü, giriş kutularına dokunmadan güncellenir
 function jfStatusPaint() {
@@ -4070,7 +4557,8 @@ Actions['jf-waybill'] = function (el) {
   return noP.then(function (no) {
     d.waybill = normWaybill({
       no: no, at: new Date().toISOString(), company: String(Settings.company).trim(), customer: Data.isUna(c) ? '' : c.name,
-      currency: Settings.currency || '', total: calc.total, meters: calc.meters, sig: waybillSig(d, calc), lines: calc.lines
+      currency: Settings.currency || '', total: calc.total, meters: calc.meters, sig: waybillSig(d, calc), lines: calc.lines,
+      paid: d.waybill ? !!d.waybill.paid : false, paidAt: d.waybill ? d.waybill.paidAt : null
     });
     // İrsaliye işle birlikte hemen kaydedilir (form açık kalır)
     var nc = clone(c), found = false;
@@ -4079,6 +4567,7 @@ Actions['jf-waybill'] = function (el) {
     return Data.saveCustomer(nc);
   }).then(function () {
     if (JF === jf) { jf.dirty = false; jfPaint(); }
+    App.refreshStats();
     Screens.refresh();
     fb('ok');
     return Forms.waybill(d.waybill, true);
@@ -4393,6 +4882,19 @@ Actions['jf-del-photo'] = function (el) {
 Actions['jf-save'] = function () {
   var c = jfCustomer(), d = JF.draft;
   if (!c) return;
+  // Eğer faturada fiyat ya da metre ile alakalı düzenleme yapıldıysa ve fatura henüz ödenmediyse faturayı otomatik güncelle
+  if (d.waybill && !d.waybill.paid) {
+    var cCalc = waybillCalc(d);
+    if (!cCalc.err) {
+      d.waybill.meters = cCalc.meters;
+      d.waybill.total = cCalc.total;
+      d.waybill.lines = cCalc.lines;
+      d.waybill.sig = waybillSig(d, cCalc);
+      d.waybill.currency = Settings.currency || d.waybill.currency || '';
+      d.waybill.customer = Data.isUna(c) ? '' : c.name;
+      if (String(Settings.company || '').trim()) d.waybill.company = String(Settings.company).trim();
+    }
+  }
   var nc = clone(c), found = false;
   nc.jobs = nc.jobs.map(function (j) { if (j.id === d.id) { found = true; return clone(d); } return j; });
   if (!found) nc.jobs.push(clone(d));
@@ -4401,6 +4903,7 @@ Actions['jf-save'] = function () {
     fb('ok');
     UI.toast(found ? 'İş kaydedildi' : 'Yeni iş eklendi');
     UI.pop();
+    App.refreshStats();
     Screens.refresh();
   });
 };
@@ -4445,10 +4948,10 @@ Forms.info = function (customer, job, replace) {
   var html = '<div class="sh-head"><div class="sh-title hud">İş Özeti<small>' + esc(customer.name) + ' · ' + fmtDate(job.createdAt) + '</small></div>' +
     '<button class="ibtn" data-act="back" aria-label="Kapat">' + icon('x') + '</button></div><div class="sh-body"><div class="info">' +
     '<p class="h hud">İş Detayı</p>' + row('Müşteri', customer.name) + row('İş / Model', name) + row('Durum', status) +
-    row('Kumaş', [job.fabricType, job.fabricColor].filter(Boolean).join(' - ') + (job.fabricGramsPerMeter ? ' (1 mt: ' + job.fabricGramsPerMeter + ' gr)' : '')) +
+    row('Kumaş', [job.fabricType, job.fabricColor].filter(Boolean).join(' - ')) +
     (job.notes ? row('Not', job.notes) : '') + row('Fotoğraf', job.photos.length + ' adet') + '</div>';
   if (job.unassignedRolls.length) html += block('Atanmamış Toplar', calcRollTotals(job.unassignedRolls, job.fabricGramsPerMeter), true);
-  job.patternGroups.forEach(function (g) { if (g.fabricRolls.length) html += block(g.patternName || 'İsimsiz Kalıp', calcRollTotals(g.fabricRolls, job.fabricGramsPerMeter), false); });
+  job.patternGroups.forEach(function (g) { if (g.fabricRolls.length) html += block((g.patternName || 'İsimsiz Kalıp') + (g.gramsPerMeter ? ' (1 mt: ' + g.gramsPerMeter + ' gr)' : ''), calcRollTotals(g.fabricRolls, g.gramsPerMeter || job.fabricGramsPerMeter), false); });
   html += '<div class="grand"><div class="between"><span class="hud" style="font-size:12px">Genel Toplam</span><b>' + fmtNum(t.grandTotalMeters) + ' mt</b></div><p>' + (t.meterRolls.length + t.kgRolls.length) + ' top</p></div>';
   if (job.photos.length) html += '<div class="ph-grid">' + job.photos.map(function (p, i) { return '<div class="ph"><img data-pid="' + esc(p) + '" alt="" data-act="info-view" data-i="' + i + '" /></div>'; }).join('') + '</div>';
   html += '</div><div class="sh-foot"><button class="btn" data-act="info-open">' + icon('edit', 18) + ' İşi Aç</button>' +
@@ -4486,7 +4989,7 @@ function shareJobImage(customer, job) {
   lines.push({ t: 'Müşteri: ' + customer.name, s: 18 });
   lines.push({ t: 'İş / Model: ' + jobDisplayName(job), s: 18 });
   lines.push({ t: 'Durum: ' + status, s: 18 });
-  lines.push({ t: 'Kumaş: ' + [job.fabricType, job.fabricColor].filter(Boolean).join(' - ') + (job.fabricGramsPerMeter ? ' (1 mt: ' + job.fabricGramsPerMeter + ' gr)' : ''), s: 18 });
+  lines.push({ t: 'Kumaş: ' + [job.fabricType, job.fabricColor].filter(Boolean).join(' - '), s: 18 });
   if (job.notes) lines.push({ t: 'Not: ' + job.notes, s: 16, wrap: true });
   lines.push({ t: 'Fotoğraf: ' + job.photos.length + ' adet', s: 18, after: 16 });
   lines.push({ t: 'KUMAŞ TOPLARI', s: 15, b: true, c: C.tx2, after: 8 });
@@ -4503,7 +5006,7 @@ function shareJobImage(customer, job) {
     lines.push({ t: 'Kalıp Toplamı: ' + fmtNum(tt.grandTotalMeters) + ' mt', s: 14, after: 12 });
   };
   if (job.unassignedRolls.length) push('Atanmamış Toplar', calcRollTotals(job.unassignedRolls, job.fabricGramsPerMeter));
-  job.patternGroups.forEach(function (g) { if (g.fabricRolls.length) push(g.patternName || 'İsimsiz Kalıp', calcRollTotals(g.fabricRolls, job.fabricGramsPerMeter)); });
+  job.patternGroups.forEach(function (g) { if (g.fabricRolls.length) push((g.patternName || 'İsimsiz Kalıp') + (g.gramsPerMeter ? ' (1 mt: ' + g.gramsPerMeter + ' gr)' : ''), calcRollTotals(g.fabricRolls, g.gramsPerMeter || job.fabricGramsPerMeter)); });
   lines.push({ t: 'Genel Toplam: ' + fmtNum(t.grandTotalMeters) + ' mt (' + (t.meterRolls.length + t.kgRolls.length) + ' top)', s: 20, b: true, c: C.cy, before: 10 });
 
   var font = function (l) { return (l.b ? '600 ' : '') + l.s + 'px "Exo 2", Cairo, Arial, sans-serif'; };
@@ -6049,6 +6552,59 @@ function boot() {
   }).then(function () {
     return runMigrations();
   }).then(function () {
+    if ((IN_FRAME || IS_PREVIEW_HOST) && !Data.real().length) {
+      if (!Settings.company) Settings.company = 'MİT Tekstil & Baskı';
+      if (!Settings.currency) Settings.currency = 'TL';
+      var sampleJob1 = {
+        id: uid(), createdAt: new Date().toISOString(), status: 'active', deliveredAt: null, printed: false,
+        fabricType: '30/1 Süprem', fabricColor: 'Lacivert', notes: 'Önizleme için örnek iş 1',
+        patternGroups: [
+          { id: uid(), patternName: 'Çiçek Desen 2026', fabricRolls: [{ id: uid(), value: 120, unit: 'mt' }], pricePerMeter: 12.5, gramsPerMeter: 180 },
+          { id: uid(), patternName: 'Geometrik Simli', fabricRolls: [{ id: uid(), value: 30, unit: 'kg' }], pricePerMeter: 15, gramsPerMeter: 200 }
+        ],
+        unassignedRolls: [], photos: []
+      };
+      var calc1 = waybillCalc(sampleJob1);
+      sampleJob1.waybill = normWaybill({
+        no: 1, at: new Date().toISOString(), company: Settings.company, customer: 'Ahmet Tekstil',
+        currency: Settings.currency, total: calc1.total, meters: calc1.meters, sig: waybillSig(sampleJob1, calc1),
+        lines: calc1.lines, paid: false
+      });
+      var sampleJob2 = {
+        id: uid(), createdAt: new Date(Date.now() - 86400000).toISOString(), status: 'delivered', deliveredAt: new Date(Date.now() - 3600000).toISOString(), printed: true,
+        fabricType: '24/1 Penye', fabricColor: 'Siyah', notes: 'Önizleme için örnek iş 2',
+        patternGroups: [
+          { id: uid(), patternName: 'Yıldız Taş Baskı', fabricRolls: [{ id: uid(), value: 45, unit: 'kg' }], pricePerMeter: 18, gramsPerMeter: 225 }
+        ],
+        unassignedRolls: [], photos: []
+      };
+      var calc2 = waybillCalc(sampleJob2);
+      sampleJob2.waybill = normWaybill({
+        no: 2, at: new Date(Date.now() - 3600000).toISOString(), company: Settings.company, customer: 'Yıldız Konfeksiyon',
+        currency: Settings.currency, total: calc2.total, meters: calc2.meters, sig: waybillSig(sampleJob2, calc2),
+        lines: calc2.lines, paid: false
+      });
+      var sampleCust1 = {
+        id: uid(), name: 'Ahmet Tekstil', phone: '0532 123 45 67', address: 'Merter, İstanbul', location: null,
+        createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+        jobs: [sampleJob1]
+      };
+      var sampleCust2 = {
+        id: uid(), name: 'Yıldız Konfeksiyon', phone: '0533 987 65 43', address: 'Osmanbey, İstanbul', location: null,
+        createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+        jobs: [sampleJob2]
+      };
+      Data.customers = [sampleCust1, sampleCust2];
+      Data.patterns = [
+        { id: uid(), name: 'Çiçek Desen 2026', photo: '' },
+        { id: uid(), name: 'Geometrik Simli', photo: '' },
+        { id: uid(), name: 'Yıldız Taş Baskı', photo: '' }
+      ];
+      Store.put('customers', sampleCust1);
+      Store.put('customers', sampleCust2);
+      Meta.set('settings', Settings);
+      Meta.set('waybillSeq', 2);
+    }
     App.booted = true;
     App.refreshStats();
     Fx.init();
